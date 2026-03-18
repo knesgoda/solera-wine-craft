@@ -55,6 +55,30 @@ const BillingSettings = () => {
     }
   };
 
+  const handleDowngrade = (tier: string) => {
+    if (!hasStripeCustomer) {
+      toast({ title: "No active subscription", description: "No active subscription to downgrade.", variant: "destructive" });
+      return;
+    }
+    setDowngradeTarget(tier);
+  };
+
+  const confirmDowngrade = async () => {
+    setDowngradeLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("stripe-portal", {
+        body: { org_id: organization?.id },
+      });
+      if (error) throw error;
+      if (data?.url) window.open(data.url, "_blank");
+    } catch (e: any) {
+      toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" });
+    } finally {
+      setDowngradeLoading(false);
+      setDowngradeTarget(null);
+    }
+  };
+
   const handleUpgrade = async (tier: string) => {
     try {
       const { data, error } = await supabase.functions.invoke("stripe-checkout", {
