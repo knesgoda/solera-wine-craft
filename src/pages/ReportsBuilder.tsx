@@ -199,7 +199,7 @@ export default function ReportsBuilder() {
         if (table === "barrels") cols.push("id", "org_id");
 
         const uniqueCols = [...new Set(cols)];
-        let query = supabase.from(table).select(uniqueCols.join(",")).limit(50);
+        let query = (supabase.from as any)(table).select(uniqueCols.join(",")).limit(50);
 
         // Apply filters for this table
         filters.forEach((fl) => {
