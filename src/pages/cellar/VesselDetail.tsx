@@ -71,15 +71,21 @@ export default function VesselDetail() {
 
   const addLog = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("fermentation_logs").insert({
+      const record = {
         vessel_id: vesselId!,
         vintage_id: vessel?.vintage_id || null,
         logged_at: new Date(loggedAt).toISOString(),
         temp_f: logTempF ? parseFloat(logTempF) : null,
         brix: logBrix ? parseFloat(logBrix) : null,
         notes: logNotes || null,
-      } as any);
+      };
+      const { error } = await supabase.from("fermentation_logs").insert(record as any);
       if (error) throw error;
+
+      // Evaluate alert rules asynchronously
+      supabase.functions.invoke("evaluate-alerts", {
+        body: { type: "fermentation_log", record },
+      }).catch((e) => console.error("Alert evaluation failed:", e));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["fermentation-logs", vesselId] });

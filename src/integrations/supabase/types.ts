@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      alert_rules: {
+        Row: {
+          active: boolean
+          channel: Database["public"]["Enums"]["alert_channel"]
+          created_at: string
+          id: string
+          last_triggered_at: string | null
+          operator: Database["public"]["Enums"]["alert_operator"]
+          org_id: string
+          parameter: Database["public"]["Enums"]["alert_parameter"]
+          threshold: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          channel?: Database["public"]["Enums"]["alert_channel"]
+          created_at?: string
+          id?: string
+          last_triggered_at?: string | null
+          operator: Database["public"]["Enums"]["alert_operator"]
+          org_id: string
+          parameter: Database["public"]["Enums"]["alert_parameter"]
+          threshold: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          channel?: Database["public"]["Enums"]["alert_channel"]
+          created_at?: string
+          id?: string
+          last_triggered_at?: string | null
+          operator?: Database["public"]["Enums"]["alert_operator"]
+          org_id?: string
+          parameter?: Database["public"]["Enums"]["alert_parameter"]
+          threshold?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_rules_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       barrel_groups: {
         Row: {
           created_at: string
@@ -685,6 +732,47 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          channel: Database["public"]["Enums"]["alert_channel"]
+          created_at: string
+          id: string
+          message: string
+          org_id: string
+          read: boolean
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["alert_channel"]
+          created_at?: string
+          id?: string
+          message: string
+          org_id: string
+          read?: boolean
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["alert_channel"]
+          created_at?: string
+          id?: string
+          message?: string
+          org_id?: string
+          read?: boolean
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
@@ -1150,6 +1238,17 @@ export type Database = {
         | "acid"
         | "other"
       addition_unit: "g" | "kg" | "mL" | "L" | "oz" | "lb"
+      alert_channel: "email" | "push" | "both"
+      alert_operator: "gte" | "lte" | "eq"
+      alert_parameter:
+        | "brix"
+        | "ph"
+        | "ta"
+        | "va"
+        | "so2_free"
+        | "so2_total"
+        | "temp_f"
+        | "gdd_cumulative"
       app_role: "owner" | "admin" | "member"
       block_lifecycle_stage:
         | "planting"
@@ -1166,6 +1265,7 @@ export type Database = {
         | "importing"
         | "completed"
         | "failed"
+      notification_type: "alert" | "harvest" | "system" | "task"
       org_tier: "hobbyist" | "small_boutique" | "mid_size" | "enterprise"
       task_status: "pending" | "in_progress" | "complete"
       vintage_status:
@@ -1311,6 +1411,18 @@ export const Constants = {
         "other",
       ],
       addition_unit: ["g", "kg", "mL", "L", "oz", "lb"],
+      alert_channel: ["email", "push", "both"],
+      alert_operator: ["gte", "lte", "eq"],
+      alert_parameter: [
+        "brix",
+        "ph",
+        "ta",
+        "va",
+        "so2_free",
+        "so2_total",
+        "temp_f",
+        "gdd_cumulative",
+      ],
       app_role: ["owner", "admin", "member"],
       block_lifecycle_stage: [
         "planting",
@@ -1329,6 +1441,7 @@ export const Constants = {
         "completed",
         "failed",
       ],
+      notification_type: ["alert", "harvest", "system", "task"],
       org_tier: ["hobbyist", "small_boutique", "mid_size", "enterprise"],
       task_status: ["pending", "in_progress", "complete"],
       vintage_status: [

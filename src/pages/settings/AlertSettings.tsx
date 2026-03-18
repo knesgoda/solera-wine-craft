@@ -1,0 +1,223 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Trash2, Bell, ShieldAlert } from "lucide-react";
+import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
+
+const PARAMETERS = [
+  { value: "brix", label: "Brix" },
+  { value: "ph", label: "pH" },
+  { value: "ta", label: "TA" },
+  { value: "va", label: "VA" },
+  { value: "so2_free", label: "Free SO₂" },
+  { value: "so2_total", label: "Total SO₂" },
+  { value: "temp_f", label: "Temperature (°F)" },
+  { value: "gdd_cumulative", label: "GDD Cumulative" },
+];
+
+const OPERATORS = [
+  { value: "gte", label: "≥ (greater or equal)" },
+  { value: "lte", label: "≤ (less or equal)" },
+  { value: "eq", label: "= (equal)" },
+];
+
+const CHANNELS = [
+  { value: "email", label: "Email" },
+  { value: "push", label: "Push" },
+  { value: "both", label: "Email + Push" },
+];
+
+const OP_SYMBOLS: Record<string, string> = { gte: "≥", lte: "≤", eq: "=" };
+
+const AlertSettings = () => {
+  const { organization } = useAuth();
+  const orgId = organization?.id;
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ parameter: "", operator: "", threshold: "", channel: "both" });
+
+  const { data: rules = [], isLoading } = useQuery({
+    queryKey: ["alert-rules", orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("alert_rules")
+        .select("*")
+        .eq("org_id", orgId!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!orgId,
+  });
+
+  const createRule = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("alert_rules").insert({
+        org_id: orgId!,
+        parameter: form.parameter as any,
+        operator: form.operator as any,
+        threshold: parseFloat(form.threshold),
+        channel: form.channel as any,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["alert-rules", orgId] });
+      setOpen(false);
+      setForm({ parameter: "", operator: "", threshold: "", channel: "both" });
+      toast.success("Alert rule created");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const toggleRule = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase.from("alert_rules").update({ active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["alert-rules", orgId] }),
+  });
+
+  const deleteRule = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("alert_rules").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["alert-rules", orgId] });
+      toast.success("Rule deleted");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const paramLabel = (val: string) => PARAMETERS.find((p) => p.value === val)?.label || val;
+  const channelLabel = (val: string) => CHANNELS.find((c) => c.value === val)?.label || val;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">Alert Rules</h1>
+          <p className="text-muted-foreground mt-1">Configure automated alerts for lab and cellar data</p>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button><Plus className="h-4 w-4 mr-2" />New Rule</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="font-display">New Alert Rule</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={(e) => { e.preventDefault(); createRule.mutate(); }} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Parameter</Label>
+                <Select value={form.parameter} onValueChange={(v) => setForm({ ...form, parameter: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select parameter" /></SelectTrigger>
+                  <SelectContent>
+                    {PARAMETERS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Operator</Label>
+                  <Select value={form.operator} onValueChange={(v) => setForm({ ...form, operator: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      {OPERATORS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Threshold</Label>
+                  <Input type="number" step="0.01" value={form.threshold} onChange={(e) => setForm({ ...form, threshold: e.target.value })} required />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Notification Channel</Label>
+                <Select value={form.channel} onValueChange={(v) => setForm({ ...form, channel: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CHANNELS.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full" disabled={createRule.isPending || !form.parameter || !form.operator || !form.threshold}>
+                {createRule.isPending ? "Creating..." : "Create Rule"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {isLoading ? (
+        <div className="animate-pulse text-muted-foreground">Loading rules...</div>
+      ) : rules.length === 0 ? (
+        <Card className="border-dashed border-2 border-border">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <ShieldAlert className="h-10 w-10 text-muted-foreground mb-3" />
+            <h3 className="font-display text-lg font-semibold mb-1">No alert rules</h3>
+            <p className="text-muted-foreground text-sm mb-4">Set up rules to get notified about critical thresholds</p>
+            <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />New Rule</Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {rules.map((rule: any) => (
+            <Card key={rule.id} className="border-none shadow-sm">
+              <CardContent className="py-4 px-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <Switch
+                      checked={rule.active}
+                      onCheckedChange={(active) => toggleRule.mutate({ id: rule.id, active })}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-foreground">
+                          {paramLabel(rule.parameter)} {OP_SYMBOLS[rule.operator]} {rule.threshold}
+                        </span>
+                        <Badge variant="outline" className="text-[10px]">
+                          {channelLabel(rule.channel)}
+                        </Badge>
+                        {!rule.active && (
+                          <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground">
+                            Inactive
+                          </Badge>
+                        )}
+                      </div>
+                      {rule.last_triggered_at && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Last triggered {formatDistanceToNow(new Date(rule.last_triggered_at), { addSuffix: true })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => { if (confirm("Delete this rule?")) deleteRule.mutate(rule.id); }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AlertSettings;

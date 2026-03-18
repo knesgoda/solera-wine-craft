@@ -20,6 +20,8 @@ import BarrelInventory from "./pages/cellar/BarrelInventory";
 import BlendingTrials from "./pages/cellar/BlendingTrials";
 import TrialDetail from "./pages/cellar/TrialDetail";
 import WeatherSettings from "./pages/settings/WeatherSettings";
+import AlertSettings from "./pages/settings/AlertSettings";
+import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
 import VineyardList from "./pages/operations/VineyardList";
 import VineyardDetail from "./pages/operations/VineyardDetail";
@@ -79,6 +81,8 @@ const App = () => (
               <Route path="/data-import" element={<DataImport />} />
               <Route path="/settings" element={<ComingSoon />} />
               <Route path="/settings/weather" element={<WeatherSettings />} />
+              <Route path="/settings/alerts" element={<AlertSettings />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
