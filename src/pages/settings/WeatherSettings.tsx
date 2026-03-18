@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Loader2, CloudSun, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,6 +21,8 @@ interface ConfigRow {
   longitude: number | null;
   gdd_base_temp_f: number;
   active: boolean;
+  weather_source: string;
+  tomorrow_io_api_key: string | null;
 }
 
 export default function WeatherSettings() {
@@ -56,7 +60,7 @@ export default function WeatherSettings() {
   const configMap = new Map(configs.map((c) => [c.vineyard_id, c]));
 
   const saveConfig = useMutation({
-    mutationFn: async (params: { vineyardId: string; lat: string; lng: string; baseTemp: string; active: boolean }) => {
+    mutationFn: async (params: { vineyardId: string; lat: string; lng: string; baseTemp: string; active: boolean; weatherSource?: string; tomorrowKey?: string }) => {
       const existing = configMap.get(params.vineyardId);
       const payload: any = {
         org_id: organization!.id,
@@ -65,6 +69,8 @@ export default function WeatherSettings() {
         longitude: params.lng ? parseFloat(params.lng) : null,
         gdd_base_temp_f: params.baseTemp ? parseFloat(params.baseTemp) : 50,
         active: params.active,
+        weather_source: params.weatherSource || "open_meteo",
+        tomorrow_io_api_key: params.tomorrowKey || null,
       };
 
       if (existing) {
@@ -106,6 +112,8 @@ export default function WeatherSettings() {
 
   const isLoading = loadingV || loadingC;
 
+  const isEnterprise = organization?.tier === "enterprise";
+
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto pb-24 md:pb-6">
       <div className="flex items-center gap-3 mb-6">
@@ -117,6 +125,23 @@ export default function WeatherSettings() {
         Configure weather data ingestion for each vineyard. Coordinates are pre-populated from your vineyard records.
         When activated, historical data from April 1 of the current season will be backfilled automatically.
       </p>
+
+      {isEnterprise && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Weather Data Source</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Enterprise plans can use Tomorrow.io for premium agricultural weather data including
+              evapotranspiration, soil moisture, and spray window predictions.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Select the weather source per vineyard below. If using Tomorrow.io, add your API key in the vineyard config card.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -136,8 +161,9 @@ export default function WeatherSettings() {
               vineyard={v}
               config={configMap.get(v.id)}
               isBackfilling={backfilling === v.id}
-              onSave={(lat, lng, baseTemp, active) =>
-                saveConfig.mutate({ vineyardId: v.id, lat, lng, baseTemp, active })
+              isEnterprise={isEnterprise}
+              onSave={(lat, lng, baseTemp, active, weatherSource, tomorrowKey) =>
+                saveConfig.mutate({ vineyardId: v.id, lat, lng, baseTemp, active, weatherSource, tomorrowKey })
               }
               isSaving={saveConfig.isPending}
             />
@@ -152,16 +178,17 @@ function VineyardWeatherCard({
   vineyard,
   config,
   isBackfilling,
+  isEnterprise,
   onSave,
   isSaving,
 }: {
   vineyard: any;
   config?: ConfigRow;
   isBackfilling: boolean;
-  onSave: (lat: string, lng: string, baseTemp: string, active: boolean) => void;
+  isEnterprise: boolean;
+  onSave: (lat: string, lng: string, baseTemp: string, active: boolean, weatherSource?: string, tomorrowKey?: string) => void;
   isSaving: boolean;
 }) {
-  // Parse coordinates from vineyard if available
   const parsedCoords = vineyard.coordinates
     ? vineyard.coordinates.split(",").map((s: string) => s.trim())
     : [null, null];
@@ -170,6 +197,8 @@ function VineyardWeatherCard({
   const [lng, setLng] = useState(config?.longitude?.toString() || parsedCoords[1] || "");
   const [baseTemp, setBaseTemp] = useState(config?.gdd_base_temp_f?.toString() || "50");
   const [active, setActive] = useState(config?.active || false);
+  const [weatherSource, setWeatherSource] = useState(config?.weather_source || "open_meteo");
+  const [tomorrowKey, setTomorrowKey] = useState(config?.tomorrow_io_api_key || "");
 
   return (
     <Card>
@@ -210,9 +239,38 @@ function VineyardWeatherCard({
           <Label>Enable Weather Ingestion</Label>
           <Switch checked={active} onCheckedChange={setActive} />
         </div>
+        {isEnterprise && (
+          <>
+            <Separator />
+            <div className="space-y-2">
+              <Label>Weather Source</Label>
+              <Select value={weatherSource} onValueChange={setWeatherSource}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="open_meteo">Open-Meteo (Free)</SelectItem>
+                  <SelectItem value="tomorrow_io">Tomorrow.io (Premium)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {weatherSource === "tomorrow_io" && (
+              <div className="space-y-2">
+                <Label>Tomorrow.io API Key</Label>
+                <Input
+                  type="password"
+                  value={tomorrowKey}
+                  onChange={(e) => setTomorrowKey(e.target.value)}
+                  placeholder="Enter your Tomorrow.io API key"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Provides evapotranspiration, soil moisture, and spray window predictions.
+                </p>
+              </div>
+            )}
+          </>
+        )}
         <Button
           className="w-full min-h-[44px]"
-          onClick={() => onSave(lat, lng, baseTemp, active)}
+          onClick={() => onSave(lat, lng, baseTemp, active, weatherSource, tomorrowKey)}
           disabled={isSaving || isBackfilling || !lat || !lng}
         >
           {(isSaving || isBackfilling) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}

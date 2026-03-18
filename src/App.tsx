@@ -70,6 +70,10 @@ import SsoLogin from "./pages/SsoLogin";
 import ApiSettings from "./pages/settings/ApiSettings";
 import Developers from "./pages/Developers";
 import FacilitySettings from "./pages/settings/FacilitySettings";
+import BillingSettings from "./pages/settings/BillingSettings";
+import UserManagement from "./pages/settings/UserManagement";
+import AuditLog from "./pages/settings/AuditLog";
+import SmsSettings from "./pages/settings/SmsSettings";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PushPrompt } from "./components/PushPrompt";
 import { useOfflineSync } from "./hooks/useOfflineSync";
@@ -155,6 +159,10 @@ const App = () => (
               <Route path="/settings/sso" element={<SsoSettings />} />
               <Route path="/settings/api" element={<ApiSettings />} />
               <Route path="/settings/facilities" element={<FacilitySettings />} />
+              <Route path="/settings/billing" element={<BillingSettings />} />
+              <Route path="/settings/users" element={<UserManagement />} />
+              <Route path="/settings/audit" element={<AuditLog />} />
+              <Route path="/settings/alerts/sms" element={<SmsSettings />} />
             </Route>
             {/* Client Portal Routes */}
             <Route path="/client/login" element={<ClientLogin />} />

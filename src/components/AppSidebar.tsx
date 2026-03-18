@@ -2,6 +2,7 @@ import {
   LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings, ClipboardList, Cylinder, Beaker,
   Bell, ShieldAlert, CloudSun, FileSpreadsheet, FileText, PenTool, TrendingUp, Star, BarChart3, Package,
   Store, ShoppingBag, Users, Plug, GlassWater, Truck, Building2, Scale, FileCheck, Shield, Key,
+  CreditCard, ScrollText, MessageSquare,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -37,8 +38,11 @@ const items = [
   { title: "Data Import", url: "/data-import", icon: Upload },
   { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Billing", url: "/settings/billing", icon: CreditCard, indent: true },
+  { title: "Users", url: "/settings/users", icon: Users, indent: true },
   { title: "Weather", url: "/settings/weather", icon: CloudSun, indent: true },
   { title: "Alerts", url: "/settings/alerts", icon: ShieldAlert, indent: true },
+  { title: "SMS Alerts", url: "/settings/alerts/sms", icon: MessageSquare, indent: true },
   { title: "Ratings", url: "/settings/ratings", icon: Star, indent: true },
   { title: "Storefront", url: "/settings/storefront", icon: Store, indent: true },
   { title: "Integrations", url: "/settings/integrations", icon: Plug, indent: true },
@@ -46,6 +50,7 @@ const items = [
   { title: "SSO / SAML", url: "/settings/sso", icon: Shield, indent: true },
   { title: "Facilities", url: "/settings/facilities", icon: Building2, indent: true },
   { title: "API & Webhooks", url: "/settings/api", icon: Key, indent: true },
+  { title: "Audit Log", url: "/settings/audit", icon: ScrollText, indent: true },
 ];
 
 export function AppSidebar() {

@@ -282,6 +282,50 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          metadata_json: Json | null
+          org_id: string
+          record_id: string | null
+          record_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata_json?: Json | null
+          org_id: string
+          record_id?: string | null
+          record_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata_json?: Json | null
+          org_id?: string
+          record_id?: string | null
+          record_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       barrel_groups: {
         Row: {
           created_at: string
@@ -1924,6 +1968,7 @@ export type Database = {
           enabled_modules: string[] | null
           id: string
           name: string
+          needs_onboarding_call: boolean
           onboarding_completed: boolean
           tier: Database["public"]["Enums"]["org_tier"] | null
           type: string | null
@@ -1934,6 +1979,7 @@ export type Database = {
           enabled_modules?: string[] | null
           id?: string
           name: string
+          needs_onboarding_call?: boolean
           onboarding_completed?: boolean
           tier?: Database["public"]["Enums"]["org_tier"] | null
           type?: string | null
@@ -1944,6 +1990,7 @@ export type Database = {
           enabled_modules?: string[] | null
           id?: string
           name?: string
+          needs_onboarding_call?: boolean
           onboarding_completed?: boolean
           tier?: Database["public"]["Enums"]["org_tier"] | null
           type?: string | null
@@ -1958,9 +2005,11 @@ export type Database = {
           email: string | null
           first_name: string | null
           id: string
+          last_active_at: string | null
           last_name: string | null
           org_id: string | null
           push_subscription: Json | null
+          role: string
           updated_at: string
         }
         Insert: {
@@ -1969,9 +2018,11 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id: string
+          last_active_at?: string | null
           last_name?: string | null
           org_id?: string | null
           push_subscription?: Json | null
+          role?: string
           updated_at?: string
         }
         Update: {
@@ -1980,9 +2031,11 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id?: string
+          last_active_at?: string | null
           last_name?: string | null
           org_id?: string | null
           push_subscription?: Json | null
+          role?: string
           updated_at?: string
         }
         Relationships: [
@@ -2196,6 +2249,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "shopify_config_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_config: {
+        Row: {
+          active: boolean
+          created_at: string
+          from_number: string | null
+          id: string
+          org_id: string
+          twilio_account_sid: string | null
+          twilio_auth_token_encrypted: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          from_number?: string | null
+          id?: string
+          org_id: string
+          twilio_account_sid?: string | null
+          twilio_auth_token_encrypted?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          from_number?: string | null
+          id?: string
+          org_id?: string
+          twilio_account_sid?: string | null
+          twilio_auth_token_encrypted?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_config_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: true
             referencedRelation: "organizations"
@@ -2669,8 +2763,10 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           org_id: string
+          tomorrow_io_api_key: string | null
           updated_at: string
           vineyard_id: string
+          weather_source: string
         }
         Insert: {
           active?: boolean
@@ -2680,8 +2776,10 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           org_id: string
+          tomorrow_io_api_key?: string | null
           updated_at?: string
           vineyard_id: string
+          weather_source?: string
         }
         Update: {
           active?: boolean
@@ -2691,8 +2789,10 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           org_id?: string
+          tomorrow_io_api_key?: string | null
           updated_at?: string
           vineyard_id?: string
+          weather_source?: string
         }
         Relationships: [
           {
@@ -3141,7 +3241,7 @@ export type Database = {
         | "comp"
         | "audit_correction"
         | "custom_crush_transfer"
-      alert_channel: "email" | "push" | "both"
+      alert_channel: "email" | "push" | "both" | "sms"
       alert_operator: "gte" | "lte" | "eq"
       alert_parameter:
         | "brix"
@@ -3170,7 +3270,7 @@ export type Database = {
         | "read:tasks"
         | "write:tasks"
         | "read:analytics"
-      app_role: "owner" | "admin" | "member"
+      app_role: "owner" | "admin" | "member" | "manager" | "cellar" | "field"
       block_lifecycle_stage:
         | "planting"
         | "establishment"
@@ -3394,7 +3494,7 @@ export const Constants = {
         "audit_correction",
         "custom_crush_transfer",
       ],
-      alert_channel: ["email", "push", "both"],
+      alert_channel: ["email", "push", "both", "sms"],
       alert_operator: ["gte", "lte", "eq"],
       alert_parameter: [
         "brix",
@@ -3426,7 +3526,7 @@ export const Constants = {
         "write:tasks",
         "read:analytics",
       ],
-      app_role: ["owner", "admin", "member"],
+      app_role: ["owner", "admin", "member", "manager", "cellar", "field"],
       block_lifecycle_stage: [
         "planting",
         "establishment",
