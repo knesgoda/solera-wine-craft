@@ -33,6 +33,25 @@ const Dashboard = () => {
 
   const { data: primeBlocks = [] } = usePrimeWindowBlocks();
 
+  const { data: inventoryStats } = useQuery({
+    queryKey: ["dashboard-inventory", orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory_skus")
+        .select("cases, bottles_per_case, price, loose_bottles")
+        .eq("org_id", orgId!)
+        .eq("active", true);
+      if (error) throw error;
+      const totalCases = (data || []).reduce((s, r: any) => s + (Number(r.cases) || 0), 0);
+      const totalValue = (data || []).reduce((s, r: any) => {
+        const bottles = (Number(r.cases) || 0) * (Number(r.bottles_per_case) || 12) + (Number(r.loose_bottles) || 0);
+        return s + bottles * (Number(r.price) || 0);
+      }, 0);
+      return { totalCases, totalValue };
+    },
+    enabled: !!orgId,
+  });
+
   const { data: tasksDue = 0 } = useQuery({
     queryKey: ["dashboard-tasks-due", orgId],
     queryFn: async () => {
