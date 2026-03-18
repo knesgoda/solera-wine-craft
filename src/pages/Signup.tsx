@@ -22,42 +22,21 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      // 1. Sign up with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { first_name: firstName, last_name: lastName },
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            winery_name: wineryName,
+          },
           emailRedirectTo: window.location.origin,
         },
       });
 
       if (authError) throw authError;
-      if (!authData.user) throw new Error("Signup failed");
-
-      // 2. Create organization
-      const { data: orgData, error: orgError } = await supabase
-        .from("organizations")
-        .insert({ name: wineryName })
-        .select()
-        .single();
-
-      if (orgError) throw orgError;
-
-      // 3. Link profile to org
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ org_id: orgData.id })
-        .eq("id", authData.user.id);
-
-      if (profileError) throw profileError;
-
-      // 4. Assign owner role
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .insert({ user_id: authData.user.id, role: "owner" });
-
-      if (roleError) throw roleError;
+      if (!authData.user) throw new Error("Signup failed. Please try again.");
 
       toast.success("Account created! Let's set up your winery.");
       navigate("/onboarding");
