@@ -22,6 +22,7 @@ import TrialDetail from "./pages/cellar/TrialDetail";
 import WeatherSettings from "./pages/settings/WeatherSettings";
 import AlertSettings from "./pages/settings/AlertSettings";
 import NotificationsPage from "./pages/NotificationsPage";
+import GoogleSheetsSettings from "./pages/settings/GoogleSheetsSettings";
 import NotFound from "./pages/NotFound";
 import VineyardList from "./pages/operations/VineyardList";
 import VineyardDetail from "./pages/operations/VineyardDetail";
@@ -83,6 +84,7 @@ const App = () => (
               <Route path="/settings/weather" element={<WeatherSettings />} />
               <Route path="/settings/alerts" element={<AlertSettings />} />
               <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/settings/integrations/google-sheets" element={<GoogleSheetsSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

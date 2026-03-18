@@ -1,5 +1,6 @@
 import {
   LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings, ClipboardList, Cylinder, Beaker,
+  Bell, ShieldAlert, CloudSun, FileSpreadsheet,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -20,7 +21,11 @@ const items = [
   { title: "Ask Solera", url: "/ask-solera", icon: Bot },
   { title: "Sales", url: "/sales", icon: ShoppingCart },
   { title: "Data Import", url: "/data-import", icon: Upload },
+  { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Weather", url: "/settings/weather", icon: CloudSun, indent: true },
+  { title: "Alerts", url: "/settings/alerts", icon: ShieldAlert, indent: true },
+  { title: "Google Sheets", url: "/settings/integrations/google-sheets", icon: FileSpreadsheet, indent: true },
 ];
 
 export function AppSidebar() {
