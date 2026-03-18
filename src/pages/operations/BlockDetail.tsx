@@ -116,6 +116,9 @@ const BlockDetail = () => {
         </CardContent>
       </Card>
 
+      {/* Harvest Window Prediction */}
+      <HarvestWindowCard blockId={blockId!} vineyardId={vineyardId!} />
+
       {/* Soil Info */}
       <Card className="border-none shadow-md">
         <CardHeader>

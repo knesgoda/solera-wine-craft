@@ -7,10 +7,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { addDays, format } from "date-fns";
+import { usePrimeWindowBlocks } from "@/hooks/usePrimeWindowBlocks";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 const Dashboard = () => {
   const { profile, organization } = useAuth();
   const orgId = organization?.id;
+  const [showPrimeBlocks, setShowPrimeBlocks] = useState(false);
 
   const { data: activeVintages = 0 } = useQuery({
     queryKey: ["dashboard-active-vintages", orgId],
@@ -26,23 +31,7 @@ const Dashboard = () => {
     enabled: !!orgId,
   });
 
-  const { data: pickWindows = 0 } = useQuery({
-    queryKey: ["dashboard-pick-windows", orgId],
-    queryFn: async () => {
-      const thirtyDays = format(addDays(new Date(), 30), "yyyy-MM-dd");
-      const today = format(new Date(), "yyyy-MM-dd");
-      const { count, error } = await supabase
-        .from("vintages")
-        .select("*", { count: "exact", head: true })
-        .eq("org_id", orgId!)
-        .eq("status", "in_progress")
-        .gte("harvest_date", today)
-        .lte("harvest_date", thirtyDays);
-      if (error) throw error;
-      return count || 0;
-    },
-    enabled: !!orgId,
-  });
+  const { data: primeBlocks = [] } = usePrimeWindowBlocks();
 
   const { data: tasksDue = 0 } = useQuery({
     queryKey: ["dashboard-tasks-due", orgId],
@@ -62,7 +51,7 @@ const Dashboard = () => {
 
   const stats = [
     { title: "Active Vintages", value: activeVintages, icon: Wine, link: "/vintages", color: "text-primary" },
-    { title: "Upcoming Pick Windows", value: pickWindows, icon: Calendar, link: "/vintages", color: "text-secondary" },
+    { title: "Prime Pick Windows", value: primeBlocks.length, icon: Calendar, color: "text-secondary", onClick: () => primeBlocks.length > 0 && setShowPrimeBlocks(true) },
     { title: "Tasks Due", value: tasksDue, icon: CheckSquare, link: "/tasks", color: "text-secondary" },
   ];
 
@@ -76,8 +65,8 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {stats.map((stat) => (
-          <Link to={stat.link} key={stat.title}>
+        {stats.map((stat) => {
+          const inner = (
             <Card className="hover:shadow-lg transition-shadow cursor-pointer border-none shadow-md">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
@@ -87,8 +76,17 @@ const Dashboard = () => {
                 <div className="text-3xl font-bold font-display text-foreground">{stat.value}</div>
               </CardContent>
             </Card>
-          </Link>
-        ))}
+          );
+
+          if (stat.link) {
+            return <Link to={stat.link} key={stat.title}>{inner}</Link>;
+          }
+          return (
+            <div key={stat.title} onClick={stat.onClick} className="cursor-pointer">
+              {inner}
+            </div>
+          );
+        })}
       </div>
 
       <Card className="border-none shadow-md">
@@ -108,6 +106,43 @@ const Dashboard = () => {
           <p className="text-xs text-muted-foreground mt-2">AI-powered insights coming soon</p>
         </CardContent>
       </Card>
+
+      {/* Prime Window Blocks Dialog */}
+      <Dialog open={showPrimeBlocks} onOpenChange={setShowPrimeBlocks}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-display">Blocks in Prime Pick Window</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {primeBlocks.map((b) => (
+              <Link
+                key={b.blockId}
+                to={`/operations/${b.vineyardId}/blocks/${b.blockId}`}
+                onClick={() => setShowPrimeBlocks(false)}
+                className="block"
+              >
+                <Card className="hover:shadow-md transition-shadow border-none shadow-sm">
+                  <CardContent className="py-3 px-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-foreground">{b.blockName}</p>
+                      <p className="text-xs text-muted-foreground">{b.vineyardName}</p>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        {format(b.predictedDate, "MMM d")}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground mt-1">Brix: {b.currentBrix.toFixed(1)}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+            {primeBlocks.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">No blocks currently in prime window</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
