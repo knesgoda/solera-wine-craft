@@ -60,7 +60,7 @@ export default function WeatherSettings() {
   const configMap = new Map(configs.map((c) => [c.vineyard_id, c]));
 
   const saveConfig = useMutation({
-    mutationFn: async (params: { vineyardId: string; lat: string; lng: string; baseTemp: string; active: boolean }) => {
+    mutationFn: async (params: { vineyardId: string; lat: string; lng: string; baseTemp: string; active: boolean; weatherSource?: string; tomorrowKey?: string }) => {
       const existing = configMap.get(params.vineyardId);
       const payload: any = {
         org_id: organization!.id,
@@ -69,6 +69,8 @@ export default function WeatherSettings() {
         longitude: params.lng ? parseFloat(params.lng) : null,
         gdd_base_temp_f: params.baseTemp ? parseFloat(params.baseTemp) : 50,
         active: params.active,
+        weather_source: params.weatherSource || "open_meteo",
+        tomorrow_io_api_key: params.tomorrowKey || null,
       };
 
       if (existing) {
