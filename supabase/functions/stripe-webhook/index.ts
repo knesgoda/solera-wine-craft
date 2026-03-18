@@ -170,12 +170,8 @@ async function resolveSubscriptionTier(sub: any, stripeKey: string, fallbackTier
 
         // Re-fetch subscription from Stripe to confirm details
         const sub = await stripeGet(`subscriptions/${subscription.id}`, stripeKey);
-        const priceId = sub.items?.data?.[0]?.price?.id;
-        let tier = "pro"; // default
-        if (priceId) {
-          const price = await stripeGet(`prices/${priceId}`, stripeKey);
-          tier = price.metadata?.tier || "pro";
-        }
+        const tier = await resolveSubscriptionTier(sub, stripeKey);
+
 
         await supabase.from("organizations").update({
           tier,
