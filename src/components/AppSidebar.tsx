@@ -43,12 +43,12 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
-                      end={item.url === "/dashboard"}
-                      className="hover:bg-sidebar-accent/50 text-sidebar-foreground/80 py-3"
+                      end={item.url === "/dashboard" || item.url === "/cellar"}
+                      className={`hover:bg-sidebar-accent/50 text-sidebar-foreground/80 py-3 ${(item as any).indent && !collapsed ? "pl-10" : ""}`}
                       activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
                     >
-                      <item.icon className="mr-3 h-5 w-5 shrink-0" />
-                      {!collapsed && <span>{item.title}</span>}
+                      <item.icon className={`mr-3 h-5 w-5 shrink-0 ${(item as any).indent ? "h-4 w-4" : ""}`} />
+                      {!collapsed && <span className={(item as any).indent ? "text-sm" : ""}>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
