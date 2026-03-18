@@ -281,6 +281,63 @@ export type Database = {
           },
         ]
       }
+      ttb_additions: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          addition_type: Database["public"]["Enums"]["addition_type"]
+          amount: number
+          batch_size: number | null
+          created_at: string
+          id: string
+          org_id: string
+          ttb_code: string | null
+          unit: Database["public"]["Enums"]["addition_unit"]
+          vintage_id: string
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          addition_type: Database["public"]["Enums"]["addition_type"]
+          amount: number
+          batch_size?: number | null
+          created_at?: string
+          id?: string
+          org_id: string
+          ttb_code?: string | null
+          unit: Database["public"]["Enums"]["addition_unit"]
+          vintage_id: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          addition_type?: Database["public"]["Enums"]["addition_type"]
+          amount?: number
+          batch_size?: number | null
+          created_at?: string
+          id?: string
+          org_id?: string
+          ttb_code?: string | null
+          unit?: Database["public"]["Enums"]["addition_unit"]
+          vintage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ttb_additions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ttb_additions_vintage_id_fkey"
+            columns: ["vintage_id"]
+            isOneToOne: false
+            referencedRelation: "vintages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -421,6 +478,14 @@ export type Database = {
       }
     }
     Enums: {
+      addition_type:
+        | "so2"
+        | "yeast_nutrient"
+        | "enzyme"
+        | "fining_agent"
+        | "acid"
+        | "other"
+      addition_unit: "g" | "kg" | "mL" | "L" | "oz" | "lb"
       app_role: "owner" | "admin" | "member"
       block_lifecycle_stage:
         | "planting"
@@ -565,6 +630,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      addition_type: [
+        "so2",
+        "yeast_nutrient",
+        "enzyme",
+        "fining_agent",
+        "acid",
+        "other",
+      ],
+      addition_unit: ["g", "kg", "mL", "L", "oz", "lb"],
       app_role: ["owner", "admin", "member"],
       block_lifecycle_stage: [
         "planting",
