@@ -131,11 +131,11 @@ export default function ReportsBuilder() {
         dateFrom: dateFrom?.toISOString(),
         dateTo: dateTo?.toISOString(),
       };
-      const { error } = await supabase.from("saved_reports" as any).insert({
+      const { error } = await (supabase.from as any)("saved_reports").insert({
         org_id: orgId,
         name,
         config_json: config,
-      } as any);
+      });
       if (error) throw error;
     },
     onSuccess: () => {
