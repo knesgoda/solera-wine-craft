@@ -11,6 +11,7 @@ const mainTabs = [
 ];
 
 const moreTabs = [
+  { title: "Cellar", url: "/cellar", icon: Warehouse },
   { title: "Ask Solera", url: "/ask-solera", icon: Bot },
   { title: "Sales", url: "/sales", icon: ShoppingCart },
   { title: "Data Import", url: "/data-import", icon: Upload },
