@@ -13,6 +13,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import ComingSoon from "./pages/ComingSoon";
+import DataImport from "./pages/DataImport";
 import NotFound from "./pages/NotFound";
 import VineyardList from "./pages/operations/VineyardList";
 import VineyardDetail from "./pages/operations/VineyardDetail";
