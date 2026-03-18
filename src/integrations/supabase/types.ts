@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      barrels: {
+        Row: {
+          barrel_id: string | null
+          cooperage: string | null
+          created_at: string
+          id: string
+          org_id: string
+          size_liters: number | null
+          status: string | null
+          toast: string | null
+          type: string | null
+          updated_at: string
+          variety: string | null
+          vintage_id: string | null
+        }
+        Insert: {
+          barrel_id?: string | null
+          cooperage?: string | null
+          created_at?: string
+          id?: string
+          org_id: string
+          size_liters?: number | null
+          status?: string | null
+          toast?: string | null
+          type?: string | null
+          updated_at?: string
+          variety?: string | null
+          vintage_id?: string | null
+        }
+        Update: {
+          barrel_id?: string | null
+          cooperage?: string | null
+          created_at?: string
+          id?: string
+          org_id?: string
+          size_liters?: number | null
+          status?: string | null
+          toast?: string | null
+          type?: string | null
+          updated_at?: string
+          variety?: string | null
+          vintage_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "barrels_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "barrels_vintage_id_fkey"
+            columns: ["vintage_id"]
+            isOneToOne: false
+            referencedRelation: "vintages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocks: {
         Row: {
           acres: number | null
@@ -75,6 +135,223 @@ export type Database = {
             columns: ["vineyard_id"]
             isOneToOne: false
             referencedRelation: "vineyards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fermentation_vessels: {
+        Row: {
+          capacity_liters: number | null
+          created_at: string
+          id: string
+          material: string | null
+          name: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          capacity_liters?: number | null
+          created_at?: string
+          id?: string
+          material?: string | null
+          name: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          capacity_liters?: number | null
+          created_at?: string
+          id?: string
+          material?: string | null
+          name?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fermentation_vessels_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_errors: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          job_id: string
+          resolved: boolean
+          row_number: number | null
+          source_data: Json | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          job_id: string
+          resolved?: boolean
+          row_number?: number | null
+          source_data?: Json | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          job_id?: string
+          resolved?: boolean
+          row_number?: number | null
+          source_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_errors_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_rows: number | null
+          id: string
+          imported_rows: number | null
+          org_id: string
+          skipped_rows: number | null
+          source_type: Database["public"]["Enums"]["import_source_type"]
+          started_at: string | null
+          status: Database["public"]["Enums"]["import_status"]
+          total_rows: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_rows?: number | null
+          id?: string
+          imported_rows?: number | null
+          org_id: string
+          skipped_rows?: number | null
+          source_type: Database["public"]["Enums"]["import_source_type"]
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["import_status"]
+          total_rows?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_rows?: number | null
+          id?: string
+          imported_rows?: number | null
+          org_id?: string
+          skipped_rows?: number | null
+          source_type?: Database["public"]["Enums"]["import_source_type"]
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["import_status"]
+          total_rows?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_jobs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_mappings: {
+        Row: {
+          confidence: string | null
+          created_at: string
+          id: string
+          org_id: string
+          overridden_by_user: boolean
+          source_column: string
+          source_type: Database["public"]["Enums"]["import_source_type"]
+          target_field: string | null
+          target_table: string | null
+        }
+        Insert: {
+          confidence?: string | null
+          created_at?: string
+          id?: string
+          org_id: string
+          overridden_by_user?: boolean
+          source_column: string
+          source_type: Database["public"]["Enums"]["import_source_type"]
+          target_field?: string | null
+          target_table?: string | null
+        }
+        Update: {
+          confidence?: string | null
+          created_at?: string
+          id?: string
+          org_id?: string
+          overridden_by_user?: boolean
+          source_column?: string
+          source_type?: Database["public"]["Enums"]["import_source_type"]
+          target_field?: string | null
+          target_table?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_mappings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_skus: {
+        Row: {
+          bottles: number | null
+          cases: number | null
+          created_at: string
+          id: string
+          label: string | null
+          org_id: string
+          price: number | null
+          updated_at: string
+          variety: string | null
+          vintage_year: number | null
+        }
+        Insert: {
+          bottles?: number | null
+          cases?: number | null
+          created_at?: string
+          id?: string
+          label?: string | null
+          org_id: string
+          price?: number | null
+          updated_at?: string
+          variety?: string | null
+          vintage_year?: number | null
+        }
+        Update: {
+          bottles?: number | null
+          cases?: number | null
+          created_at?: string
+          id?: string
+          label?: string | null
+          org_id?: string
+          price?: number | null
+          updated_at?: string
+          variety?: string | null
+          vintage_year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_skus_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -466,6 +743,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_import_job_org_id: { Args: { _job_id: string }; Returns: string }
       get_user_org_id: { Args: { _user_id: string }; Returns: string }
       get_vineyard_org_id: { Args: { _vineyard_id: string }; Returns: string }
       get_vintage_org_id: { Args: { _vintage_id: string }; Returns: string }
@@ -494,6 +772,14 @@ export type Database = {
         | "mature"
         | "replanting"
       block_status: "active" | "inactive" | "removed"
+      import_source_type: "csv" | "innovint" | "vinnow"
+      import_status:
+        | "pending"
+        | "mapping"
+        | "previewing"
+        | "importing"
+        | "completed"
+        | "failed"
       org_tier: "hobbyist" | "small_boutique" | "mid_size" | "enterprise"
       task_status: "pending" | "in_progress" | "complete"
       vintage_status:
@@ -648,6 +934,15 @@ export const Constants = {
         "replanting",
       ],
       block_status: ["active", "inactive", "removed"],
+      import_source_type: ["csv", "innovint", "vinnow"],
+      import_status: [
+        "pending",
+        "mapping",
+        "previewing",
+        "importing",
+        "completed",
+        "failed",
+      ],
       org_tier: ["hobbyist", "small_boutique", "mid_size", "enterprise"],
       task_status: ["pending", "in_progress", "complete"],
       vintage_status: [
