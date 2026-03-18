@@ -1,4 +1,4 @@
-import { Wine, Calendar, CheckSquare, Send } from "lucide-react";
+import { Wine, Calendar, CheckSquare, Send, Package, DollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
