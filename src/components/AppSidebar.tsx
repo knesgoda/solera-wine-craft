@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings,
+  LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings, ClipboardList,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
