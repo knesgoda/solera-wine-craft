@@ -109,7 +109,18 @@ const App = () => (
         <AuthProvider>
           <AppInner />
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Marketing routes */}
+            <Route element={<MarketingLayout />}>
+              <Route path="/" element={<Homepage />} />
+              <Route path="/features" element={<FeaturesPage />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/compare" element={<ComparePage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/faq" element={<FaqPage />} />
+              <Route path="/changelog" element={<ChangelogPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+            </Route>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
