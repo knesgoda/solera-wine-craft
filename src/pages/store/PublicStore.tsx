@@ -215,6 +215,12 @@ const PublicStore = () => {
     } else if (params.get("canceled") === "true") {
       toast.info("Checkout canceled");
       window.history.replaceState({}, "", "/store");
+    } else if (params.get("club_success") === "true") {
+      toast.success("Welcome to the wine club! Check your email for details.");
+      window.history.replaceState({}, "", "/store");
+    } else if (params.get("club_canceled") === "true") {
+      toast.info("Club signup canceled");
+      window.history.replaceState({}, "", "/store");
     }
   }, []);
 
