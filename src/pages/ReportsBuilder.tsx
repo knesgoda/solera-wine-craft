@@ -114,8 +114,7 @@ export default function ReportsBuilder() {
   const { data: savedReports = [] } = useQuery({
     queryKey: ["saved-reports", orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("saved_reports" as any)
+      const { data, error } = await (supabase.from as any)("saved_reports")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
