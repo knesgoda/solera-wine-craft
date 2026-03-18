@@ -8,8 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, ChevronRight, MapPin, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, ChevronRight, MapPin, Trash2, CloudSun, Grid3x3 } from "lucide-react";
+import { toast } from "sonner";
+import type { Database } from "@/integrations/supabase/types";
+import { WeatherTab } from "@/components/weather/WeatherTab";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
