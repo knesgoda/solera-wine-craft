@@ -78,7 +78,7 @@ const App = () => (
               <Route path="/cellar/barrels" element={<BarrelInventory />} />
               <Route path="/cellar/blending" element={<BlendingTrials />} />
               <Route path="/cellar/blending/:trialId" element={<TrialDetail />} />
-              <Route path="/ask-solera" element={<ComingSoon />} />
+              <Route path="/ask-solera" element={<AskSolera />} />
               <Route path="/sales" element={<ComingSoon />} />
               <Route path="/data-import" element={<DataImport />} />
               <Route path="/settings" element={<ComingSoon />} />
