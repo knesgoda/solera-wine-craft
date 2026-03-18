@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, CreditCard, ArrowRight } from "lucide-react";
+import { Check, CreditCard, ArrowRight, Info } from "lucide-react";
 import { getTierDisplay } from "@/hooks/useTierGate";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -15,17 +15,17 @@ const PLANS = [
   },
   {
     tier: "small_boutique",
-    price: "$99/mo",
+    price: "$69/mo",
     features: ["Unlimited vineyards & blocks", "5 users", "Cellar management", "Reports & analytics", "Inventory management"],
   },
   {
     tier: "mid_size",
-    price: "$249/mo",
+    price: "$129/mo",
     features: ["Everything in Pro", "15 users", "DTC storefront & orders", "Wine club", "Client portal", "All integrations"],
   },
   {
     tier: "enterprise",
-    price: "Custom",
+    price: "$399/mo",
     features: ["Everything in Growth", "Unlimited users", "SSO / SAML", "Multi-facility", "API & webhooks", "QuickBooks", "Dedicated support"],
   },
 ];
@@ -33,11 +33,13 @@ const PLANS = [
 const BillingSettings = () => {
   const { organization } = useAuth();
   const currentTier = organization?.tier || "hobbyist";
+  const hasStripeCustomer = !!(organization as any)?.stripe_customer_id;
 
   const handleManageBilling = async () => {
+    if (!hasStripeCustomer) return;
     try {
-      const { data, error } = await supabase.functions.invoke("stripe-checkout", {
-        body: { action: "portal", org_id: organization?.id },
+      const { data, error } = await supabase.functions.invoke("stripe-portal", {
+        body: { org_id: organization?.id },
       });
       if (error) throw error;
       if (data?.url) window.open(data.url, "_blank");
@@ -80,10 +82,17 @@ const BillingSettings = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <Button variant="outline" onClick={handleManageBilling}>
-            <CreditCard className="h-4 w-4 mr-2" />
-            Manage Billing & Payment Method
-          </Button>
+          {hasStripeCustomer ? (
+            <Button variant="outline" onClick={handleManageBilling}>
+              <CreditCard className="h-4 w-4 mr-2" />
+              Manage Billing & Payment Method
+            </Button>
+          ) : (
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <Info className="h-4 w-4 shrink-0" />
+              No active subscription — upgrade to manage billing.
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -93,7 +102,6 @@ const BillingSettings = () => {
           const planIdx = TIER_ORDER.indexOf(plan.tier);
           const isCurrent = plan.tier === currentTier;
           const isUpgrade = planIdx > currentIdx;
-          const isDowngrade = planIdx < currentIdx;
 
           return (
             <Card key={plan.tier} className={`border-none shadow-md ${isCurrent ? "ring-2 ring-primary" : ""}`}>
