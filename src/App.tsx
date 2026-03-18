@@ -64,6 +64,8 @@ import ClientDocuments from "./pages/client/ClientDocuments";
 import ClientMessages from "./pages/client/ClientMessages";
 import ComplianceSettings from "./pages/compliance/ComplianceSettings";
 import ComplianceReports from "./pages/compliance/ComplianceReports";
+import SsoSettings from "./pages/settings/SsoSettings";
+import SsoLogin from "./pages/SsoLogin";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PushPrompt } from "./components/PushPrompt";
 import { useOfflineSync } from "./hooks/useOfflineSync";
@@ -95,6 +97,7 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/store" element={<PublicStore />} />
+            <Route path="/sso/login" element={<SsoLogin />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
@@ -143,6 +146,7 @@ const App = () => (
               <Route path="/settings/integrations/shipcompliant" element={<ShipCompliantSettings />} />
               <Route path="/compliance" element={<ComplianceReports />} />
               <Route path="/compliance/settings" element={<ComplianceSettings />} />
+              <Route path="/settings/sso" element={<SsoSettings />} />
             </Route>
             {/* Client Portal Routes */}
             <Route path="/client/login" element={<ClientLogin />} />

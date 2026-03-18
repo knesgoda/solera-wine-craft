@@ -1920,6 +1920,56 @@ export type Database = {
           },
         ]
       }
+      sso_configs: {
+        Row: {
+          active: boolean
+          attribute_mapping_json: Json | null
+          certificate: string | null
+          created_at: string
+          enforce_sso: boolean
+          entity_id: string | null
+          id: string
+          org_id: string
+          provider: Database["public"]["Enums"]["sso_provider"]
+          sso_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          attribute_mapping_json?: Json | null
+          certificate?: string | null
+          created_at?: string
+          enforce_sso?: boolean
+          entity_id?: string | null
+          id?: string
+          org_id: string
+          provider?: Database["public"]["Enums"]["sso_provider"]
+          sso_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          attribute_mapping_json?: Json | null
+          certificate?: string | null
+          created_at?: string
+          enforce_sso?: boolean
+          entity_id?: string | null
+          id?: string
+          org_id?: string
+          provider?: Database["public"]["Enums"]["sso_provider"]
+          sso_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sso_configs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       storefront_config: {
         Row: {
           age_gate_enabled: boolean
@@ -2775,6 +2825,7 @@ export type Database = {
         | "refunded"
       org_tier: "hobbyist" | "small_boutique" | "mid_size" | "enterprise"
       sheet_module: "vintage_lab" | "tasks" | "inventory"
+      sso_provider: "okta" | "azure_ad" | "google_workspace" | "generic_saml"
       sync_schedule: "manual" | "hourly" | "daily"
       sync_status: "success" | "partial" | "failed" | "running"
       task_status: "pending" | "in_progress" | "complete"
@@ -3008,6 +3059,7 @@ export const Constants = {
       ],
       org_tier: ["hobbyist", "small_boutique", "mid_size", "enterprise"],
       sheet_module: ["vintage_lab", "tasks", "inventory"],
+      sso_provider: ["okta", "azure_ad", "google_workspace", "generic_saml"],
       sync_schedule: ["manual", "hourly", "daily"],
       sync_status: ["success", "partial", "failed", "running"],
       task_status: ["pending", "in_progress", "complete"],

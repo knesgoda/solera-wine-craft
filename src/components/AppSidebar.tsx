@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings, ClipboardList, Cylinder, Beaker,
   Bell, ShieldAlert, CloudSun, FileSpreadsheet, FileText, PenTool, TrendingUp, Star, BarChart3, Package,
-  Store, ShoppingBag, Users, Plug, GlassWater, Truck, Building2, Scale, FileCheck,
+  Store, ShoppingBag, Users, Plug, GlassWater, Truck, Building2, Scale, FileCheck, Shield,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -43,6 +43,7 @@ const items = [
   { title: "Storefront", url: "/settings/storefront", icon: Store, indent: true },
   { title: "Integrations", url: "/settings/integrations", icon: Plug, indent: true },
   { title: "Google Sheets", url: "/settings/integrations/google-sheets", icon: FileSpreadsheet, indent: true },
+  { title: "SSO / SAML", url: "/settings/sso", icon: Shield, indent: true },
 ];
 
 export function AppSidebar() {
