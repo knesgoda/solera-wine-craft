@@ -11,7 +11,7 @@ import soleraLogo from "@/assets/solera-logo.png";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Vineyard Ops", url: "/vineyard-ops", icon: Grape },
+  { title: "Vineyard Ops", url: "/operations", icon: Grape },
   { title: "Vintages", url: "/vintages", icon: Wine },
   { title: "Cellar", url: "/cellar", icon: Warehouse },
   { title: "Ask Solera", url: "/ask-solera", icon: Bot },
