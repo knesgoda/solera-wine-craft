@@ -77,6 +77,16 @@ import SmsSettings from "./pages/settings/SmsSettings";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PushPrompt } from "./components/PushPrompt";
 import { useOfflineSync } from "./hooks/useOfflineSync";
+import { MarketingLayout } from "./components/marketing/MarketingLayout";
+import Homepage from "./pages/marketing/Homepage";
+import FeaturesPage from "./pages/marketing/FeaturesPage";
+import PricingPage from "./pages/marketing/PricingPage";
+import ComparePage from "./pages/marketing/ComparePage";
+import AboutPage from "./pages/marketing/AboutPage";
+import FaqPage from "./pages/marketing/FaqPage";
+import ChangelogPage from "./pages/marketing/ChangelogPage";
+import PrivacyPage from "./pages/marketing/PrivacyPage";
+import TermsPage from "./pages/marketing/TermsPage";
 
 const queryClient = new QueryClient();
 
@@ -99,7 +109,18 @@ const App = () => (
         <AuthProvider>
           <AppInner />
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Marketing routes */}
+            <Route element={<MarketingLayout />}>
+              <Route path="/" element={<Homepage />} />
+              <Route path="/features" element={<FeaturesPage />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/compare" element={<ComparePage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/faq" element={<FaqPage />} />
+              <Route path="/changelog" element={<ChangelogPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+            </Route>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
