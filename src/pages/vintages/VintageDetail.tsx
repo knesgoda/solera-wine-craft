@@ -25,8 +25,9 @@ export default function VintageDetail() {
   const { vintageId } = useParams<{ vintageId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { organization } = useAuth();
+  const { organization, profile } = useAuth();
   const [labDialogOpen, setLabDialogOpen] = useState(false);
+  const orgId = profile?.org_id;
 
   const { data: vintage, isLoading } = useQuery({
     queryKey: ["vintage", vintageId],
@@ -68,6 +69,27 @@ export default function VintageDetail() {
       queryClient.invalidateQueries({ queryKey: ["vintage", vintageId] });
       queryClient.invalidateQueries({ queryKey: ["vintages"] });
       toast.success("Status updated");
+    },
+  });
+
+  const { data: clientOrgs = [] } = useQuery({
+    queryKey: ["client-orgs-for-assign", orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("client_orgs").select("id, name").eq("parent_org_id", orgId!).eq("active", true);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!orgId,
+  });
+
+  const assignClient = useMutation({
+    mutationFn: async (clientOrgId: string | null) => {
+      const { error } = await supabase.from("vintages").update({ client_org_id: clientOrgId }).eq("id", vintageId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vintage", vintageId] });
+      toast.success("Client assignment updated");
     },
   });
 
@@ -117,6 +139,18 @@ export default function VintageDetail() {
           )}
           {vintage.notes && (
             <div className="text-sm"><span className="text-muted-foreground">Notes:</span> <span className="text-foreground">{vintage.notes}</span></div>
+          )}
+          {clientOrgs.length > 0 && (
+            <div className="text-sm pt-2 border-t">
+              <span className="text-muted-foreground">Client Assignment:</span>
+              <Select value={vintage.client_org_id || "none"} onValueChange={(v) => assignClient.mutate(v === "none" ? null : v)}>
+                <SelectTrigger className="w-[200px] mt-1"><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Unassigned</SelectItem>
+                  {clientOrgs.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           )}
         </CardContent>
       </Card>

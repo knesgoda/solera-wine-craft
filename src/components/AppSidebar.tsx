@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings, ClipboardList, Cylinder, Beaker,
   Bell, ShieldAlert, CloudSun, FileSpreadsheet, FileText, PenTool, TrendingUp, Star, BarChart3, Package,
-  Store, ShoppingBag, Users, Plug, GlassWater, Truck,
+  Store, ShoppingBag, Users, Plug, GlassWater, Truck, Building2,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -31,6 +31,7 @@ const items = [
   { title: "Wine Club", url: "/club", icon: GlassWater },
   { title: "Club Shipments", url: "/club/shipments", icon: Truck, indent: true },
   { title: "Sales", url: "/sales", icon: ShoppingCart },
+  { title: "Clients", url: "/clients", icon: Building2 },
   { title: "Data Import", url: "/data-import", icon: Upload },
   { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Settings", url: "/settings", icon: Settings },

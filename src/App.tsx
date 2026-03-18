@@ -52,6 +52,16 @@ import TaskList from "./pages/tasks/TaskList";
 import TaskDetail from "./pages/tasks/TaskDetail";
 import VintageList from "./pages/vintages/VintageList";
 import VintageDetail from "./pages/vintages/VintageDetail";
+import ClientList from "./pages/clients/ClientList";
+import ClientDetail from "./pages/clients/ClientDetail";
+import ClientLayout from "./components/ClientLayout";
+import ClientLogin from "./pages/client/ClientLogin";
+import ClientSignup from "./pages/client/ClientSignup";
+import ClientDashboard from "./pages/client/ClientDashboard";
+import ClientVintagesList from "./pages/client/ClientVintagesList";
+import ClientVintageDetail from "./pages/client/ClientVintageDetail";
+import ClientDocuments from "./pages/client/ClientDocuments";
+import ClientMessages from "./pages/client/ClientMessages";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PushPrompt } from "./components/PushPrompt";
 import { useOfflineSync } from "./hooks/useOfflineSync";
@@ -114,6 +124,8 @@ const App = () => (
               <Route path="/club" element={<ClubList />} />
               <Route path="/club/:clubId" element={<ClubDetail />} />
               <Route path="/club/shipments" element={<ClubShipments />} />
+              <Route path="/clients" element={<ClientList />} />
+              <Route path="/clients/:clientId" element={<ClientDetail />} />
               <Route path="/settings" element={<ComingSoon />} />
               <Route path="/settings/weather" element={<WeatherSettings />} />
               <Route path="/settings/alerts" element={<AlertSettings />} />
@@ -127,6 +139,16 @@ const App = () => (
               <Route path="/settings/integrations/winedirect" element={<WineDirectSettings />} />
               <Route path="/settings/integrations/shopify" element={<ShopifySettings />} />
               <Route path="/settings/integrations/shipcompliant" element={<ShipCompliantSettings />} />
+            </Route>
+            {/* Client Portal Routes */}
+            <Route path="/client/login" element={<ClientLogin />} />
+            <Route path="/client/signup" element={<ClientSignup />} />
+            <Route path="/client" element={<ClientLayout />}>
+              <Route path="dashboard" element={<ClientDashboard />} />
+              <Route path="vintages" element={<ClientVintagesList />} />
+              <Route path="vintages/:vintageId" element={<ClientVintageDetail />} />
+              <Route path="documents" element={<ClientDocuments />} />
+              <Route path="messages" element={<ClientMessages />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

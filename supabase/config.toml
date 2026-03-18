@@ -23,3 +23,18 @@ verify_jwt = false
 
 [functions.check-compliance]
 verify_jwt = false
+
+[functions.invite-client]
+verify_jwt = false
+
+[functions.complete-client-signup]
+verify_jwt = false
+
+[functions.send-client-message]
+verify_jwt = false
+
+[functions.generate-coa]
+verify_jwt = false
+
+[functions.generate-billing-report]
+verify_jwt = false
