@@ -148,6 +148,7 @@ const App = () => (
               <Route path="/compliance" element={<ComplianceReports />} />
               <Route path="/compliance/settings" element={<ComplianceSettings />} />
               <Route path="/settings/sso" element={<SsoSettings />} />
+              <Route path="/settings/facilities" element={<FacilitySettings />} />
             </Route>
             {/* Client Portal Routes */}
             <Route path="/client/login" element={<ClientLogin />} />
