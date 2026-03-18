@@ -43,6 +43,7 @@ const items = [
   { title: "Storefront", url: "/settings/storefront", icon: Store, indent: true },
   { title: "Integrations", url: "/settings/integrations", icon: Plug, indent: true },
   { title: "Google Sheets", url: "/settings/integrations/google-sheets", icon: FileSpreadsheet, indent: true },
+  { title: "SSO / SAML", url: "/settings/sso", icon: Shield, indent: true },
 ];
 
 export function AppSidebar() {
