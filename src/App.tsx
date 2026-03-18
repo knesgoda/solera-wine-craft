@@ -16,6 +16,7 @@ import ComingSoon from "./pages/ComingSoon";
 import AskSolera from "./pages/AskSolera";
 import Reports from "./pages/Reports";
 import DataImport from "./pages/DataImport";
+import ReportsBuilder from "./pages/ReportsBuilder";
 import CellarDashboard from "./pages/cellar/CellarDashboard";
 import VesselDetail from "./pages/cellar/VesselDetail";
 import BarrelInventory from "./pages/cellar/BarrelInventory";
