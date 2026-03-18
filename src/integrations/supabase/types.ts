@@ -695,6 +695,56 @@ export type Database = {
           },
         ]
       }
+      commerce7_config: {
+        Row: {
+          active: boolean
+          app_id: string | null
+          app_secret: string | null
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          org_id: string
+          sync_inventory: boolean
+          sync_orders: boolean
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          app_id?: string | null
+          app_secret?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          org_id: string
+          sync_inventory?: boolean
+          sync_orders?: boolean
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          app_id?: string | null
+          app_secret?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          org_id?: string
+          sync_inventory?: boolean
+          sync_orders?: boolean
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commerce7_config_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address_json: Json | null
@@ -1090,6 +1140,53 @@ export type Database = {
           },
         ]
       }
+      integration_sync_logs: {
+        Row: {
+          created_at: string
+          error_details: string | null
+          errors: number
+          id: string
+          integration: string
+          org_id: string
+          records_synced: number
+          status: string
+          sync_type: string
+          synced_at: string
+        }
+        Insert: {
+          created_at?: string
+          error_details?: string | null
+          errors?: number
+          id?: string
+          integration: string
+          org_id: string
+          records_synced?: number
+          status?: string
+          sync_type?: string
+          synced_at?: string
+        }
+        Update: {
+          created_at?: string
+          error_details?: string | null
+          errors?: number
+          id?: string
+          integration?: string
+          org_id?: string
+          records_synced?: number
+          status?: string
+          sync_type?: string
+          synced_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_sync_logs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_adjustments: {
         Row: {
           adjusted_at: string
@@ -1324,6 +1421,8 @@ export type Database = {
       }
       orders: {
         Row: {
+          compliance_details: Json | null
+          compliance_status: string | null
           created_at: string
           customer_address_json: Json | null
           customer_email: string
@@ -1337,6 +1436,7 @@ export type Database = {
           shipped_at: string | null
           shipping_cost: number
           sku_id: string
+          source: string | null
           status: Database["public"]["Enums"]["order_status"]
           stripe_payment_intent_id: string | null
           stripe_session_id: string | null
@@ -1346,6 +1446,8 @@ export type Database = {
           unit_price: number
         }
         Insert: {
+          compliance_details?: Json | null
+          compliance_status?: string | null
           created_at?: string
           customer_address_json?: Json | null
           customer_email: string
@@ -1359,6 +1461,7 @@ export type Database = {
           shipped_at?: string | null
           shipping_cost?: number
           sku_id: string
+          source?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
@@ -1368,6 +1471,8 @@ export type Database = {
           unit_price?: number
         }
         Update: {
+          compliance_details?: Json | null
+          compliance_status?: string | null
           created_at?: string
           customer_address_json?: Json | null
           customer_email?: string
@@ -1381,6 +1486,7 @@ export type Database = {
           shipped_at?: string | null
           shipping_cost?: number
           sku_id?: string
+          source?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
@@ -1552,6 +1658,88 @@ export type Database = {
             foreignKeyName: "saved_reports_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shipcompliant_config: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          org_id: string
+          password_hash: string | null
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          org_id: string
+          password_hash?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          org_id?: string
+          password_hash?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipcompliant_config_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopify_config: {
+        Row: {
+          access_token: string | null
+          active: boolean
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          org_id: string
+          shop_domain: string | null
+          sync_inventory: boolean
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          active?: boolean
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          org_id: string
+          shop_domain?: string | null
+          sync_inventory?: boolean
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          active?: boolean
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          org_id?: string
+          shop_domain?: string | null
+          sync_inventory?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopify_config_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -2088,6 +2276,47 @@ export type Database = {
             foreignKeyName: "wine_clubs_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      winedirect_config: {
+        Row: {
+          account_id: string | null
+          active: boolean
+          api_key: string | null
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          active?: boolean
+          api_key?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          active?: boolean
+          api_key?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "winedirect_config_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },

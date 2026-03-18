@@ -26,6 +26,11 @@ import WeatherSettings from "./pages/settings/WeatherSettings";
 import AlertSettings from "./pages/settings/AlertSettings";
 import NotificationsPage from "./pages/NotificationsPage";
 import GoogleSheetsSettings from "./pages/settings/GoogleSheetsSettings";
+import IntegrationsHub from "./pages/settings/IntegrationsHub";
+import Commerce7Settings from "./pages/settings/Commerce7Settings";
+import WineDirectSettings from "./pages/settings/WineDirectSettings";
+import ShopifySettings from "./pages/settings/ShopifySettings";
+import ShipCompliantSettings from "./pages/settings/ShipCompliantSettings";
 import RatingsSettings from "./pages/settings/RatingsSettings";
 import AnalogExplorer from "./pages/analytics/AnalogExplorer";
 import InventoryList from "./pages/inventory/InventoryList";
@@ -116,7 +121,12 @@ const App = () => (
               <Route path="/settings/storefront" element={<StorefrontSettings />} />
               <Route path="/settings/ratings" element={<RatingsSettings />} />
               <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/settings/integrations" element={<IntegrationsHub />} />
               <Route path="/settings/integrations/google-sheets" element={<GoogleSheetsSettings />} />
+              <Route path="/settings/integrations/commerce7" element={<Commerce7Settings />} />
+              <Route path="/settings/integrations/winedirect" element={<WineDirectSettings />} />
+              <Route path="/settings/integrations/shopify" element={<ShopifySettings />} />
+              <Route path="/settings/integrations/shipcompliant" element={<ShipCompliantSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
