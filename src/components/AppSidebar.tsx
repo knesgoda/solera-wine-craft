@@ -45,6 +45,7 @@ const items = [
   { title: "Google Sheets", url: "/settings/integrations/google-sheets", icon: FileSpreadsheet, indent: true },
   { title: "SSO / SAML", url: "/settings/sso", icon: Shield, indent: true },
   { title: "Facilities", url: "/settings/facilities", icon: Building2, indent: true },
+  { title: "API & Webhooks", url: "/settings/api", icon: Key, indent: true },
 ];
 
 export function AppSidebar() {
