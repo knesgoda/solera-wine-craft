@@ -618,6 +618,30 @@ export type Database = {
           },
         ]
       }
+      changelogs: {
+        Row: {
+          created_at: string
+          entries_json: Json
+          id: string
+          released_at: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          entries_json?: Json
+          id?: string
+          released_at?: string
+          version: string
+        }
+        Update: {
+          created_at?: string
+          entries_json?: Json
+          id?: string
+          released_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       client_invite_tokens: {
         Row: {
           client_org_id: string
@@ -2138,6 +2162,65 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: true
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roadmap_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          phase: string | null
+          status: string
+          title: string
+          votes: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          phase?: string | null
+          status?: string
+          title: string
+          votes?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          phase?: string | null
+          status?: string
+          title?: string
+          votes?: number
+        }
+        Relationships: []
+      }
+      roadmap_votes: {
+        Row: {
+          id: string
+          item_id: string
+          voted_at: string
+          voter_ip: string
+        }
+        Insert: {
+          id?: string
+          item_id: string
+          voted_at?: string
+          voter_ip: string
+        }
+        Update: {
+          id?: string
+          item_id?: string
+          voted_at?: string
+          voter_ip?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_votes_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "roadmap_items"
             referencedColumns: ["id"]
           },
         ]
