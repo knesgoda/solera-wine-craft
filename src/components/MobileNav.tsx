@@ -6,8 +6,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 const mainTabs = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Vineyard", url: "/operations", icon: Grape },
+  { title: "Tasks", url: "/tasks", icon: ClipboardList },
   { title: "Vintages", url: "/vintages", icon: Wine },
-  { title: "Cellar", url: "/cellar", icon: Warehouse },
 ];
 
 const moreTabs = [

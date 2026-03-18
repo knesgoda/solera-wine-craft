@@ -41,6 +41,8 @@ const App = () => (
               <Route path="/operations" element={<VineyardList />} />
               <Route path="/operations/:vineyardId" element={<VineyardDetail />} />
               <Route path="/operations/:vineyardId/blocks/:blockId" element={<BlockDetail />} />
+              <Route path="/tasks" element={<TaskList />} />
+              <Route path="/tasks/:taskId" element={<TaskDetail />} />
               <Route path="/vineyard-ops" element={<Navigate to="/operations" replace />} />
               <Route path="/vintages" element={<ComingSoon />} />
               <Route path="/cellar" element={<ComingSoon />} />
