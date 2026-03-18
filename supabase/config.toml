@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.webhook-dispatch]
 verify_jwt = false
+
+[functions.sync-quickbooks]
+verify_jwt = false

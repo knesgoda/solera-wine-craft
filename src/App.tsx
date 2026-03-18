@@ -149,6 +149,7 @@ const App = () => (
               <Route path="/settings/integrations/winedirect" element={<WineDirectSettings />} />
               <Route path="/settings/integrations/shopify" element={<ShopifySettings />} />
               <Route path="/settings/integrations/shipcompliant" element={<ShipCompliantSettings />} />
+              <Route path="/settings/integrations/quickbooks" element={<QuickBooksSettings />} />
               <Route path="/compliance" element={<ComplianceReports />} />
               <Route path="/compliance/settings" element={<ComplianceSettings />} />
               <Route path="/settings/sso" element={<SsoSettings />} />

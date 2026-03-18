@@ -59,17 +59,19 @@ const IntegrationsHub = () => {
   const { data: configs } = useQuery({
     queryKey: ["integration-configs", orgId],
     queryFn: async () => {
-      const [c7, wd, sh, sc] = await Promise.all([
+      const [c7, wd, sh, sc, qb] = await Promise.all([
         supabase.from("commerce7_config").select("active, last_synced_at").eq("org_id", orgId!).maybeSingle(),
         supabase.from("winedirect_config").select("active, last_synced_at").eq("org_id", orgId!).maybeSingle(),
         supabase.from("shopify_config").select("active, last_synced_at").eq("org_id", orgId!).maybeSingle(),
         supabase.from("shipcompliant_config").select("active").eq("org_id", orgId!).maybeSingle(),
+        supabase.from("quickbooks_config").select("active, last_synced_at").eq("org_id", orgId!).maybeSingle(),
       ]);
       return {
         commerce7: c7.data,
         winedirect: wd.data,
         shopify: sh.data,
         shipcompliant: sc.data,
+        quickbooks: qb.data,
       };
     },
     enabled: !!orgId,
