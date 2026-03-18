@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Plug, ShoppingCart, Truck, ShieldCheck, Wine, ExternalLink } from "lucide-react";
+import { Plug, ShoppingCart, Truck, ShieldCheck, Wine, ExternalLink, BookOpen } from "lucide-react";
 import { format } from "date-fns";
 
 const integrations = [
