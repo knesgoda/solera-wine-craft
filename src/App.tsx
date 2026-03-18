@@ -159,6 +159,10 @@ const App = () => (
               <Route path="/settings/sso" element={<SsoSettings />} />
               <Route path="/settings/api" element={<ApiSettings />} />
               <Route path="/settings/facilities" element={<FacilitySettings />} />
+              <Route path="/settings/billing" element={<BillingSettings />} />
+              <Route path="/settings/users" element={<UserManagement />} />
+              <Route path="/settings/audit" element={<AuditLog />} />
+              <Route path="/settings/alerts/sms" element={<SmsSettings />} />
             </Route>
             {/* Client Portal Routes */}
             <Route path="/client/login" element={<ClientLogin />} />
