@@ -178,16 +178,17 @@ function VineyardWeatherCard({
   vineyard,
   config,
   isBackfilling,
+  isEnterprise,
   onSave,
   isSaving,
 }: {
   vineyard: any;
   config?: ConfigRow;
   isBackfilling: boolean;
-  onSave: (lat: string, lng: string, baseTemp: string, active: boolean) => void;
+  isEnterprise: boolean;
+  onSave: (lat: string, lng: string, baseTemp: string, active: boolean, weatherSource?: string, tomorrowKey?: string) => void;
   isSaving: boolean;
 }) {
-  // Parse coordinates from vineyard if available
   const parsedCoords = vineyard.coordinates
     ? vineyard.coordinates.split(",").map((s: string) => s.trim())
     : [null, null];
@@ -196,6 +197,8 @@ function VineyardWeatherCard({
   const [lng, setLng] = useState(config?.longitude?.toString() || parsedCoords[1] || "");
   const [baseTemp, setBaseTemp] = useState(config?.gdd_base_temp_f?.toString() || "50");
   const [active, setActive] = useState(config?.active || false);
+  const [weatherSource, setWeatherSource] = useState(config?.weather_source || "open_meteo");
+  const [tomorrowKey, setTomorrowKey] = useState(config?.tomorrow_io_api_key || "");
 
   return (
     <Card>
