@@ -87,6 +87,15 @@ function mapSubscriptionStatus(stripeStatus: string): string {
   return statusMap[stripeStatus] || stripeStatus;
 }
 
+async function resolveSubscriptionTier(sub: any, stripeKey: string, fallbackTier?: string): Promise<string> {
+  const priceId = sub.items?.data?.[0]?.price?.id;
+  if (priceId) {
+    const price = await stripeGet(`prices/${priceId}`, stripeKey);
+    if (price.metadata?.tier) return price.metadata.tier;
+  }
+
+  return sub.metadata?.target_tier || fallbackTier || "pro";
+}
 Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
@@ -162,12 +171,8 @@ Deno.serve(async (req) => {
 
         // Re-fetch subscription from Stripe to confirm details
         const sub = await stripeGet(`subscriptions/${subscription.id}`, stripeKey);
-        const priceId = sub.items?.data?.[0]?.price?.id;
-        let tier = "pro"; // default
-        if (priceId) {
-          const price = await stripeGet(`prices/${priceId}`, stripeKey);
-          tier = price.metadata?.tier || "pro";
-        }
+        const tier = await resolveSubscriptionTier(sub, stripeKey);
+
 
         await supabase.from("organizations").update({
           tier,
@@ -257,12 +262,8 @@ async function handleSubscriptionCheckout(
 
   // Re-fetch subscription from Stripe (never trust client data)
   const sub = await stripeGet(`subscriptions/${subscriptionId}`, stripeKey);
-  const priceId = sub.items?.data?.[0]?.price?.id;
-  let tier = "pro";
-  if (priceId) {
-    const price = await stripeGet(`prices/${priceId}`, stripeKey);
-    tier = price.metadata?.tier || "pro";
-  }
+  const tier = await resolveSubscriptionTier(sub, stripeKey, metadata.target_tier);
+
 
   // Find org
   const { orgId } = await findOrgByStripeCustomer(supabase, stripeCustomerId, customerEmail);
