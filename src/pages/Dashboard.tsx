@@ -85,7 +85,7 @@ const Dashboard = () => {
         <p className="text-muted-foreground mt-1">Here's what's happening at your winery</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {stats.map((stat) => {
           const inner = (
             <Card className="hover:shadow-lg transition-shadow cursor-pointer border-none shadow-md">
