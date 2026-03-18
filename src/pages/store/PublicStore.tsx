@@ -350,7 +350,63 @@ const PublicStore = () => {
             <p className="text-lg">No wines available at this time</p>
           </div>
         )}
+
+        {/* Wine Club Section */}
+        {wineClubs.length > 0 && (
+          <div className="mt-16">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-display font-bold text-foreground flex items-center justify-center gap-2">
+                <GlassWater className="h-6 w-6 text-primary" /> Join Our Wine Club
+              </h2>
+              <p className="text-muted-foreground mt-2">Exclusive selections delivered to your door</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {wineClubs.map((club: any) => (
+                <Card key={club.id} className="border-none shadow-md hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="font-display">{club.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {club.description && <p className="text-sm text-muted-foreground">{club.description}</p>}
+                    <div className="text-sm space-y-1">
+                      <p><span className="text-muted-foreground">Frequency:</span> {FREQ_LABELS[club.frequency] || club.frequency}</p>
+                      <p><span className="text-muted-foreground">Bottles:</span> {club.bottles_per_shipment} per shipment</p>
+                    </div>
+                    <div className="flex items-center justify-between pt-2">
+                      <span className="text-xl font-bold text-foreground">${Number(club.price_per_shipment).toFixed(2)}</span>
+                      <Button onClick={() => setJoiningClub(club.id)}>Join Club</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
+
+      {/* Club Signup Dialog */}
+      <Dialog open={!!joiningClub} onOpenChange={(open) => !open && setJoiningClub(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle className="font-display">Join Wine Club</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div><Label>Full Name *</Label><Input value={clubName} onChange={(e) => setClubName(e.target.value)} placeholder="John Smith" /></div>
+            <div><Label>Email *</Label><Input type="email" value={clubEmail} onChange={(e) => setClubEmail(e.target.value)} placeholder="john@example.com" /></div>
+            <div className="space-y-2">
+              <Label>Shipping Address</Label>
+              <Input placeholder="Address" value={clubAddress.line1} onChange={(e) => setClubAddress({ ...clubAddress, line1: e.target.value })} />
+              <div className="grid grid-cols-3 gap-2">
+                <Input placeholder="City" value={clubAddress.city} onChange={(e) => setClubAddress({ ...clubAddress, city: e.target.value })} />
+                <Input placeholder="State" value={clubAddress.state} onChange={(e) => setClubAddress({ ...clubAddress, state: e.target.value })} />
+                <Input placeholder="ZIP" value={clubAddress.zip} onChange={(e) => setClubAddress({ ...clubAddress, zip: e.target.value })} />
+              </div>
+            </div>
+            <Button className="w-full" onClick={() => { const club = wineClubs.find((c: any) => c.id === joiningClub); if (club) handleJoinClub(club); }}>
+              Subscribe — ${Number(wineClubs.find((c: any) => c.id === joiningClub)?.price_per_shipment || 0).toFixed(2)}/shipment
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">You'll be redirected to Stripe for secure payment</p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Checkout dialog */}
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
