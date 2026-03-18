@@ -93,7 +93,7 @@ export default function ContactPage() {
             <div className="md:col-span-2">
               {sent ? (
                 <div className="text-center py-16 bg-card rounded-xl border border-border">
-                  <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
+                  <CheckCircle className="w-12 h-12 text-primary mx-auto mb-4" />
                   <h2 className="font-display text-2xl font-bold text-foreground mb-2">Message Sent!</h2>
                   <p className="text-muted-foreground mb-6">
                     Thanks for reaching out. We'll get back to you within one business day.
