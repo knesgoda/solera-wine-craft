@@ -26,6 +26,8 @@ export function MarketingNavbar() {
   }, []);
 
   const solid = !isHome || scrolled || menuOpen;
+  const textClass = solid ? "text-primary-foreground" : "text-foreground";
+  const textMuted = solid ? "text-primary-foreground/80" : "text-foreground/70";
 
   return (
     <nav
@@ -37,7 +39,7 @@ export function MarketingNavbar() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2" onClick={() => setMenuOpen(false)}>
           <img src={soleraLogo} alt="Solera" className="h-8 w-8 rounded" />
-          <span className="font-display text-xl font-bold text-primary-foreground">Solera</span>
+          <span className={`font-display text-xl font-bold ${textClass}`}>Solera</span>
         </Link>
 
         {/* Desktop links */}
