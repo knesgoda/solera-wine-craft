@@ -128,6 +128,63 @@ export type Database = {
           },
         ]
       }
+      anomaly_flags: {
+        Row: {
+          created_at: string
+          expected_range_high: number | null
+          expected_range_low: number | null
+          flagged_at: string
+          id: string
+          notes: string | null
+          org_id: string
+          parameter: string
+          resolved: boolean
+          value: number
+          vintage_id: string
+        }
+        Insert: {
+          created_at?: string
+          expected_range_high?: number | null
+          expected_range_low?: number | null
+          flagged_at?: string
+          id?: string
+          notes?: string | null
+          org_id: string
+          parameter: string
+          resolved?: boolean
+          value: number
+          vintage_id: string
+        }
+        Update: {
+          created_at?: string
+          expected_range_high?: number | null
+          expected_range_low?: number | null
+          flagged_at?: string
+          id?: string
+          notes?: string | null
+          org_id?: string
+          parameter?: string
+          resolved?: boolean
+          value?: number
+          vintage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anomaly_flags_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anomaly_flags_vintage_id_fkey"
+            columns: ["vintage_id"]
+            isOneToOne: false
+            referencedRelation: "vintages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       barrel_groups: {
         Row: {
           created_at: string
@@ -1376,6 +1433,41 @@ export type Database = {
             columns: ["vineyard_id"]
             isOneToOne: false
             referencedRelation: "vineyards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekly_summaries: {
+        Row: {
+          content: string
+          created_at: string
+          generated_at: string
+          id: string
+          org_id: string
+          week_starting: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          org_id: string
+          week_starting: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          org_id?: string
+          week_starting?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_summaries_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]

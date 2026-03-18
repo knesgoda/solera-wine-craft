@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings, ClipboardList, Cylinder, Beaker,
-  Bell, ShieldAlert, CloudSun, FileSpreadsheet,
+  Bell, ShieldAlert, CloudSun, FileSpreadsheet, FileText,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -19,6 +19,7 @@ const items = [
   { title: "Barrels", url: "/cellar/barrels", icon: Cylinder, indent: true },
   { title: "Blending", url: "/cellar/blending", icon: Beaker, indent: true },
   { title: "Ask Solera", url: "/ask-solera", icon: Bot },
+  { title: "Reports", url: "/reports", icon: FileText },
   { title: "Sales", url: "/sales", icon: ShoppingCart },
   { title: "Data Import", url: "/data-import", icon: Upload },
   { title: "Notifications", url: "/notifications", icon: Bell },

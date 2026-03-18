@@ -54,6 +54,11 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange }: Props) {
       supabase.functions.invoke("evaluate-alerts", {
         body: { type: "lab_sample", record },
       }).catch((e) => console.error("Alert evaluation failed:", e));
+
+      // Detect anomalies asynchronously
+      supabase.functions.invoke("detect-anomalies", {
+        body: { type: "lab_sample", record },
+      }).catch((e) => console.error("Anomaly detection failed:", e));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["lab-samples", vintageId] });
