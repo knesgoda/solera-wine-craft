@@ -14,6 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocks: {
+        Row: {
+          acres: number | null
+          clone: string | null
+          created_at: string
+          id: string
+          lifecycle_stage:
+            | Database["public"]["Enums"]["block_lifecycle_stage"]
+            | null
+          name: string
+          rootstock: string | null
+          soil_organic_matter: number | null
+          soil_ph: number | null
+          soil_texture: string | null
+          status: Database["public"]["Enums"]["block_status"]
+          updated_at: string
+          variety: string | null
+          vineyard_id: string
+        }
+        Insert: {
+          acres?: number | null
+          clone?: string | null
+          created_at?: string
+          id?: string
+          lifecycle_stage?:
+            | Database["public"]["Enums"]["block_lifecycle_stage"]
+            | null
+          name: string
+          rootstock?: string | null
+          soil_organic_matter?: number | null
+          soil_ph?: number | null
+          soil_texture?: string | null
+          status?: Database["public"]["Enums"]["block_status"]
+          updated_at?: string
+          variety?: string | null
+          vineyard_id: string
+        }
+        Update: {
+          acres?: number | null
+          clone?: string | null
+          created_at?: string
+          id?: string
+          lifecycle_stage?:
+            | Database["public"]["Enums"]["block_lifecycle_stage"]
+            | null
+          name?: string
+          rootstock?: string | null
+          soil_organic_matter?: number | null
+          soil_ph?: number | null
+          soil_texture?: string | null
+          status?: Database["public"]["Enums"]["block_status"]
+          updated_at?: string
+          variety?: string | null
+          vineyard_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocks_vineyard_id_fkey"
+            columns: ["vineyard_id"]
+            isOneToOne: false
+            referencedRelation: "vineyards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
@@ -109,12 +174,54 @@ export type Database = {
         }
         Relationships: []
       }
+      vineyards: {
+        Row: {
+          acres: number | null
+          coordinates: string | null
+          created_at: string
+          id: string
+          name: string
+          org_id: string
+          region: string | null
+          updated_at: string
+        }
+        Insert: {
+          acres?: number | null
+          coordinates?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          org_id: string
+          region?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acres?: number | null
+          coordinates?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          org_id?: string
+          region?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vineyards_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       get_user_org_id: { Args: { _user_id: string }; Returns: string }
+      get_vineyard_org_id: { Args: { _vineyard_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -125,6 +232,13 @@ export type Database = {
     }
     Enums: {
       app_role: "owner" | "admin" | "member"
+      block_lifecycle_stage:
+        | "planting"
+        | "establishment"
+        | "bearing"
+        | "mature"
+        | "replanting"
+      block_status: "active" | "inactive" | "removed"
       org_tier: "hobbyist" | "small_boutique" | "mid_size" | "enterprise"
     }
     CompositeTypes: {
@@ -254,6 +368,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["owner", "admin", "member"],
+      block_lifecycle_stage: [
+        "planting",
+        "establishment",
+        "bearing",
+        "mature",
+        "replanting",
+      ],
+      block_status: ["active", "inactive", "removed"],
       org_tier: ["hobbyist", "small_boutique", "mid_size", "enterprise"],
     },
   },
