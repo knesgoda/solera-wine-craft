@@ -79,6 +79,65 @@ export type Database = {
           },
         ]
       }
+      lab_samples: {
+        Row: {
+          alcohol: number | null
+          brix: number | null
+          created_at: string
+          id: string
+          notes: string | null
+          offline_queued: boolean
+          ph: number | null
+          rs: number | null
+          sampled_at: string
+          so2_free: number | null
+          so2_total: number | null
+          ta: number | null
+          va: number | null
+          vintage_id: string
+        }
+        Insert: {
+          alcohol?: number | null
+          brix?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          offline_queued?: boolean
+          ph?: number | null
+          rs?: number | null
+          sampled_at: string
+          so2_free?: number | null
+          so2_total?: number | null
+          ta?: number | null
+          va?: number | null
+          vintage_id: string
+        }
+        Update: {
+          alcohol?: number | null
+          brix?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          offline_queued?: boolean
+          ph?: number | null
+          rs?: number | null
+          sampled_at?: string
+          so2_free?: number | null
+          so2_total?: number | null
+          ta?: number | null
+          va?: number | null
+          vintage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_samples_vintage_id_fkey"
+            columns: ["vintage_id"]
+            isOneToOne: false
+            referencedRelation: "vintages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
@@ -281,6 +340,70 @@ export type Database = {
           },
         ]
       }
+      vintages: {
+        Row: {
+          block_id: string | null
+          client_org_id: string | null
+          created_at: string
+          harvest_date: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          status: Database["public"]["Enums"]["vintage_status"]
+          tons_harvested: number | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          block_id?: string | null
+          client_org_id?: string | null
+          created_at?: string
+          harvest_date?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          status?: Database["public"]["Enums"]["vintage_status"]
+          tons_harvested?: number | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          block_id?: string | null
+          client_org_id?: string | null
+          created_at?: string
+          harvest_date?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          status?: Database["public"]["Enums"]["vintage_status"]
+          tons_harvested?: number | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vintages_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vintages_client_org_id_fkey"
+            columns: ["client_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vintages_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -288,6 +411,7 @@ export type Database = {
     Functions: {
       get_user_org_id: { Args: { _user_id: string }; Returns: string }
       get_vineyard_org_id: { Args: { _vineyard_id: string }; Returns: string }
+      get_vintage_org_id: { Args: { _vintage_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -307,6 +431,13 @@ export type Database = {
       block_status: "active" | "inactive" | "removed"
       org_tier: "hobbyist" | "small_boutique" | "mid_size" | "enterprise"
       task_status: "pending" | "in_progress" | "complete"
+      vintage_status:
+        | "planned"
+        | "in_progress"
+        | "harvested"
+        | "in_cellar"
+        | "bottled"
+        | "released"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -445,6 +576,14 @@ export const Constants = {
       block_status: ["active", "inactive", "removed"],
       org_tier: ["hobbyist", "small_boutique", "mid_size", "enterprise"],
       task_status: ["pending", "in_progress", "complete"],
+      vintage_status: [
+        "planned",
+        "in_progress",
+        "harvested",
+        "in_cellar",
+        "bottled",
+        "released",
+      ],
     },
   },
 } as const
