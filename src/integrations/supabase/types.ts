@@ -14,16 +14,118 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      organizations: {
+        Row: {
+          created_at: string
+          enabled_modules: string[] | null
+          id: string
+          name: string
+          onboarding_completed: boolean
+          tier: Database["public"]["Enums"]["org_tier"] | null
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled_modules?: string[] | null
+          id?: string
+          name: string
+          onboarding_completed?: boolean
+          tier?: Database["public"]["Enums"]["org_tier"] | null
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled_modules?: string[] | null
+          id?: string
+          name?: string
+          onboarding_completed?: boolean
+          tier?: Database["public"]["Enums"]["org_tier"] | null
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          org_id: string | null
+          push_subscription: Json | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          org_id?: string | null
+          push_subscription?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          org_id?: string | null
+          push_subscription?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_org_id: { Args: { _user_id: string }; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "owner" | "admin" | "member"
+      org_tier: "hobbyist" | "small_boutique" | "mid_size" | "enterprise"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +252,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["owner", "admin", "member"],
+      org_tier: ["hobbyist", "small_boutique", "mid_size", "enterprise"],
+    },
   },
 } as const
