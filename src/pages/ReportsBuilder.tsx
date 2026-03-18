@@ -149,7 +149,7 @@ export default function ReportsBuilder() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("saved_reports" as any).delete().eq("id", id);
+      const { error } = await (supabase.from as any)("saved_reports").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
