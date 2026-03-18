@@ -517,6 +517,184 @@ export type Database = {
           },
         ]
       }
+      club_members: {
+        Row: {
+          cancelled_at: string | null
+          club_id: string
+          created_at: string
+          customer_id: string
+          id: string
+          joined_at: string
+          next_shipment_date: string | null
+          notes: string | null
+          org_id: string
+          shipping_address_json: Json | null
+          status: Database["public"]["Enums"]["club_member_status"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          club_id: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          joined_at?: string
+          next_shipment_date?: string | null
+          notes?: string | null
+          org_id: string
+          shipping_address_json?: Json | null
+          status?: Database["public"]["Enums"]["club_member_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          club_id?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          joined_at?: string
+          next_shipment_date?: string | null
+          notes?: string | null
+          org_id?: string
+          shipping_address_json?: Json | null
+          status?: Database["public"]["Enums"]["club_member_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_members_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "wine_clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_members_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_shipment_members: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+          shipment_id: string
+          shipped_at: string | null
+          status: Database["public"]["Enums"]["club_shipment_member_status"]
+          stripe_payment_intent_id: string | null
+          tracking_number: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+          shipment_id: string
+          shipped_at?: string | null
+          status?: Database["public"]["Enums"]["club_shipment_member_status"]
+          stripe_payment_intent_id?: string | null
+          tracking_number?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+          shipment_id?: string
+          shipped_at?: string | null
+          status?: Database["public"]["Enums"]["club_shipment_member_status"]
+          stripe_payment_intent_id?: string | null
+          tracking_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_shipment_members_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "club_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_shipment_members_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "club_shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_shipments: {
+        Row: {
+          club_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          org_id: string
+          shipment_date: string
+          sku_allocations_json: Json | null
+          status: Database["public"]["Enums"]["club_shipment_status"]
+          total_members_billed: number
+          total_members_shipped: number
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          org_id: string
+          shipment_date: string
+          sku_allocations_json?: Json | null
+          status?: Database["public"]["Enums"]["club_shipment_status"]
+          total_members_billed?: number
+          total_members_shipped?: number
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          org_id?: string
+          shipment_date?: string
+          sku_allocations_json?: Json | null
+          status?: Database["public"]["Enums"]["club_shipment_status"]
+          total_members_billed?: number
+          total_members_shipped?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_shipments_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "wine_clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_shipments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address_json: Json | null
@@ -1868,6 +2046,53 @@ export type Database = {
           },
         ]
       }
+      wine_clubs: {
+        Row: {
+          active: boolean
+          bottles_per_shipment: number
+          created_at: string
+          description: string | null
+          frequency: Database["public"]["Enums"]["club_frequency"]
+          id: string
+          name: string
+          org_id: string
+          price_per_shipment: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          bottles_per_shipment?: number
+          created_at?: string
+          description?: string | null
+          frequency?: Database["public"]["Enums"]["club_frequency"]
+          id?: string
+          name: string
+          org_id: string
+          price_per_shipment?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          bottles_per_shipment?: number
+          created_at?: string
+          description?: string | null
+          frequency?: Database["public"]["Enums"]["club_frequency"]
+          id?: string
+          name?: string
+          org_id?: string
+          price_per_shipment?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wine_clubs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1882,6 +2107,7 @@ export type Database = {
         Args: { _connection_id: string }
         Returns: string
       }
+      get_shipment_org_id: { Args: { _shipment_id: string }; Returns: string }
       get_trial_org_id: { Args: { _trial_id: string }; Returns: string }
       get_user_org_id: { Args: { _user_id: string }; Returns: string }
       get_vessel_org_id: { Args: { _vessel_id: string }; Returns: string }
@@ -1937,6 +2163,24 @@ export type Database = {
         | "mature"
         | "replanting"
       block_status: "active" | "inactive" | "removed"
+      club_frequency:
+        | "monthly"
+        | "bimonthly"
+        | "quarterly"
+        | "twice_yearly"
+        | "annual"
+      club_member_status: "active" | "paused" | "cancelled" | "payment_failed"
+      club_shipment_member_status:
+        | "pending"
+        | "billed"
+        | "payment_failed"
+        | "shipped"
+      club_shipment_status:
+        | "draft"
+        | "processing"
+        | "billed"
+        | "shipping"
+        | "completed"
       conflict_resolution: "solera_wins" | "sheet_wins" | "flag_for_review"
       import_source_type: "csv" | "innovint" | "vinnow"
       import_status:
@@ -2140,6 +2384,27 @@ export const Constants = {
         "replanting",
       ],
       block_status: ["active", "inactive", "removed"],
+      club_frequency: [
+        "monthly",
+        "bimonthly",
+        "quarterly",
+        "twice_yearly",
+        "annual",
+      ],
+      club_member_status: ["active", "paused", "cancelled", "payment_failed"],
+      club_shipment_member_status: [
+        "pending",
+        "billed",
+        "payment_failed",
+        "shipped",
+      ],
+      club_shipment_status: [
+        "draft",
+        "processing",
+        "billed",
+        "shipping",
+        "completed",
+      ],
       conflict_resolution: ["solera_wins", "sheet_wins", "flag_for_review"],
       import_source_type: ["csv", "innovint", "vinnow"],
       import_status: [
