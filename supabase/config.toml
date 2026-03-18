@@ -1,1 +1,4 @@
 project_id = "vibdxsntxwrepnkrlbdw"
+
+[functions.ask-solera]
+verify_jwt = false
