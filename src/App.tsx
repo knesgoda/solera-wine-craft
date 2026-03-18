@@ -64,6 +64,8 @@ import ClientDocuments from "./pages/client/ClientDocuments";
 import ClientMessages from "./pages/client/ClientMessages";
 import ComplianceSettings from "./pages/compliance/ComplianceSettings";
 import ComplianceReports from "./pages/compliance/ComplianceReports";
+import SsoSettings from "./pages/settings/SsoSettings";
+import SsoLogin from "./pages/SsoLogin";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PushPrompt } from "./components/PushPrompt";
 import { useOfflineSync } from "./hooks/useOfflineSync";
