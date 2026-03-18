@@ -72,6 +72,8 @@ const Dashboard = () => {
     { title: "Active Vintages", value: activeVintages, icon: Wine, link: "/vintages", color: "text-primary" },
     { title: "Prime Pick Windows", value: primeBlocks.length, icon: Calendar, color: "text-secondary", onClick: () => primeBlocks.length > 0 && setShowPrimeBlocks(true) },
     { title: "Tasks Due", value: tasksDue, icon: CheckSquare, link: "/tasks", color: "text-secondary" },
+    { title: "Cases On Hand", value: inventoryStats?.totalCases ?? 0, icon: Package, link: "/inventory", color: "text-primary" },
+    { title: "Inventory Value", value: `$${(inventoryStats?.totalValue ?? 0).toLocaleString()}`, icon: DollarSign, link: "/inventory", color: "text-secondary" },
   ];
 
   return (
