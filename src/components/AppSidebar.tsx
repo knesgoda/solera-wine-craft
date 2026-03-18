@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings, ClipboardList, Cylinder, Beaker,
   Bell, ShieldAlert, CloudSun, FileSpreadsheet, FileText, PenTool, TrendingUp, Star, BarChart3, Package,
-  Store, ShoppingBag, Users, Plug, GlassWater, Truck, Building2, Scale, FileCheck, Shield,
+  Store, ShoppingBag, Users, Plug, GlassWater, Truck, Building2, Scale, FileCheck, Shield, Key,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -45,6 +45,7 @@ const items = [
   { title: "Google Sheets", url: "/settings/integrations/google-sheets", icon: FileSpreadsheet, indent: true },
   { title: "SSO / SAML", url: "/settings/sso", icon: Shield, indent: true },
   { title: "Facilities", url: "/settings/facilities", icon: Building2, indent: true },
+  { title: "API & Webhooks", url: "/settings/api", icon: Key, indent: true },
 ];
 
 export function AppSidebar() {
