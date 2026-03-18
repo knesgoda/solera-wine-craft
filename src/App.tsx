@@ -66,6 +66,8 @@ import ComplianceSettings from "./pages/compliance/ComplianceSettings";
 import ComplianceReports from "./pages/compliance/ComplianceReports";
 import SsoSettings from "./pages/settings/SsoSettings";
 import SsoLogin from "./pages/SsoLogin";
+import ApiSettings from "./pages/settings/ApiSettings";
+import Developers from "./pages/Developers";
 import FacilitySettings from "./pages/settings/FacilitySettings";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PushPrompt } from "./components/PushPrompt";
