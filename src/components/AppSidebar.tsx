@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings, ClipboardList, Cylinder, Beaker,
   Bell, ShieldAlert, CloudSun, FileSpreadsheet, FileText, PenTool, TrendingUp, Star, BarChart3, Package,
-  Store, ShoppingBag, Users, Plug, GlassWater, Truck,
+  Store, ShoppingBag, Users, Plug, GlassWater, Truck, Building2,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
