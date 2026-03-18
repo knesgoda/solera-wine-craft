@@ -90,6 +90,7 @@ import TermsPage from "./pages/marketing/TermsPage";
 import BlogIndex from "./pages/marketing/BlogIndex";
 import BlogPost from "./pages/marketing/BlogPost";
 import BlogAdmin from "./pages/admin/BlogAdmin";
+import ContactPage from "./pages/marketing/ContactPage";
 
 const queryClient = new QueryClient();
 
