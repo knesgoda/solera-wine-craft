@@ -14,6 +14,9 @@ import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import ComingSoon from "./pages/ComingSoon";
 import NotFound from "./pages/NotFound";
+import VineyardList from "./pages/operations/VineyardList";
+import VineyardDetail from "./pages/operations/VineyardDetail";
+import BlockDetail from "./pages/operations/BlockDetail";
 
 const queryClient = new QueryClient();
 
@@ -33,7 +36,10 @@ const App = () => (
             <Route path="/onboarding" element={<Onboarding />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/vineyard-ops" element={<ComingSoon />} />
+              <Route path="/operations" element={<VineyardList />} />
+              <Route path="/operations/:vineyardId" element={<VineyardDetail />} />
+              <Route path="/operations/:vineyardId/blocks/:blockId" element={<BlockDetail />} />
+              <Route path="/vineyard-ops" element={<Navigate to="/operations" replace />} />
               <Route path="/vintages" element={<ComingSoon />} />
               <Route path="/cellar" element={<ComingSoon />} />
               <Route path="/ask-solera" element={<ComingSoon />} />
