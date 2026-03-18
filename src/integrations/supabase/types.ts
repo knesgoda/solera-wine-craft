@@ -156,6 +156,72 @@ export type Database = {
           },
         ]
       }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          block_id: string | null
+          created_at: string
+          due_date: string | null
+          gps_lat: number | null
+          gps_lng: number | null
+          id: string
+          instructions: string | null
+          offline_queued: boolean
+          org_id: string
+          photos: string[] | null
+          status: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          block_id?: string | null
+          created_at?: string
+          due_date?: string | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          instructions?: string | null
+          offline_queued?: boolean
+          org_id: string
+          photos?: string[] | null
+          status?: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          block_id?: string | null
+          created_at?: string
+          due_date?: string | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          instructions?: string | null
+          offline_queued?: boolean
+          org_id?: string
+          photos?: string[] | null
+          status?: Database["public"]["Enums"]["task_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -240,6 +306,7 @@ export type Database = {
         | "replanting"
       block_status: "active" | "inactive" | "removed"
       org_tier: "hobbyist" | "small_boutique" | "mid_size" | "enterprise"
+      task_status: "pending" | "in_progress" | "complete"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -377,6 +444,7 @@ export const Constants = {
       ],
       block_status: ["active", "inactive", "removed"],
       org_tier: ["hobbyist", "small_boutique", "mid_size", "enterprise"],
+      task_status: ["pending", "in_progress", "complete"],
     },
   },
 } as const
