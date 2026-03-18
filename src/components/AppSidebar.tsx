@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings, ClipboardList, Cylinder, Beaker,
-  Bell, ShieldAlert, CloudSun, FileSpreadsheet, FileText, PenTool, TrendingUp, Star, BarChart3,
+  Bell, ShieldAlert, CloudSun, FileSpreadsheet, FileText, PenTool, TrendingUp, Star, BarChart3, Package,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -23,6 +23,7 @@ const items = [
   { title: "Weekly Reports", url: "/reports", icon: FileText, indent: true },
   { title: "Report Builder", url: "/reports/builder", icon: PenTool, indent: true },
   { title: "Analog Explorer", url: "/analytics/analog", icon: TrendingUp, indent: true },
+  { title: "Inventory", url: "/inventory", icon: Package },
   { title: "Sales", url: "/sales", icon: ShoppingCart },
   { title: "Data Import", url: "/data-import", icon: Upload },
   { title: "Notifications", url: "/notifications", icon: Bell },

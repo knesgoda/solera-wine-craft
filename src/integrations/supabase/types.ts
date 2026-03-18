@@ -859,41 +859,119 @@ export type Database = {
           },
         ]
       }
+      inventory_adjustments: {
+        Row: {
+          adjusted_at: string
+          adjusted_by: string | null
+          bottles_delta: number
+          cases_delta: number
+          created_at: string
+          id: string
+          notes: string | null
+          org_id: string
+          reason: Database["public"]["Enums"]["adjustment_reason"]
+          sku_id: string
+        }
+        Insert: {
+          adjusted_at?: string
+          adjusted_by?: string | null
+          bottles_delta?: number
+          cases_delta?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          org_id: string
+          reason: Database["public"]["Enums"]["adjustment_reason"]
+          sku_id: string
+        }
+        Update: {
+          adjusted_at?: string
+          adjusted_by?: string | null
+          bottles_delta?: number
+          cases_delta?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          org_id?: string
+          reason?: Database["public"]["Enums"]["adjustment_reason"]
+          sku_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_adjustments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_adjustments_sku_id_fkey"
+            columns: ["sku_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_skus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_skus: {
         Row: {
+          active: boolean
+          allocation_type: Database["public"]["Enums"]["allocation_type"]
           bottles: number | null
+          bottles_per_case: number
           cases: number | null
+          cost_per_bottle: number | null
           created_at: string
           id: string
           label: string | null
+          label_image_url: string | null
+          loose_bottles: number
+          notes: string | null
           org_id: string
           price: number | null
           updated_at: string
           variety: string | null
+          vintage_id: string | null
           vintage_year: number | null
         }
         Insert: {
+          active?: boolean
+          allocation_type?: Database["public"]["Enums"]["allocation_type"]
           bottles?: number | null
+          bottles_per_case?: number
           cases?: number | null
+          cost_per_bottle?: number | null
           created_at?: string
           id?: string
           label?: string | null
+          label_image_url?: string | null
+          loose_bottles?: number
+          notes?: string | null
           org_id: string
           price?: number | null
           updated_at?: string
           variety?: string | null
+          vintage_id?: string | null
           vintage_year?: number | null
         }
         Update: {
+          active?: boolean
+          allocation_type?: Database["public"]["Enums"]["allocation_type"]
           bottles?: number | null
+          bottles_per_case?: number
           cases?: number | null
+          cost_per_bottle?: number | null
           created_at?: string
           id?: string
           label?: string | null
+          label_image_url?: string | null
+          loose_bottles?: number
+          notes?: string | null
           org_id?: string
           price?: number | null
           updated_at?: string
           variety?: string | null
+          vintage_id?: string | null
           vintage_year?: number | null
         }
         Relationships: [
@@ -902,6 +980,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_skus_vintage_id_fkey"
+            columns: ["vintage_id"]
+            isOneToOne: false
+            referencedRelation: "vintages"
             referencedColumns: ["id"]
           },
         ]
@@ -1625,6 +1710,13 @@ export type Database = {
         | "acid"
         | "other"
       addition_unit: "g" | "kg" | "mL" | "L" | "oz" | "lb"
+      adjustment_reason:
+        | "production_addition"
+        | "sale"
+        | "breakage"
+        | "comp"
+        | "audit_correction"
+        | "custom_crush_transfer"
       alert_channel: "email" | "push" | "both"
       alert_operator: "gte" | "lte" | "eq"
       alert_parameter:
@@ -1636,6 +1728,13 @@ export type Database = {
         | "so2_total"
         | "temp_f"
         | "gdd_cumulative"
+      allocation_type:
+        | "dtc"
+        | "wine_club"
+        | "wholesale"
+        | "restaurant"
+        | "library"
+        | "custom_crush_client"
       app_role: "owner" | "admin" | "member"
       block_lifecycle_stage:
         | "planting"
@@ -1802,6 +1901,14 @@ export const Constants = {
         "other",
       ],
       addition_unit: ["g", "kg", "mL", "L", "oz", "lb"],
+      adjustment_reason: [
+        "production_addition",
+        "sale",
+        "breakage",
+        "comp",
+        "audit_correction",
+        "custom_crush_transfer",
+      ],
       alert_channel: ["email", "push", "both"],
       alert_operator: ["gte", "lte", "eq"],
       alert_parameter: [
@@ -1813,6 +1920,14 @@ export const Constants = {
         "so2_total",
         "temp_f",
         "gdd_cumulative",
+      ],
+      allocation_type: [
+        "dtc",
+        "wine_club",
+        "wholesale",
+        "restaurant",
+        "library",
+        "custom_crush_client",
       ],
       app_role: ["owner", "admin", "member"],
       block_lifecycle_stage: [

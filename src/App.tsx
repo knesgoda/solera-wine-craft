@@ -28,6 +28,8 @@ import NotificationsPage from "./pages/NotificationsPage";
 import GoogleSheetsSettings from "./pages/settings/GoogleSheetsSettings";
 import RatingsSettings from "./pages/settings/RatingsSettings";
 import AnalogExplorer from "./pages/analytics/AnalogExplorer";
+import InventoryList from "./pages/inventory/InventoryList";
+import SkuDetail from "./pages/inventory/SkuDetail";
 import NotFound from "./pages/NotFound";
 import VineyardList from "./pages/operations/VineyardList";
 import VineyardDetail from "./pages/operations/VineyardDetail";
@@ -88,6 +90,8 @@ const App = () => (
               <Route path="/reports/builder" element={<ReportsBuilder />} />
               <Route path="/data-import" element={<DataImport />} />
               <Route path="/analytics/analog" element={<AnalogExplorer />} />
+              <Route path="/inventory" element={<InventoryList />} />
+              <Route path="/inventory/:skuId" element={<SkuDetail />} />
               <Route path="/settings" element={<ComingSoon />} />
               <Route path="/settings/weather" element={<WeatherSettings />} />
               <Route path="/settings/alerts" element={<AlertSettings />} />

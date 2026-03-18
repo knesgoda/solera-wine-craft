@@ -1,4 +1,4 @@
-import { Wine, Calendar, CheckSquare, Send } from "lucide-react";
+import { Wine, Calendar, CheckSquare, Send, Package, DollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,25 @@ const Dashboard = () => {
 
   const { data: primeBlocks = [] } = usePrimeWindowBlocks();
 
+  const { data: inventoryStats } = useQuery({
+    queryKey: ["dashboard-inventory", orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory_skus")
+        .select("cases, bottles_per_case, price, loose_bottles")
+        .eq("org_id", orgId!)
+        .eq("active", true);
+      if (error) throw error;
+      const totalCases = (data || []).reduce((s, r: any) => s + (Number(r.cases) || 0), 0);
+      const totalValue = (data || []).reduce((s, r: any) => {
+        const bottles = (Number(r.cases) || 0) * (Number(r.bottles_per_case) || 12) + (Number(r.loose_bottles) || 0);
+        return s + bottles * (Number(r.price) || 0);
+      }, 0);
+      return { totalCases, totalValue };
+    },
+    enabled: !!orgId,
+  });
+
   const { data: tasksDue = 0 } = useQuery({
     queryKey: ["dashboard-tasks-due", orgId],
     queryFn: async () => {
@@ -53,6 +72,8 @@ const Dashboard = () => {
     { title: "Active Vintages", value: activeVintages, icon: Wine, link: "/vintages", color: "text-primary" },
     { title: "Prime Pick Windows", value: primeBlocks.length, icon: Calendar, color: "text-secondary", onClick: () => primeBlocks.length > 0 && setShowPrimeBlocks(true) },
     { title: "Tasks Due", value: tasksDue, icon: CheckSquare, link: "/tasks", color: "text-secondary" },
+    { title: "Cases On Hand", value: inventoryStats?.totalCases ?? 0, icon: Package, link: "/inventory", color: "text-primary" },
+    { title: "Inventory Value", value: `$${(inventoryStats?.totalValue ?? 0).toLocaleString()}`, icon: DollarSign, link: "/inventory", color: "text-secondary" },
   ];
 
   return (
@@ -64,7 +85,7 @@ const Dashboard = () => {
         <p className="text-muted-foreground mt-1">Here's what's happening at your winery</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {stats.map((stat) => {
           const inner = (
             <Card className="hover:shadow-lg transition-shadow cursor-pointer border-none shadow-md">
