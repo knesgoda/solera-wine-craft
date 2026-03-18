@@ -87,6 +87,9 @@ import FaqPage from "./pages/marketing/FaqPage";
 import ChangelogPage from "./pages/marketing/ChangelogPage";
 import PrivacyPage from "./pages/marketing/PrivacyPage";
 import TermsPage from "./pages/marketing/TermsPage";
+import BlogIndex from "./pages/marketing/BlogIndex";
+import BlogPost from "./pages/marketing/BlogPost";
+import BlogAdmin from "./pages/admin/BlogAdmin";
 
 const queryClient = new QueryClient();
 
