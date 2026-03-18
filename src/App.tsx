@@ -176,7 +176,6 @@ const App = () => (
               <Route path="/settings/alerts" element={<AlertSettings />} />
               <Route path="/settings/ratings" element={<RatingsSettings />} />
               <Route path="/settings/storefront" element={<StorefrontSettings />} />
-              <Route path="/settings/ratings" element={<RatingsSettings />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings/integrations" element={<IntegrationsHub />} />
               <Route path="/settings/integrations/google-sheets" element={<GoogleSheetsSettings />} />
