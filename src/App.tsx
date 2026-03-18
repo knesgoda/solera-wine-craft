@@ -13,6 +13,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import ComingSoon from "./pages/ComingSoon";
+import AskSolera from "./pages/AskSolera";
 import DataImport from "./pages/DataImport";
 import CellarDashboard from "./pages/cellar/CellarDashboard";
 import VesselDetail from "./pages/cellar/VesselDetail";
