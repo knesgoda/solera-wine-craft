@@ -13,6 +13,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import ComingSoon from "./pages/ComingSoon";
+import DataImport from "./pages/DataImport";
 import NotFound from "./pages/NotFound";
 import VineyardList from "./pages/operations/VineyardList";
 import VineyardDetail from "./pages/operations/VineyardDetail";
@@ -51,7 +52,7 @@ const App = () => (
               <Route path="/cellar" element={<ComingSoon />} />
               <Route path="/ask-solera" element={<ComingSoon />} />
               <Route path="/sales" element={<ComingSoon />} />
-              <Route path="/data-import" element={<ComingSoon />} />
+              <Route path="/data-import" element={<DataImport />} />
               <Route path="/settings" element={<ComingSoon />} />
             </Route>
             <Route path="*" element={<NotFound />} />
