@@ -140,7 +140,18 @@ export default function VintageDetail() {
           {vintage.notes && (
             <div className="text-sm"><span className="text-muted-foreground">Notes:</span> <span className="text-foreground">{vintage.notes}</span></div>
           )}
-        </CardContent>
+          {clientOrgs.length > 0 && (
+            <div className="text-sm pt-2 border-t">
+              <span className="text-muted-foreground">Client Assignment:</span>
+              <Select value={vintage.client_org_id || "none"} onValueChange={(v) => assignClient.mutate(v === "none" ? null : v)}>
+                <SelectTrigger className="w-[200px] mt-1"><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Unassigned</SelectItem>
+                  {clientOrgs.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
       </Card>
 
       {/* Milestone Timeline */}
