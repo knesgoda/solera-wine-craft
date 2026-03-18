@@ -129,6 +129,7 @@ const App = () => (
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/contact" element={<ContactPage />} />
             </Route>
+            <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/blog" element={<BlogAdmin />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
