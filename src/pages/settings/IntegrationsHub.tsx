@@ -41,6 +41,14 @@ const integrations = [
     path: "/settings/integrations/shipcompliant",
     table: "shipcompliant_config" as const,
   },
+  {
+    key: "quickbooks",
+    name: "QuickBooks Online",
+    description: "Sync invoices, expenses, and inventory value with QuickBooks.",
+    icon: BookOpen,
+    path: "/settings/integrations/quickbooks",
+    table: "quickbooks_config" as const,
+  },
 ];
 
 const IntegrationsHub = () => {
