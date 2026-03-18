@@ -78,6 +78,7 @@ const App = () => (
               <Route path="/sales" element={<ComingSoon />} />
               <Route path="/data-import" element={<DataImport />} />
               <Route path="/settings" element={<ComingSoon />} />
+              <Route path="/settings/weather" element={<WeatherSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
