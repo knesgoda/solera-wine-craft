@@ -26,6 +26,8 @@ import WeatherSettings from "./pages/settings/WeatherSettings";
 import AlertSettings from "./pages/settings/AlertSettings";
 import NotificationsPage from "./pages/NotificationsPage";
 import GoogleSheetsSettings from "./pages/settings/GoogleSheetsSettings";
+import RatingsSettings from "./pages/settings/RatingsSettings";
+import AnalogExplorer from "./pages/analytics/AnalogExplorer";
 import NotFound from "./pages/NotFound";
 import VineyardList from "./pages/operations/VineyardList";
 import VineyardDetail from "./pages/operations/VineyardDetail";
