@@ -854,6 +854,57 @@ export type Database = {
         }
         Relationships: []
       }
+      vineyard_weather_config: {
+        Row: {
+          active: boolean
+          created_at: string
+          gdd_base_temp_f: number
+          id: string
+          latitude: number | null
+          longitude: number | null
+          org_id: string
+          updated_at: string
+          vineyard_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          gdd_base_temp_f?: number
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          org_id: string
+          updated_at?: string
+          vineyard_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          gdd_base_temp_f?: number
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          org_id?: string
+          updated_at?: string
+          vineyard_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vineyard_weather_config_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vineyard_weather_config_vineyard_id_fkey"
+            columns: ["vineyard_id"]
+            isOneToOne: true
+            referencedRelation: "vineyards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vineyards: {
         Row: {
           acres: number | null
@@ -955,6 +1006,69 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weather_readings: {
+        Row: {
+          created_at: string
+          gdd_cumulative: number | null
+          gdd_daily: number | null
+          id: string
+          org_id: string
+          precip_inches: number | null
+          recorded_at: string
+          source: string
+          temp_f: number | null
+          temp_max_f: number | null
+          temp_min_f: number | null
+          vineyard_id: string
+          wind_mph: number | null
+        }
+        Insert: {
+          created_at?: string
+          gdd_cumulative?: number | null
+          gdd_daily?: number | null
+          id?: string
+          org_id: string
+          precip_inches?: number | null
+          recorded_at: string
+          source?: string
+          temp_f?: number | null
+          temp_max_f?: number | null
+          temp_min_f?: number | null
+          vineyard_id: string
+          wind_mph?: number | null
+        }
+        Update: {
+          created_at?: string
+          gdd_cumulative?: number | null
+          gdd_daily?: number | null
+          id?: string
+          org_id?: string
+          precip_inches?: number | null
+          recorded_at?: string
+          source?: string
+          temp_f?: number | null
+          temp_max_f?: number | null
+          temp_min_f?: number | null
+          vineyard_id?: string
+          wind_mph?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weather_readings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weather_readings_vineyard_id_fkey"
+            columns: ["vineyard_id"]
+            isOneToOne: false
+            referencedRelation: "vineyards"
             referencedColumns: ["id"]
           },
         ]
