@@ -62,6 +62,8 @@ import ClientVintagesList from "./pages/client/ClientVintagesList";
 import ClientVintageDetail from "./pages/client/ClientVintageDetail";
 import ClientDocuments from "./pages/client/ClientDocuments";
 import ClientMessages from "./pages/client/ClientMessages";
+import ComplianceSettings from "./pages/compliance/ComplianceSettings";
+import ComplianceReports from "./pages/compliance/ComplianceReports";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PushPrompt } from "./components/PushPrompt";
 import { useOfflineSync } from "./hooks/useOfflineSync";
