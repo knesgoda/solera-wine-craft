@@ -2137,6 +2137,172 @@ export type Database = {
           },
         ]
       }
+      ttb_bond_info: {
+        Row: {
+          bond_number: string | null
+          bonded_winery_number: string | null
+          created_at: string
+          id: string
+          org_id: string
+          premises_address: string | null
+          proprietor_name: string | null
+          registry_number: string | null
+          report_period_end: string | null
+          report_period_start: string | null
+          updated_at: string
+        }
+        Insert: {
+          bond_number?: string | null
+          bonded_winery_number?: string | null
+          created_at?: string
+          id?: string
+          org_id: string
+          premises_address?: string | null
+          proprietor_name?: string | null
+          registry_number?: string | null
+          report_period_end?: string | null
+          report_period_start?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bond_number?: string | null
+          bonded_winery_number?: string | null
+          created_at?: string
+          id?: string
+          org_id?: string
+          premises_address?: string | null
+          proprietor_name?: string | null
+          registry_number?: string | null
+          report_period_end?: string | null
+          report_period_start?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ttb_bond_info_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ttb_reports: {
+        Row: {
+          created_at: string
+          generated_at: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          pdf_url: string | null
+          report_period_end: string
+          report_period_start: string
+          status: Database["public"]["Enums"]["ttb_report_status"]
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          generated_at?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          pdf_url?: string | null
+          report_period_end: string
+          report_period_start: string
+          status?: Database["public"]["Enums"]["ttb_report_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          generated_at?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          pdf_url?: string | null
+          report_period_end?: string
+          report_period_start?: string
+          status?: Database["public"]["Enums"]["ttb_report_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ttb_reports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ttb_wine_premise_operations: {
+        Row: {
+          beginning_inventory_gallons: number
+          bottled_gallons: number
+          created_at: string
+          dumped_gallons: number
+          ending_inventory_gallons: number
+          id: string
+          org_id: string
+          period_end: string
+          period_start: string
+          produced_gallons: number
+          received_gallons: number
+          report_id: string
+          shipped_gallons: number
+          wine_type: Database["public"]["Enums"]["ttb_wine_type"]
+        }
+        Insert: {
+          beginning_inventory_gallons?: number
+          bottled_gallons?: number
+          created_at?: string
+          dumped_gallons?: number
+          ending_inventory_gallons?: number
+          id?: string
+          org_id: string
+          period_end: string
+          period_start: string
+          produced_gallons?: number
+          received_gallons?: number
+          report_id: string
+          shipped_gallons?: number
+          wine_type?: Database["public"]["Enums"]["ttb_wine_type"]
+        }
+        Update: {
+          beginning_inventory_gallons?: number
+          bottled_gallons?: number
+          created_at?: string
+          dumped_gallons?: number
+          ending_inventory_gallons?: number
+          id?: string
+          org_id?: string
+          period_end?: string
+          period_start?: string
+          produced_gallons?: number
+          received_gallons?: number
+          report_id?: string
+          shipped_gallons?: number
+          wine_type?: Database["public"]["Enums"]["ttb_wine_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ttb_wine_premise_operations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ttb_wine_premise_operations_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "ttb_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -2612,6 +2778,13 @@ export type Database = {
       sync_schedule: "manual" | "hourly" | "daily"
       sync_status: "success" | "partial" | "failed" | "running"
       task_status: "pending" | "in_progress" | "complete"
+      ttb_report_status: "draft" | "ready" | "submitted"
+      ttb_wine_type:
+        | "still_table_wine"
+        | "sparkling_wine"
+        | "dessert_wine"
+        | "vermouth"
+        | "other"
       vintage_status:
         | "planned"
         | "in_progress"
@@ -2838,6 +3011,14 @@ export const Constants = {
       sync_schedule: ["manual", "hourly", "daily"],
       sync_status: ["success", "partial", "failed", "running"],
       task_status: ["pending", "in_progress", "complete"],
+      ttb_report_status: ["draft", "ready", "submitted"],
+      ttb_wine_type: [
+        "still_table_wine",
+        "sparkling_wine",
+        "dessert_wine",
+        "vermouth",
+        "other",
+      ],
       vintage_status: [
         "planned",
         "in_progress",
