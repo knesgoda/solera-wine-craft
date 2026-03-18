@@ -66,6 +66,7 @@ import ComplianceSettings from "./pages/compliance/ComplianceSettings";
 import ComplianceReports from "./pages/compliance/ComplianceReports";
 import SsoSettings from "./pages/settings/SsoSettings";
 import SsoLogin from "./pages/SsoLogin";
+import FacilitySettings from "./pages/settings/FacilitySettings";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PushPrompt } from "./components/PushPrompt";
 import { useOfflineSync } from "./hooks/useOfflineSync";
@@ -147,6 +148,7 @@ const App = () => (
               <Route path="/compliance" element={<ComplianceReports />} />
               <Route path="/compliance/settings" element={<ComplianceSettings />} />
               <Route path="/settings/sso" element={<SsoSettings />} />
+              <Route path="/settings/facilities" element={<FacilitySettings />} />
             </Route>
             {/* Client Portal Routes */}
             <Route path="/client/login" element={<ClientLogin />} />

@@ -44,6 +44,7 @@ const items = [
   { title: "Integrations", url: "/settings/integrations", icon: Plug, indent: true },
   { title: "Google Sheets", url: "/settings/integrations/google-sheets", icon: FileSpreadsheet, indent: true },
   { title: "SSO / SAML", url: "/settings/sso", icon: Shield, indent: true },
+  { title: "Facilities", url: "/settings/facilities", icon: Building2, indent: true },
 ];
 
 export function AppSidebar() {
