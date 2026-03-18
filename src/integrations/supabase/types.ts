@@ -128,6 +128,56 @@ export type Database = {
           },
         ]
       }
+      analog_vintages: {
+        Row: {
+          created_at: string
+          gdd_total: number | null
+          harvest_date: string | null
+          id: string
+          imported: boolean
+          notes: string | null
+          org_id: string
+          rating: number | null
+          rating_source: string | null
+          region: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          gdd_total?: number | null
+          harvest_date?: string | null
+          id?: string
+          imported?: boolean
+          notes?: string | null
+          org_id: string
+          rating?: number | null
+          rating_source?: string | null
+          region: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          gdd_total?: number | null
+          harvest_date?: string | null
+          id?: string
+          imported?: boolean
+          notes?: string | null
+          org_id?: string
+          rating?: number | null
+          rating_source?: string | null
+          region?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analog_vintages_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       anomaly_flags: {
         Row: {
           created_at: string
@@ -1026,6 +1076,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_ratings_config: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          last_imported_at: string | null
+          org_id: string
+          source_name: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_imported_at?: string | null
+          org_id: string
+          source_name: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_imported_at?: string | null
+          org_id?: string
+          source_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_ratings_config_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"

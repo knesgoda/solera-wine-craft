@@ -26,6 +26,8 @@ import WeatherSettings from "./pages/settings/WeatherSettings";
 import AlertSettings from "./pages/settings/AlertSettings";
 import NotificationsPage from "./pages/NotificationsPage";
 import GoogleSheetsSettings from "./pages/settings/GoogleSheetsSettings";
+import RatingsSettings from "./pages/settings/RatingsSettings";
+import AnalogExplorer from "./pages/analytics/AnalogExplorer";
 import NotFound from "./pages/NotFound";
 import VineyardList from "./pages/operations/VineyardList";
 import VineyardDetail from "./pages/operations/VineyardDetail";
@@ -85,9 +87,11 @@ const App = () => (
               <Route path="/reports" element={<Reports />} />
               <Route path="/reports/builder" element={<ReportsBuilder />} />
               <Route path="/data-import" element={<DataImport />} />
+              <Route path="/analytics/analog" element={<AnalogExplorer />} />
               <Route path="/settings" element={<ComingSoon />} />
               <Route path="/settings/weather" element={<WeatherSettings />} />
               <Route path="/settings/alerts" element={<AlertSettings />} />
+              <Route path="/settings/ratings" element={<RatingsSettings />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings/integrations/google-sheets" element={<GoogleSheetsSettings />} />
             </Route>
