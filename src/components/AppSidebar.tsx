@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings, ClipboardList, Cylinder, Beaker,
-  Bell, ShieldAlert, CloudSun, FileSpreadsheet,
+  Bell, ShieldAlert, CloudSun, FileSpreadsheet, FileText,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
