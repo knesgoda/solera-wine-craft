@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Plug, ShoppingCart, Truck, ShieldCheck, Wine, ExternalLink } from "lucide-react";
+import { Plug, ShoppingCart, Truck, ShieldCheck, Wine, ExternalLink, BookOpen } from "lucide-react";
 import { format } from "date-fns";
 
 const integrations = [
@@ -41,6 +41,14 @@ const integrations = [
     path: "/settings/integrations/shipcompliant",
     table: "shipcompliant_config" as const,
   },
+  {
+    key: "quickbooks",
+    name: "QuickBooks Online",
+    description: "Sync invoices, expenses, and inventory value with QuickBooks.",
+    icon: BookOpen,
+    path: "/settings/integrations/quickbooks",
+    table: "quickbooks_config" as const,
+  },
 ];
 
 const IntegrationsHub = () => {
@@ -51,17 +59,19 @@ const IntegrationsHub = () => {
   const { data: configs } = useQuery({
     queryKey: ["integration-configs", orgId],
     queryFn: async () => {
-      const [c7, wd, sh, sc] = await Promise.all([
+      const [c7, wd, sh, sc, qb] = await Promise.all([
         supabase.from("commerce7_config").select("active, last_synced_at").eq("org_id", orgId!).maybeSingle(),
         supabase.from("winedirect_config").select("active, last_synced_at").eq("org_id", orgId!).maybeSingle(),
         supabase.from("shopify_config").select("active, last_synced_at").eq("org_id", orgId!).maybeSingle(),
         supabase.from("shipcompliant_config").select("active").eq("org_id", orgId!).maybeSingle(),
+        supabase.from("quickbooks_config").select("active, last_synced_at").eq("org_id", orgId!).maybeSingle(),
       ]);
       return {
         commerce7: c7.data,
         winedirect: wd.data,
         shopify: sh.data,
         shipcompliant: sc.data,
+        quickbooks: qb.data,
       };
     },
     enabled: !!orgId,

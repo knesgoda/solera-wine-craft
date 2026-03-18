@@ -1829,6 +1829,7 @@ export type Database = {
           org_id: string
           quantity_bottles: number
           quantity_cases: number
+          quickbooks_invoice_id: string | null
           shipped_at: string | null
           shipping_cost: number
           sku_id: string
@@ -1854,6 +1855,7 @@ export type Database = {
           org_id: string
           quantity_bottles?: number
           quantity_cases?: number
+          quickbooks_invoice_id?: string | null
           shipped_at?: string | null
           shipping_cost?: number
           sku_id: string
@@ -1879,6 +1881,7 @@ export type Database = {
           org_id?: string
           quantity_bottles?: number
           quantity_cases?: number
+          quickbooks_invoice_id?: string | null
           shipped_at?: string | null
           shipping_cost?: number
           sku_id?: string
@@ -2022,6 +2025,65 @@ export type Database = {
             foreignKeyName: "public_ratings_config_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quickbooks_config: {
+        Row: {
+          access_token_encrypted: string | null
+          active: boolean
+          company_name: string | null
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          org_id: string
+          realm_id: string | null
+          refresh_token_encrypted: string | null
+          sync_expenses: boolean
+          sync_inventory_value: boolean
+          sync_invoices: boolean
+          token_expiry: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token_encrypted?: string | null
+          active?: boolean
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          org_id: string
+          realm_id?: string | null
+          refresh_token_encrypted?: string | null
+          sync_expenses?: boolean
+          sync_inventory_value?: boolean
+          sync_invoices?: boolean
+          token_expiry?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token_encrypted?: string | null
+          active?: boolean
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          org_id?: string
+          realm_id?: string | null
+          refresh_token_encrypted?: string | null
+          sync_expenses?: boolean
+          sync_inventory_value?: boolean
+          sync_invoices?: boolean
+          token_expiry?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quickbooks_config_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -2358,9 +2420,11 @@ export type Database = {
           addition_type: Database["public"]["Enums"]["addition_type"]
           amount: number
           batch_size: number | null
+          cost_per_unit: number | null
           created_at: string
           id: string
           org_id: string
+          quickbooks_expense_id: string | null
           ttb_code: string | null
           unit: Database["public"]["Enums"]["addition_unit"]
           vintage_id: string
@@ -2371,9 +2435,11 @@ export type Database = {
           addition_type: Database["public"]["Enums"]["addition_type"]
           amount: number
           batch_size?: number | null
+          cost_per_unit?: number | null
           created_at?: string
           id?: string
           org_id: string
+          quickbooks_expense_id?: string | null
           ttb_code?: string | null
           unit: Database["public"]["Enums"]["addition_unit"]
           vintage_id: string
@@ -2384,9 +2450,11 @@ export type Database = {
           addition_type?: Database["public"]["Enums"]["addition_type"]
           amount?: number
           batch_size?: number | null
+          cost_per_unit?: number | null
           created_at?: string
           id?: string
           org_id?: string
+          quickbooks_expense_id?: string | null
           ttb_code?: string | null
           unit?: Database["public"]["Enums"]["addition_unit"]
           vintage_id?: string
