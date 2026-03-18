@@ -398,6 +398,55 @@ export type Database = {
           },
         ]
       }
+      harvest_alerts_sent: {
+        Row: {
+          block_id: string
+          id: string
+          org_id: string
+          sent_at: string
+          vintage_id: string
+          week_start: string
+        }
+        Insert: {
+          block_id: string
+          id?: string
+          org_id: string
+          sent_at?: string
+          vintage_id: string
+          week_start: string
+        }
+        Update: {
+          block_id?: string
+          id?: string
+          org_id?: string
+          sent_at?: string
+          vintage_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "harvest_alerts_sent_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "harvest_alerts_sent_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "harvest_alerts_sent_vintage_id_fkey"
+            columns: ["vintage_id"]
+            isOneToOne: false
+            referencedRelation: "vintages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_errors: {
         Row: {
           created_at: string
