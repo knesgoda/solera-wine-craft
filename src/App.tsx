@@ -13,6 +13,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import ComingSoon from "./pages/ComingSoon";
+import AskSolera from "./pages/AskSolera";
 import DataImport from "./pages/DataImport";
 import CellarDashboard from "./pages/cellar/CellarDashboard";
 import VesselDetail from "./pages/cellar/VesselDetail";
@@ -77,7 +78,7 @@ const App = () => (
               <Route path="/cellar/barrels" element={<BarrelInventory />} />
               <Route path="/cellar/blending" element={<BlendingTrials />} />
               <Route path="/cellar/blending/:trialId" element={<TrialDetail />} />
-              <Route path="/ask-solera" element={<ComingSoon />} />
+              <Route path="/ask-solera" element={<AskSolera />} />
               <Route path="/sales" element={<ComingSoon />} />
               <Route path="/data-import" element={<DataImport />} />
               <Route path="/settings" element={<ComingSoon />} />

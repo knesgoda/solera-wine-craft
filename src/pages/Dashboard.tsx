@@ -89,23 +89,25 @@ const Dashboard = () => {
         })}
       </div>
 
-      <Card className="border-none shadow-md">
-        <CardHeader>
-          <CardTitle className="text-lg font-display text-foreground flex items-center gap-2">
-            <span className="p-1.5 rounded-md bg-secondary/10">
-              <Send className="h-4 w-4 text-secondary" />
-            </span>
-            Ask Solera
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-3">
-            <Input placeholder="Ask about your vineyard, vintages, or operations..." className="flex-1" disabled />
-            <Button disabled className="shrink-0">Ask</Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">AI-powered insights coming soon</p>
-        </CardContent>
-      </Card>
+      <Link to="/ask-solera">
+        <Card className="border-none shadow-md hover:shadow-lg transition-shadow cursor-pointer">
+          <CardHeader>
+            <CardTitle className="text-lg font-display text-foreground flex items-center gap-2">
+              <span className="p-1.5 rounded-md bg-secondary/10">
+                <Send className="h-4 w-4 text-secondary" />
+              </span>
+              Ask Solera
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3">
+              <Input placeholder="Ask about your vineyard, vintages, or operations..." className="flex-1" readOnly />
+              <Button className="shrink-0">Ask</Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">AI-powered winery insights</p>
+          </CardContent>
+        </Card>
+      </Link>
 
       {/* Prime Window Blocks Dialog */}
       <Dialog open={showPrimeBlocks} onOpenChange={setShowPrimeBlocks}>
