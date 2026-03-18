@@ -68,7 +68,11 @@ const App = () => (
               <Route path="/vineyard-ops" element={<Navigate to="/operations" replace />} />
               <Route path="/vintages" element={<VintageList />} />
               <Route path="/vintages/:vintageId" element={<VintageDetail />} />
-              <Route path="/cellar" element={<ComingSoon />} />
+              <Route path="/cellar" element={<CellarDashboard />} />
+              <Route path="/cellar/vessels/:vesselId" element={<VesselDetail />} />
+              <Route path="/cellar/barrels" element={<BarrelInventory />} />
+              <Route path="/cellar/blending" element={<BlendingTrials />} />
+              <Route path="/cellar/blending/:trialId" element={<TrialDetail />} />
               <Route path="/ask-solera" element={<ComingSoon />} />
               <Route path="/sales" element={<ComingSoon />} />
               <Route path="/data-import" element={<DataImport />} />
