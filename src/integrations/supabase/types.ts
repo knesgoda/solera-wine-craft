@@ -235,6 +235,53 @@ export type Database = {
           },
         ]
       }
+      api_keys: {
+        Row: {
+          created_at: string
+          id: string
+          key_hash: string
+          key_prefix: string
+          label: string
+          last_used_at: string | null
+          org_id: string
+          rate_limit_per_hour: number
+          revoked_at: string | null
+          scopes: Database["public"]["Enums"]["api_scope"][]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key_hash: string
+          key_prefix: string
+          label: string
+          last_used_at?: string | null
+          org_id: string
+          rate_limit_per_hour?: number
+          revoked_at?: string | null
+          scopes?: Database["public"]["Enums"]["api_scope"][]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          label?: string
+          last_used_at?: string | null
+          org_id?: string
+          rate_limit_per_hour?: number
+          revoked_at?: string | null
+          scopes?: Database["public"]["Enums"]["api_scope"][]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       barrel_groups: {
         Row: {
           created_at: string
@@ -2774,6 +2821,85 @@ export type Database = {
           },
         ]
       }
+      webhook_delivery_logs: {
+        Row: {
+          id: string
+          response_body: string | null
+          response_code: number | null
+          subscription_id: string
+          success: boolean
+          triggered_at: string
+        }
+        Insert: {
+          id?: string
+          response_body?: string | null
+          response_code?: number | null
+          subscription_id: string
+          success?: boolean
+          triggered_at?: string
+        }
+        Update: {
+          id?: string
+          response_body?: string | null
+          response_code?: number | null
+          subscription_id?: string
+          success?: boolean
+          triggered_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_delivery_logs_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_subscriptions: {
+        Row: {
+          active: boolean
+          created_at: string
+          endpoint_url: string
+          event_type: Database["public"]["Enums"]["webhook_event_type"]
+          failure_count: number
+          id: string
+          last_triggered_at: string | null
+          org_id: string
+          secret_hash: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          endpoint_url: string
+          event_type: Database["public"]["Enums"]["webhook_event_type"]
+          failure_count?: number
+          id?: string
+          last_triggered_at?: string | null
+          org_id: string
+          secret_hash: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          endpoint_url?: string
+          event_type?: Database["public"]["Enums"]["webhook_event_type"]
+          failure_count?: number
+          id?: string
+          last_triggered_at?: string | null
+          org_id?: string
+          secret_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_subscriptions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_summaries: {
         Row: {
           content: string
@@ -2922,6 +3048,7 @@ export type Database = {
       get_vessel_org_id: { Args: { _vessel_id: string }; Returns: string }
       get_vineyard_org_id: { Args: { _vineyard_id: string }; Returns: string }
       get_vintage_org_id: { Args: { _vintage_id: string }; Returns: string }
+      get_webhook_sub_org_id: { Args: { _sub_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2964,6 +3091,17 @@ export type Database = {
         | "restaurant"
         | "library"
         | "custom_crush_client"
+      api_scope:
+        | "read:vintages"
+        | "write:vintages"
+        | "read:lab_samples"
+        | "write:lab_samples"
+        | "read:inventory"
+        | "write:inventory"
+        | "read:orders"
+        | "read:tasks"
+        | "write:tasks"
+        | "read:analytics"
       app_role: "owner" | "admin" | "member"
       block_lifecycle_stage:
         | "planting"
@@ -3034,6 +3172,16 @@ export type Database = {
         | "in_cellar"
         | "bottled"
         | "released"
+      webhook_event_type:
+        | "vintage.created"
+        | "vintage.updated"
+        | "lab_sample.created"
+        | "harvest_window.entered"
+        | "task.completed"
+        | "order.created"
+        | "order.shipped"
+        | "anomaly.detected"
+        | "weekly_summary.generated"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3198,6 +3346,18 @@ export const Constants = {
         "library",
         "custom_crush_client",
       ],
+      api_scope: [
+        "read:vintages",
+        "write:vintages",
+        "read:lab_samples",
+        "write:lab_samples",
+        "read:inventory",
+        "write:inventory",
+        "read:orders",
+        "read:tasks",
+        "write:tasks",
+        "read:analytics",
+      ],
       app_role: ["owner", "admin", "member"],
       block_lifecycle_stage: [
         "planting",
@@ -3276,6 +3436,17 @@ export const Constants = {
         "in_cellar",
         "bottled",
         "released",
+      ],
+      webhook_event_type: [
+        "vintage.created",
+        "vintage.updated",
+        "lab_sample.created",
+        "harvest_window.entered",
+        "task.completed",
+        "order.created",
+        "order.shipped",
+        "anomaly.detected",
+        "weekly_summary.generated",
       ],
     },
   },
