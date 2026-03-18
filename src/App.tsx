@@ -77,6 +77,16 @@ import SmsSettings from "./pages/settings/SmsSettings";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PushPrompt } from "./components/PushPrompt";
 import { useOfflineSync } from "./hooks/useOfflineSync";
+import { MarketingLayout } from "./components/marketing/MarketingLayout";
+import Homepage from "./pages/marketing/Homepage";
+import FeaturesPage from "./pages/marketing/FeaturesPage";
+import PricingPage from "./pages/marketing/PricingPage";
+import ComparePage from "./pages/marketing/ComparePage";
+import AboutPage from "./pages/marketing/AboutPage";
+import FaqPage from "./pages/marketing/FaqPage";
+import ChangelogPage from "./pages/marketing/ChangelogPage";
+import PrivacyPage from "./pages/marketing/PrivacyPage";
+import TermsPage from "./pages/marketing/TermsPage";
 
 const queryClient = new QueryClient();
 
