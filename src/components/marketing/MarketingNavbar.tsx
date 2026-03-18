@@ -67,7 +67,7 @@ export function MarketingNavbar() {
 
         {/* Mobile hamburger */}
         <button
-          className="md:hidden text-primary-foreground p-2"
+          className={`md:hidden ${textClass} p-2`}
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle menu"
         >
