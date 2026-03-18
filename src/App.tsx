@@ -84,6 +84,7 @@ const App = () => (
               <Route path="/settings/weather" element={<WeatherSettings />} />
               <Route path="/settings/alerts" element={<AlertSettings />} />
               <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/settings/integrations/google-sheets" element={<GoogleSheetsSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
