@@ -124,6 +124,8 @@ const App = () => (
               <Route path="/club" element={<ClubList />} />
               <Route path="/club/:clubId" element={<ClubDetail />} />
               <Route path="/club/shipments" element={<ClubShipments />} />
+              <Route path="/clients" element={<ClientList />} />
+              <Route path="/clients/:clientId" element={<ClientDetail />} />
               <Route path="/settings" element={<ComingSoon />} />
               <Route path="/settings/weather" element={<WeatherSettings />} />
               <Route path="/settings/alerts" element={<AlertSettings />} />
@@ -137,6 +139,16 @@ const App = () => (
               <Route path="/settings/integrations/winedirect" element={<WineDirectSettings />} />
               <Route path="/settings/integrations/shopify" element={<ShopifySettings />} />
               <Route path="/settings/integrations/shipcompliant" element={<ShipCompliantSettings />} />
+            </Route>
+            {/* Client Portal Routes */}
+            <Route path="/client/login" element={<ClientLogin />} />
+            <Route path="/client/signup" element={<ClientSignup />} />
+            <Route path="/client" element={<ClientLayout />}>
+              <Route path="dashboard" element={<ClientDashboard />} />
+              <Route path="vintages" element={<ClientVintagesList />} />
+              <Route path="vintages/:vintageId" element={<ClientVintageDetail />} />
+              <Route path="documents" element={<ClientDocuments />} />
+              <Route path="messages" element={<ClientMessages />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

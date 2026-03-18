@@ -31,6 +31,7 @@ const items = [
   { title: "Wine Club", url: "/club", icon: GlassWater },
   { title: "Club Shipments", url: "/club/shipments", icon: Truck, indent: true },
   { title: "Sales", url: "/sales", icon: ShoppingCart },
+  { title: "Clients", url: "/clients", icon: Building2 },
   { title: "Data Import", url: "/data-import", icon: Upload },
   { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Settings", url: "/settings", icon: Settings },
