@@ -517,6 +517,181 @@ export type Database = {
           },
         ]
       }
+      client_invite_tokens: {
+        Row: {
+          client_org_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          token: string
+          used: boolean
+        }
+        Insert: {
+          client_org_id: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used?: boolean
+        }
+        Update: {
+          client_org_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_invite_tokens_client_org_id_fkey"
+            columns: ["client_org_id"]
+            isOneToOne: false
+            referencedRelation: "client_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_messages: {
+        Row: {
+          client_org_id: string
+          created_at: string
+          id: string
+          message: string
+          org_id: string
+          read: boolean
+          sender_id: string | null
+          sender_type: string
+          vintage_id: string | null
+        }
+        Insert: {
+          client_org_id: string
+          created_at?: string
+          id?: string
+          message: string
+          org_id: string
+          read?: boolean
+          sender_id?: string | null
+          sender_type?: string
+          vintage_id?: string | null
+        }
+        Update: {
+          client_org_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          org_id?: string
+          read?: boolean
+          sender_id?: string | null
+          sender_type?: string
+          vintage_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_messages_client_org_id_fkey"
+            columns: ["client_org_id"]
+            isOneToOne: false
+            referencedRelation: "client_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_messages_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_messages_vintage_id_fkey"
+            columns: ["vintage_id"]
+            isOneToOne: false
+            referencedRelation: "vintages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_orgs: {
+        Row: {
+          active: boolean
+          contact_email: string | null
+          contact_name: string | null
+          created_at: string
+          id: string
+          name: string
+          parent_org_id: string
+        }
+        Insert: {
+          active?: boolean
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          parent_org_id: string
+        }
+        Update: {
+          active?: boolean
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          parent_org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_orgs_parent_org_id_fkey"
+            columns: ["parent_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_users: {
+        Row: {
+          auth_user_id: string | null
+          client_org_id: string
+          created_at: string
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          role: string
+        }
+        Insert: {
+          auth_user_id?: string | null
+          client_org_id: string
+          created_at?: string
+          email: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          role?: string
+        }
+        Update: {
+          auth_user_id?: string | null
+          client_org_id?: string
+          created_at?: string
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_users_client_org_id_fkey"
+            columns: ["client_org_id"]
+            isOneToOne: false
+            referencedRelation: "client_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       club_members: {
         Row: {
           cancelled_at: string | null
@@ -2124,7 +2299,7 @@ export type Database = {
             foreignKeyName: "vintages_client_org_id_fkey"
             columns: ["client_org_id"]
             isOneToOne: false
-            referencedRelation: "organizations"
+            referencedRelation: "client_orgs"
             referencedColumns: ["id"]
           },
           {
@@ -2327,6 +2502,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_client_org_id_for_user: {
+        Args: { _user_id: string }
+        Returns: string
+      }
       get_conversation_org_id: {
         Args: { _conversation_id: string }
         Returns: string
