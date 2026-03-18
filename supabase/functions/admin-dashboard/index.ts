@@ -339,6 +339,45 @@ Deno.serve(async (req) => {
       return json({ checks, checkedAt: new Date().toISOString() });
     }
 
+    // ─── Create Admin User ───
+    if (action === "create-user") {
+      const { email, userPassword, firstName, lastName, orgName, tier } = payload;
+      
+      // Create auth user (auto-confirmed via admin API)
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email,
+        password: userPassword,
+        email_confirm: true,
+        user_metadata: { first_name: firstName, last_name: lastName },
+      });
+      if (authError) throw authError;
+      
+      const userId = authData.user.id;
+
+      // Create organization
+      const { data: org, error: orgError } = await supabase
+        .from("organizations")
+        .insert({ name: orgName, tier: tier || "enterprise", onboarding_completed: true })
+        .select()
+        .single();
+      if (orgError) throw orgError;
+
+      // Link profile to org
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ org_id: org.id, first_name: firstName, last_name: lastName })
+        .eq("id", userId);
+      if (profileError) throw profileError;
+
+      // Assign owner role
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .insert({ user_id: userId, role: "owner" });
+      if (roleError) throw roleError;
+
+      return json({ success: true, userId, orgId: org.id });
+    }
+
     return json({ error: "Unknown action" }, 400);
   } catch (error: any) {
     return new Response(
