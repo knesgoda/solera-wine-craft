@@ -1,4 +1,4 @@
-import { LayoutDashboard, Grape, Wine, Warehouse, MoreHorizontal, Bot, ShoppingCart, Upload, Settings } from "lucide-react";
+import { LayoutDashboard, Grape, Wine, ClipboardList, MoreHorizontal, Bot, ShoppingCart, Upload, Settings, Warehouse } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
