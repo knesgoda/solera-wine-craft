@@ -16,6 +16,7 @@ import ComingSoon from "./pages/ComingSoon";
 import AskSolera from "./pages/AskSolera";
 import Reports from "./pages/Reports";
 import DataImport from "./pages/DataImport";
+import ReportsBuilder from "./pages/ReportsBuilder";
 import CellarDashboard from "./pages/cellar/CellarDashboard";
 import VesselDetail from "./pages/cellar/VesselDetail";
 import BarrelInventory from "./pages/cellar/BarrelInventory";
@@ -82,6 +83,7 @@ const App = () => (
               <Route path="/ask-solera" element={<AskSolera />} />
               <Route path="/sales" element={<ComingSoon />} />
               <Route path="/reports" element={<Reports />} />
+              <Route path="/reports/builder" element={<ReportsBuilder />} />
               <Route path="/data-import" element={<DataImport />} />
               <Route path="/settings" element={<ComingSoon />} />
               <Route path="/settings/weather" element={<WeatherSettings />} />

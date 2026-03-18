@@ -1033,6 +1033,38 @@ export type Database = {
           },
         ]
       }
+      saved_reports: {
+        Row: {
+          config_json: Json
+          created_at: string
+          id: string
+          name: string
+          org_id: string
+        }
+        Insert: {
+          config_json?: Json
+          created_at?: string
+          id?: string
+          name: string
+          org_id: string
+        }
+        Update: {
+          config_json?: Json
+          created_at?: string
+          id?: string
+          name?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_reports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sync_logs: {
         Row: {
           conflicts: number
