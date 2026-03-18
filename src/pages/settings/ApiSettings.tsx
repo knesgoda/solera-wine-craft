@@ -93,7 +93,7 @@ export default function ApiSettings() {
       key_hash: hash,
       key_prefix: prefix,
       label: newKeyLabel,
-      scopes: newKeyScopes,
+      scopes: newKeyScopes as any,
     });
 
     if (error) {
