@@ -1,16 +1,18 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, FlaskConical } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Loader2, FlaskConical, FileText } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { useState } from "react";
 import { NewLabSampleDialog } from "@/components/vintages/NewLabSampleDialog";
 import { LabChart } from "@/components/vintages/LabChart";
+import { TtbAdditionsTab } from "@/components/vintages/TtbAdditionsTab";
 
 const statusLabels: Record<string, string> = {
   planned: "Planned", in_progress: "In Progress", harvested: "Harvested",
@@ -22,6 +24,7 @@ export default function VintageDetail() {
   const { vintageId } = useParams<{ vintageId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { organization } = useAuth();
   const [labDialogOpen, setLabDialogOpen] = useState(false);
 
   const { data: vintage, isLoading } = useQuery({
@@ -88,9 +91,7 @@ export default function VintageDetail() {
           <div className="flex items-start justify-between gap-3">
             <CardTitle className="text-xl">{vintage.year} Vintage</CardTitle>
             <Select value={vintage.status} onValueChange={(v) => updateStatus.mutate(v)}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {statusOrder.map((s) => (
                   <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
@@ -144,51 +145,70 @@ export default function VintageDetail() {
         </CardContent>
       </Card>
 
-      {/* Lab Chart */}
-      {labSamples.length >= 2 && (
-        <Card className="mb-6">
-          <CardHeader><CardTitle className="text-lg">Lab Trends</CardTitle></CardHeader>
-          <CardContent>
-            <LabChart samples={labSamples} />
-          </CardContent>
-        </Card>
-      )}
+      {/* Tabs for Lab Samples & TTB Additions */}
+      <Tabs defaultValue="lab" className="space-y-4">
+        <TabsList className="w-full">
+          <TabsTrigger value="lab" className="flex-1 gap-2">
+            <FlaskConical className="h-4 w-4" /> Lab Samples
+          </TabsTrigger>
+          <TabsTrigger value="additions" className="flex-1 gap-2">
+            <FileText className="h-4 w-4" /> TTB Additions
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Lab Samples */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2"><FlaskConical className="h-5 w-5" /> Lab Samples</CardTitle>
-            <Button size="sm" onClick={() => setLabDialogOpen(true)}>Add Sample</Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {labSamples.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">No lab samples yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {labSamples.map((s: any) => (
-                <div key={s.id} className="border border-border rounded-lg p-3">
-                  <p className="text-sm font-medium text-foreground mb-1">
-                    {format(parseISO(s.sampled_at), "MMM d, yyyy h:mm a")}
-                  </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
-                    {s.brix != null && <div><span className="text-muted-foreground">Brix:</span> {s.brix}°</div>}
-                    {s.ph != null && <div><span className="text-muted-foreground">pH:</span> {s.ph}</div>}
-                    {s.ta != null && <div><span className="text-muted-foreground">TA:</span> {s.ta}</div>}
-                    {s.va != null && <div><span className="text-muted-foreground">VA:</span> {s.va}</div>}
-                    {s.so2_free != null && <div><span className="text-muted-foreground">Free SO₂:</span> {s.so2_free}</div>}
-                    {s.so2_total != null && <div><span className="text-muted-foreground">Total SO₂:</span> {s.so2_total}</div>}
-                    {s.alcohol != null && <div><span className="text-muted-foreground">Alcohol:</span> {s.alcohol}%</div>}
-                    {s.rs != null && <div><span className="text-muted-foreground">RS:</span> {s.rs}</div>}
-                  </div>
-                  {s.notes && <p className="text-sm text-muted-foreground mt-1">{s.notes}</p>}
-                </div>
-              ))}
-            </div>
+        <TabsContent value="lab">
+          {/* Lab Chart */}
+          {labSamples.length >= 2 && (
+            <Card className="mb-4">
+              <CardHeader><CardTitle className="text-lg">Lab Trends</CardTitle></CardHeader>
+              <CardContent><LabChart samples={labSamples} /></CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Sample Log</CardTitle>
+                <Button size="sm" onClick={() => setLabDialogOpen(true)}>Add Sample</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {labSamples.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">No lab samples yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {labSamples.map((s: any) => (
+                    <div key={s.id} className="border border-border rounded-lg p-3">
+                      <p className="text-sm font-medium text-foreground mb-1">
+                        {format(parseISO(s.sampled_at), "MMM d, yyyy h:mm a")}
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+                        {s.brix != null && <div><span className="text-muted-foreground">Brix:</span> {s.brix}°</div>}
+                        {s.ph != null && <div><span className="text-muted-foreground">pH:</span> {s.ph}</div>}
+                        {s.ta != null && <div><span className="text-muted-foreground">TA:</span> {s.ta}</div>}
+                        {s.va != null && <div><span className="text-muted-foreground">VA:</span> {s.va}</div>}
+                        {s.so2_free != null && <div><span className="text-muted-foreground">Free SO₂:</span> {s.so2_free}</div>}
+                        {s.so2_total != null && <div><span className="text-muted-foreground">Total SO₂:</span> {s.so2_total}</div>}
+                        {s.alcohol != null && <div><span className="text-muted-foreground">Alcohol:</span> {s.alcohol}%</div>}
+                        {s.rs != null && <div><span className="text-muted-foreground">RS:</span> {s.rs}</div>}
+                      </div>
+                      {s.notes && <p className="text-sm text-muted-foreground mt-1">{s.notes}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="additions">
+          <TtbAdditionsTab
+            vintageId={vintageId!}
+            vintageYear={vintage.year}
+            wineryName={organization?.name || "Winery"}
+          />
+        </TabsContent>
+      </Tabs>
 
       <NewLabSampleDialog vintageId={vintageId!} open={labDialogOpen} onOpenChange={setLabDialogOpen} />
     </div>
