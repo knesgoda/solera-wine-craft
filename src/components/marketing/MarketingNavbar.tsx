@@ -26,6 +26,8 @@ export function MarketingNavbar() {
   }, []);
 
   const solid = !isHome || scrolled || menuOpen;
+  const textClass = solid ? "text-primary-foreground" : "text-foreground";
+  const textMuted = solid ? "text-primary-foreground/80" : "text-foreground/70";
 
   return (
     <nav
@@ -37,7 +39,7 @@ export function MarketingNavbar() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2" onClick={() => setMenuOpen(false)}>
           <img src={soleraLogo} alt="Solera" className="h-8 w-8 rounded" />
-          <span className="font-display text-xl font-bold text-primary-foreground">Solera</span>
+          <span className={`font-display text-xl font-bold ${textClass}`}>Solera</span>
         </Link>
 
         {/* Desktop links */}
@@ -46,7 +48,7 @@ export function MarketingNavbar() {
             <Link
               key={l.to}
               to={l.to}
-              className="text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+              className={`text-sm font-medium ${textMuted} hover:${textClass} transition-colors`}
             >
               {l.label}
             </Link>
@@ -55,17 +57,17 @@ export function MarketingNavbar() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/10" asChild>
+          <Button variant="ghost" className={`${textClass} ${solid ? "hover:bg-primary-foreground/10" : "hover:bg-foreground/10"}`} asChild>
             <Link to="/login">Log In</Link>
           </Button>
-          <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90" asChild>
+          <Button className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>
             <Link to="/signup">Start Free</Link>
           </Button>
         </div>
 
         {/* Mobile hamburger */}
         <button
-          className="md:hidden text-primary-foreground p-2"
+          className={`md:hidden ${textClass} p-2`}
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle menu"
         >
