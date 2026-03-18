@@ -35,6 +35,7 @@ const items = [
   { title: "Weather", url: "/settings/weather", icon: CloudSun, indent: true },
   { title: "Alerts", url: "/settings/alerts", icon: ShieldAlert, indent: true },
   { title: "Ratings", url: "/settings/ratings", icon: Star, indent: true },
+  { title: "Storefront", url: "/settings/storefront", icon: Store, indent: true },
   { title: "Google Sheets", url: "/settings/integrations/google-sheets", icon: FileSpreadsheet, indent: true },
 ];
 

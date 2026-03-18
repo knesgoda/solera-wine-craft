@@ -99,9 +99,15 @@ const App = () => (
               <Route path="/analytics/analog" element={<AnalogExplorer />} />
               <Route path="/inventory" element={<InventoryList />} />
               <Route path="/inventory/:skuId" element={<SkuDetail />} />
+              <Route path="/orders" element={<OrderList />} />
+              <Route path="/orders/:orderId" element={<OrderDetail />} />
+              <Route path="/customers" element={<CustomerList />} />
+              <Route path="/customers/:customerId" element={<CustomerDetail />} />
               <Route path="/settings" element={<ComingSoon />} />
               <Route path="/settings/weather" element={<WeatherSettings />} />
               <Route path="/settings/alerts" element={<AlertSettings />} />
+              <Route path="/settings/ratings" element={<RatingsSettings />} />
+              <Route path="/settings/storefront" element={<StorefrontSettings />} />
               <Route path="/settings/ratings" element={<RatingsSettings />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings/integrations/google-sheets" element={<GoogleSheetsSettings />} />
