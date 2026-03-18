@@ -517,6 +517,59 @@ export type Database = {
           },
         ]
       }
+      customers: {
+        Row: {
+          address_json: Json | null
+          created_at: string
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          notes: string | null
+          org_id: string
+          phone: string | null
+          total_orders: number
+          total_spent: number
+          updated_at: string
+        }
+        Insert: {
+          address_json?: Json | null
+          created_at?: string
+          email: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          notes?: string | null
+          org_id: string
+          phone?: string | null
+          total_orders?: number
+          total_spent?: number
+          updated_at?: string
+        }
+        Update: {
+          address_json?: Json | null
+          created_at?: string
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          notes?: string | null
+          org_id?: string
+          phone?: string | null
+          total_orders?: number
+          total_spent?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fermentation_logs: {
         Row: {
           brix: number | null
@@ -1091,6 +1144,97 @@ export type Database = {
           },
         ]
       }
+      orders: {
+        Row: {
+          created_at: string
+          customer_address_json: Json | null
+          customer_email: string
+          customer_id: string | null
+          customer_name: string
+          id: string
+          notes: string | null
+          org_id: string
+          quantity_bottles: number
+          quantity_cases: number
+          shipped_at: string | null
+          shipping_cost: number
+          sku_id: string
+          status: Database["public"]["Enums"]["order_status"]
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+          subtotal: number
+          total: number
+          tracking_number: string | null
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          customer_address_json?: Json | null
+          customer_email: string
+          customer_id?: string | null
+          customer_name: string
+          id?: string
+          notes?: string | null
+          org_id: string
+          quantity_bottles?: number
+          quantity_cases?: number
+          shipped_at?: string | null
+          shipping_cost?: number
+          sku_id: string
+          status?: Database["public"]["Enums"]["order_status"]
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          subtotal?: number
+          total?: number
+          tracking_number?: string | null
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          customer_address_json?: Json | null
+          customer_email?: string
+          customer_id?: string | null
+          customer_name?: string
+          id?: string
+          notes?: string | null
+          org_id?: string
+          quantity_bottles?: number
+          quantity_cases?: number
+          shipped_at?: string | null
+          shipping_cost?: number
+          sku_id?: string
+          status?: Database["public"]["Enums"]["order_status"]
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          subtotal?: number
+          total?: number
+          tracking_number?: string | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_sku_id_fkey"
+            columns: ["sku_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_skus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
@@ -1230,6 +1374,56 @@ export type Database = {
             foreignKeyName: "saved_reports_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      storefront_config: {
+        Row: {
+          age_gate_enabled: boolean
+          created_at: string
+          custom_domain: string | null
+          enabled: boolean
+          id: string
+          org_id: string
+          store_description: string | null
+          store_logo_url: string | null
+          store_name: string | null
+          stripe_account_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          age_gate_enabled?: boolean
+          created_at?: string
+          custom_domain?: string | null
+          enabled?: boolean
+          id?: string
+          org_id: string
+          store_description?: string | null
+          store_logo_url?: string | null
+          store_name?: string | null
+          stripe_account_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          age_gate_enabled?: boolean
+          created_at?: string
+          custom_domain?: string | null
+          enabled?: boolean
+          id?: string
+          org_id?: string
+          store_description?: string | null
+          store_logo_url?: string | null
+          store_name?: string | null
+          stripe_account_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storefront_config_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -1753,6 +1947,14 @@ export type Database = {
         | "completed"
         | "failed"
       notification_type: "alert" | "harvest" | "system" | "task"
+      order_status:
+        | "pending"
+        | "payment_failed"
+        | "paid"
+        | "processing"
+        | "shipped"
+        | "delivered"
+        | "refunded"
       org_tier: "hobbyist" | "small_boutique" | "mid_size" | "enterprise"
       sheet_module: "vintage_lab" | "tasks" | "inventory"
       sync_schedule: "manual" | "hourly" | "daily"
@@ -1949,6 +2151,15 @@ export const Constants = {
         "failed",
       ],
       notification_type: ["alert", "harvest", "system", "task"],
+      order_status: [
+        "pending",
+        "payment_failed",
+        "paid",
+        "processing",
+        "shipped",
+        "delivered",
+        "refunded",
+      ],
       org_tier: ["hobbyist", "small_boutique", "mid_size", "enterprise"],
       sheet_module: ["vintage_lab", "tasks", "inventory"],
       sync_schedule: ["manual", "hourly", "daily"],
