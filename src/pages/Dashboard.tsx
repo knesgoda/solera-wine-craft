@@ -4,15 +4,67 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-
-const stats = [
-  { title: "Active Vintages", value: "3", icon: Wine, link: "/vintages", color: "text-primary" },
-  { title: "Upcoming Pick Windows", value: "2", icon: Calendar, link: "/vineyard-ops", color: "text-secondary" },
-  { title: "Tasks Due", value: "7", icon: CheckSquare, link: "/dashboard", color: "text-gold" },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { addDays, format } from "date-fns";
 
 const Dashboard = () => {
-  const { profile } = useAuth();
+  const { profile, organization } = useAuth();
+  const orgId = organization?.id;
+
+  const { data: activeVintages = 0 } = useQuery({
+    queryKey: ["dashboard-active-vintages", orgId],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("vintages")
+        .select("*", { count: "exact", head: true })
+        .eq("org_id", orgId!)
+        .in("status", ["in_progress", "harvested", "in_cellar"]);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!orgId,
+  });
+
+  const { data: pickWindows = 0 } = useQuery({
+    queryKey: ["dashboard-pick-windows", orgId],
+    queryFn: async () => {
+      const thirtyDays = format(addDays(new Date(), 30), "yyyy-MM-dd");
+      const today = format(new Date(), "yyyy-MM-dd");
+      const { count, error } = await supabase
+        .from("vintages")
+        .select("*", { count: "exact", head: true })
+        .eq("org_id", orgId!)
+        .eq("status", "in_progress")
+        .gte("harvest_date", today)
+        .lte("harvest_date", thirtyDays);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!orgId,
+  });
+
+  const { data: tasksDue = 0 } = useQuery({
+    queryKey: ["dashboard-tasks-due", orgId],
+    queryFn: async () => {
+      const sevenDays = format(addDays(new Date(), 7), "yyyy-MM-dd");
+      const { count, error } = await supabase
+        .from("tasks")
+        .select("*", { count: "exact", head: true })
+        .eq("org_id", orgId!)
+        .eq("status", "pending")
+        .lte("due_date", sevenDays);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!orgId,
+  });
+
+  const stats = [
+    { title: "Active Vintages", value: activeVintages, icon: Wine, link: "/vintages", color: "text-primary" },
+    { title: "Upcoming Pick Windows", value: pickWindows, icon: Calendar, link: "/vintages", color: "text-secondary" },
+    { title: "Tasks Due", value: tasksDue, icon: CheckSquare, link: "/tasks", color: "text-secondary" },
+  ];
 
   return (
     <div className="space-y-6">
@@ -23,7 +75,6 @@ const Dashboard = () => {
         <p className="text-muted-foreground mt-1">Here's what's happening at your winery</p>
       </div>
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {stats.map((stat) => (
           <Link to={stat.link} key={stat.title}>
@@ -40,7 +91,6 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Ask Solera */}
       <Card className="border-none shadow-md">
         <CardHeader>
           <CardTitle className="text-lg font-display text-foreground flex items-center gap-2">
@@ -52,11 +102,7 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="flex gap-3">
-            <Input
-              placeholder="Ask about your vineyard, vintages, or operations..."
-              className="flex-1"
-              disabled
-            />
+            <Input placeholder="Ask about your vineyard, vintages, or operations..." className="flex-1" disabled />
             <Button disabled className="shrink-0">Ask</Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">AI-powered insights coming soon</p>

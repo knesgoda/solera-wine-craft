@@ -46,7 +46,8 @@ const App = () => (
               <Route path="/tasks" element={<TaskList />} />
               <Route path="/tasks/:taskId" element={<TaskDetail />} />
               <Route path="/vineyard-ops" element={<Navigate to="/operations" replace />} />
-              <Route path="/vintages" element={<ComingSoon />} />
+              <Route path="/vintages" element={<VintageList />} />
+              <Route path="/vintages/:vintageId" element={<VintageDetail />} />
               <Route path="/cellar" element={<ComingSoon />} />
               <Route path="/ask-solera" element={<ComingSoon />} />
               <Route path="/sales" element={<ComingSoon />} />
