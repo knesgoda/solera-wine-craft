@@ -19,14 +19,17 @@ const items = [
   { title: "Barrels", url: "/cellar/barrels", icon: Cylinder, indent: true },
   { title: "Blending", url: "/cellar/blending", icon: Beaker, indent: true },
   { title: "Ask Solera", url: "/ask-solera", icon: Bot },
-  { title: "Reports", url: "/reports", icon: FileText },
+  { title: "Analytics", url: "/reports", icon: BarChart3 },
+  { title: "Weekly Reports", url: "/reports", icon: FileText, indent: true },
   { title: "Report Builder", url: "/reports/builder", icon: PenTool, indent: true },
+  { title: "Analog Explorer", url: "/analytics/analog", icon: TrendingUp, indent: true },
   { title: "Sales", url: "/sales", icon: ShoppingCart },
   { title: "Data Import", url: "/data-import", icon: Upload },
   { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Settings", url: "/settings", icon: Settings },
   { title: "Weather", url: "/settings/weather", icon: CloudSun, indent: true },
   { title: "Alerts", url: "/settings/alerts", icon: ShieldAlert, indent: true },
+  { title: "Ratings", url: "/settings/ratings", icon: Star, indent: true },
   { title: "Google Sheets", url: "/settings/integrations/google-sheets", icon: FileSpreadsheet, indent: true },
 ];
 
