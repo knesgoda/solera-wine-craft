@@ -19,6 +19,8 @@ import VineyardDetail from "./pages/operations/VineyardDetail";
 import BlockDetail from "./pages/operations/BlockDetail";
 import TaskList from "./pages/tasks/TaskList";
 import TaskDetail from "./pages/tasks/TaskDetail";
+import VintageList from "./pages/vintages/VintageList";
+import VintageDetail from "./pages/vintages/VintageDetail";
 
 const queryClient = new QueryClient();
 
