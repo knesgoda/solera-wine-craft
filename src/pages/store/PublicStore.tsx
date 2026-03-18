@@ -75,6 +75,55 @@ const PublicStore = () => {
     enabled: ageVerified,
   });
 
+  const { data: wineClubs = [] } = useQuery({
+    queryKey: ["public-wine-clubs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wine_clubs")
+        .select("*")
+        .eq("active", true);
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: ageVerified,
+  });
+
+  const [joiningClub, setJoiningClub] = useState<string | null>(null);
+  const [clubName, setClubName] = useState("");
+  const [clubEmail, setClubEmail] = useState("");
+  const [clubAddress, setClubAddress] = useState({ line1: "", city: "", state: "", zip: "" });
+
+  const handleJoinClub = async (club: any) => {
+    if (!clubName.trim() || !clubEmail.trim()) {
+      toast.error("Please fill in name and email");
+      return;
+    }
+    try {
+      const orgId = storeConfig?.org_id;
+      if (!orgId) throw new Error("Store not configured");
+      const { data, error } = await supabase.functions.invoke("club-subscribe", {
+        body: {
+          org_id: orgId,
+          club_id: club.id,
+          customer_name: clubName,
+          customer_email: clubEmail,
+          shipping_address: clubAddress.line1 ? clubAddress : null,
+          success_url: `${window.location.origin}/store?club_success=true`,
+          cancel_url: `${window.location.origin}/store?club_canceled=true`,
+        },
+      });
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url;
+    } catch (e: any) {
+      toast.error(e.message || "Failed to start subscription");
+    }
+  };
+
+  const FREQ_LABELS: Record<string, string> = {
+    monthly: "Monthly", bimonthly: "Every 2 Months", quarterly: "Quarterly",
+    twice_yearly: "Twice a Year", annual: "Annually",
+  };
+
   const addToCart = (sku: any) => {
     setCart((prev) => {
       const existing = prev.find((c) => c.sku_id === sku.id);
