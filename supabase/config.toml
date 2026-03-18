@@ -11,3 +11,15 @@ verify_jwt = false
 
 [functions.analog-insight]
 verify_jwt = false
+
+[functions.sync-commerce7]
+verify_jwt = false
+
+[functions.sync-winedirect]
+verify_jwt = false
+
+[functions.sync-shopify]
+verify_jwt = false
+
+[functions.check-compliance]
+verify_jwt = false

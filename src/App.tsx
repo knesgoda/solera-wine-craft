@@ -121,7 +121,12 @@ const App = () => (
               <Route path="/settings/storefront" element={<StorefrontSettings />} />
               <Route path="/settings/ratings" element={<RatingsSettings />} />
               <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/settings/integrations" element={<IntegrationsHub />} />
               <Route path="/settings/integrations/google-sheets" element={<GoogleSheetsSettings />} />
+              <Route path="/settings/integrations/commerce7" element={<Commerce7Settings />} />
+              <Route path="/settings/integrations/winedirect" element={<WineDirectSettings />} />
+              <Route path="/settings/integrations/shopify" element={<ShopifySettings />} />
+              <Route path="/settings/integrations/shipcompliant" element={<ShipCompliantSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
