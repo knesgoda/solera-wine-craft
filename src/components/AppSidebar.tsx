@@ -28,6 +28,8 @@ const items = [
   { title: "Store", url: "/store", icon: Store },
   { title: "Orders", url: "/orders", icon: ShoppingBag },
   { title: "Customers", url: "/customers", icon: Users },
+  { title: "Wine Club", url: "/club", icon: GlassWater },
+  { title: "Club Shipments", url: "/club/shipments", icon: Truck, indent: true },
   { title: "Sales", url: "/sales", icon: ShoppingCart },
   { title: "Data Import", url: "/data-import", icon: Upload },
   { title: "Notifications", url: "/notifications", icon: Bell },

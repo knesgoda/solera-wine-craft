@@ -106,6 +106,9 @@ const App = () => (
               <Route path="/orders/:orderId" element={<OrderDetail />} />
               <Route path="/customers" element={<CustomerList />} />
               <Route path="/customers/:customerId" element={<CustomerDetail />} />
+              <Route path="/club" element={<ClubList />} />
+              <Route path="/club/:clubId" element={<ClubDetail />} />
+              <Route path="/club/shipments" element={<ClubShipments />} />
               <Route path="/settings" element={<ComingSoon />} />
               <Route path="/settings/weather" element={<WeatherSettings />} />
               <Route path="/settings/alerts" element={<AlertSettings />} />
