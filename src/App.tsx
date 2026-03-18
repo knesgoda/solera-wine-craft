@@ -171,7 +171,7 @@ const App = () => (
               <Route path="/club/shipments" element={<ClubShipments />} />
               <Route path="/clients" element={<ClientList />} />
               <Route path="/clients/:clientId" element={<ClientDetail />} />
-              <Route path="/settings" element={<ComingSoon />} />
+              <Route path="/settings" element={<Navigate to="/settings/billing" replace />} />
               <Route path="/settings/weather" element={<WeatherSettings />} />
               <Route path="/settings/alerts" element={<AlertSettings />} />
               <Route path="/settings/ratings" element={<RatingsSettings />} />
