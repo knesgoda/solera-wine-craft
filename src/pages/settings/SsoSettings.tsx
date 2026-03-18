@@ -65,7 +65,7 @@ export default function SsoSettings() {
   const handleSave = async () => {
     if (!orgId) return;
     setSaving(true);
-    const payload = { ...form, org_id: orgId, attribute_mapping_json: form.attribute_mapping_json as any };
+    const payload = { ...form, org_id: orgId, provider: form.provider as any, attribute_mapping_json: form.attribute_mapping_json as any };
 
     let error;
     if (existingId) {
