@@ -150,15 +150,17 @@ export default function VintageDetail() {
       <Tabs defaultValue="lab" className="space-y-4">
         <TabsList className="w-full">
           <TabsTrigger value="lab" className="flex-1 gap-2">
-            <FlaskConical className="h-4 w-4" /> Lab Samples
+            <FlaskConical className="h-4 w-4" /> Lab
           </TabsTrigger>
           <TabsTrigger value="additions" className="flex-1 gap-2">
-            <FileText className="h-4 w-4" /> TTB Additions
+            <FileText className="h-4 w-4" /> TTB
+          </TabsTrigger>
+          <TabsTrigger value="anomalies" className="flex-1 gap-2">
+            <AlertTriangle className="h-4 w-4" /> Anomalies
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="lab">
-          {/* Lab Chart */}
           {labSamples.length >= 2 && (
             <Card className="mb-4">
               <CardHeader><CardTitle className="text-lg">Lab Trends</CardTitle></CardHeader>
@@ -208,6 +210,10 @@ export default function VintageDetail() {
             vintageYear={vintage.year}
             wineryName={organization?.name || "Winery"}
           />
+        </TabsContent>
+
+        <TabsContent value="anomalies">
+          <AnomaliesTab vintageId={vintageId!} />
         </TabsContent>
       </Tabs>
 

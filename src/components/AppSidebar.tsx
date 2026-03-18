@@ -19,6 +19,7 @@ const items = [
   { title: "Barrels", url: "/cellar/barrels", icon: Cylinder, indent: true },
   { title: "Blending", url: "/cellar/blending", icon: Beaker, indent: true },
   { title: "Ask Solera", url: "/ask-solera", icon: Bot },
+  { title: "Reports", url: "/reports", icon: FileText },
   { title: "Sales", url: "/sales", icon: ShoppingCart },
   { title: "Data Import", url: "/data-import", icon: Upload },
   { title: "Notifications", url: "/notifications", icon: Bell },
