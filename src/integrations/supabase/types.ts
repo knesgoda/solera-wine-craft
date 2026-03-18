@@ -445,6 +445,65 @@ export type Database = {
           },
         ]
       }
+      google_sheet_connections: {
+        Row: {
+          active: boolean
+          conflict_resolution: Database["public"]["Enums"]["conflict_resolution"]
+          created_at: string
+          google_access_token: string | null
+          google_refresh_token: string | null
+          google_sheet_id: string
+          id: string
+          last_synced_at: string | null
+          module: Database["public"]["Enums"]["sheet_module"]
+          org_id: string
+          sheet_name: string
+          sync_schedule: Database["public"]["Enums"]["sync_schedule"]
+          tab_name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          conflict_resolution?: Database["public"]["Enums"]["conflict_resolution"]
+          created_at?: string
+          google_access_token?: string | null
+          google_refresh_token?: string | null
+          google_sheet_id: string
+          id?: string
+          last_synced_at?: string | null
+          module: Database["public"]["Enums"]["sheet_module"]
+          org_id: string
+          sheet_name: string
+          sync_schedule?: Database["public"]["Enums"]["sync_schedule"]
+          tab_name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          conflict_resolution?: Database["public"]["Enums"]["conflict_resolution"]
+          created_at?: string
+          google_access_token?: string | null
+          google_refresh_token?: string | null
+          google_sheet_id?: string
+          id?: string
+          last_synced_at?: string | null
+          module?: Database["public"]["Enums"]["sheet_module"]
+          org_id?: string
+          sheet_name?: string
+          sync_schedule?: Database["public"]["Enums"]["sync_schedule"]
+          tab_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_sheet_connections_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       harvest_alerts_sent: {
         Row: {
           block_id: string
@@ -850,6 +909,50 @@ export type Database = {
           },
         ]
       }
+      sync_logs: {
+        Row: {
+          conflicts: number
+          connection_id: string
+          created_at: string
+          error_details: string | null
+          errors: number
+          id: string
+          rows_synced: number
+          status: Database["public"]["Enums"]["sync_status"]
+          synced_at: string
+        }
+        Insert: {
+          conflicts?: number
+          connection_id: string
+          created_at?: string
+          error_details?: string | null
+          errors?: number
+          id?: string
+          rows_synced?: number
+          status?: Database["public"]["Enums"]["sync_status"]
+          synced_at?: string
+        }
+        Update: {
+          conflicts?: number
+          connection_id?: string
+          created_at?: string
+          error_details?: string | null
+          errors?: number
+          id?: string
+          rows_synced?: number
+          status?: Database["public"]["Enums"]["sync_status"]
+          synced_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_logs_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "google_sheet_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assigned_to: string | null
@@ -1216,6 +1319,10 @@ export type Database = {
     }
     Functions: {
       get_import_job_org_id: { Args: { _job_id: string }; Returns: string }
+      get_sheet_connection_org_id: {
+        Args: { _connection_id: string }
+        Returns: string
+      }
       get_trial_org_id: { Args: { _trial_id: string }; Returns: string }
       get_user_org_id: { Args: { _user_id: string }; Returns: string }
       get_vessel_org_id: { Args: { _vessel_id: string }; Returns: string }
@@ -1257,6 +1364,7 @@ export type Database = {
         | "mature"
         | "replanting"
       block_status: "active" | "inactive" | "removed"
+      conflict_resolution: "solera_wins" | "sheet_wins" | "flag_for_review"
       import_source_type: "csv" | "innovint" | "vinnow"
       import_status:
         | "pending"
@@ -1267,6 +1375,9 @@ export type Database = {
         | "failed"
       notification_type: "alert" | "harvest" | "system" | "task"
       org_tier: "hobbyist" | "small_boutique" | "mid_size" | "enterprise"
+      sheet_module: "vintage_lab" | "tasks" | "inventory"
+      sync_schedule: "manual" | "hourly" | "daily"
+      sync_status: "success" | "partial" | "failed" | "running"
       task_status: "pending" | "in_progress" | "complete"
       vintage_status:
         | "planned"
@@ -1432,6 +1543,7 @@ export const Constants = {
         "replanting",
       ],
       block_status: ["active", "inactive", "removed"],
+      conflict_resolution: ["solera_wins", "sheet_wins", "flag_for_review"],
       import_source_type: ["csv", "innovint", "vinnow"],
       import_status: [
         "pending",
@@ -1443,6 +1555,9 @@ export const Constants = {
       ],
       notification_type: ["alert", "harvest", "system", "task"],
       org_tier: ["hobbyist", "small_boutique", "mid_size", "enterprise"],
+      sheet_module: ["vintage_lab", "tasks", "inventory"],
+      sync_schedule: ["manual", "hourly", "daily"],
+      sync_status: ["success", "partial", "failed", "running"],
       task_status: ["pending", "in_progress", "complete"],
       vintage_status: [
         "planned",
