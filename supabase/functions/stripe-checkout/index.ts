@@ -109,7 +109,6 @@ async function handleBillingUpgrade({
   params.append("line_items[0][price_data][product_data][description]", plan.description);
   params.append("line_items[0][price_data][unit_amount]", String(plan.amount));
   params.append("line_items[0][price_data][recurring][interval]", "month");
-  params.append("line_items[0][price_data][metadata][tier]", target_tier);
   params.append("line_items[0][quantity]", "1");
   params.append("metadata[org_id]", org_id);
   params.append("metadata[target_tier]", target_tier);

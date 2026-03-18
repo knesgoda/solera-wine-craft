@@ -261,12 +261,8 @@ async function handleSubscriptionCheckout(
 
   // Re-fetch subscription from Stripe (never trust client data)
   const sub = await stripeGet(`subscriptions/${subscriptionId}`, stripeKey);
-  const priceId = sub.items?.data?.[0]?.price?.id;
-  let tier = "pro";
-  if (priceId) {
-    const price = await stripeGet(`prices/${priceId}`, stripeKey);
-    tier = price.metadata?.tier || "pro";
-  }
+  const tier = await resolveSubscriptionTier(sub, stripeKey, metadata.target_tier);
+
 
   // Find org
   const { orgId } = await findOrgByStripeCustomer(supabase, stripeCustomerId, customerEmail);
