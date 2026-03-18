@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings, ClipboardList,
+  LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings, ClipboardList, Cylinder, Beaker,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -15,6 +15,8 @@ const items = [
   { title: "Tasks", url: "/tasks", icon: ClipboardList },
   { title: "Vintages", url: "/vintages", icon: Wine },
   { title: "Cellar", url: "/cellar", icon: Warehouse },
+  { title: "Barrels", url: "/cellar/barrels", icon: Cylinder, indent: true },
+  { title: "Blending", url: "/cellar/blending", icon: Beaker, indent: true },
   { title: "Ask Solera", url: "/ask-solera", icon: Bot },
   { title: "Sales", url: "/sales", icon: ShoppingCart },
   { title: "Data Import", url: "/data-import", icon: Upload },
