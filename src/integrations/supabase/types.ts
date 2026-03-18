@@ -618,6 +618,66 @@ export type Database = {
           },
         ]
       }
+      blog_posts: {
+        Row: {
+          author_name: string
+          category: string
+          content_markdown: string
+          created_at: string
+          excerpt: string | null
+          featured: boolean
+          id: string
+          meta_description: string | null
+          meta_title: string | null
+          og_image_url: string | null
+          published: boolean
+          published_at: string | null
+          reading_time_minutes: number
+          slug: string
+          tags_array: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_name?: string
+          category?: string
+          content_markdown?: string
+          created_at?: string
+          excerpt?: string | null
+          featured?: boolean
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          og_image_url?: string | null
+          published?: boolean
+          published_at?: string | null
+          reading_time_minutes?: number
+          slug: string
+          tags_array?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string
+          category?: string
+          content_markdown?: string
+          created_at?: string
+          excerpt?: string | null
+          featured?: boolean
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          og_image_url?: string | null
+          published?: boolean
+          published_at?: string | null
+          reading_time_minutes?: number
+          slug?: string
+          tags_array?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       changelogs: {
         Row: {
           created_at: string
