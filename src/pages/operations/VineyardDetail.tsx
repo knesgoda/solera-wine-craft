@@ -8,10 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, ChevronRight, MapPin, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, ChevronRight, MapPin, Trash2, CloudSun, Grid3x3 } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { WeatherTab } from "@/components/weather/WeatherTab";
 
 type LifecycleStage = Database["public"]["Enums"]["block_lifecycle_stage"];
 
@@ -196,44 +198,61 @@ const VineyardDetail = () => {
         </div>
       </div>
 
-      {/* Blocks */}
-      {loadingBlocks ? (
-        <div className="animate-pulse text-muted-foreground">Loading blocks...</div>
-      ) : blocks?.length === 0 ? (
-        <Card className="border-dashed border-2 border-border">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <h3 className="font-display text-lg font-semibold mb-2">No blocks yet</h3>
-            <p className="text-muted-foreground mb-4">Add blocks to track individual vineyard sections</p>
-            <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />Add Block</Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {blocks?.map((block) => (
-            <Link to={`/operations/${vineyardId}/blocks/${block.id}`} key={block.id}>
-              <Card className="hover:shadow-lg transition-shadow border-none shadow-md cursor-pointer group">
-                <CardHeader className="flex flex-row items-start justify-between pb-2">
-                  <div>
-                    <CardTitle className="text-lg font-display">{block.name}</CardTitle>
-                    {block.variety && <p className="text-sm text-muted-foreground mt-1">{block.variety}</p>}
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {block.lifecycle_stage && (
-                      <Badge variant="secondary" className={LIFECYCLE_COLORS[block.lifecycle_stage]}>
-                        {LIFECYCLE_LABELS[block.lifecycle_stage]}
-                      </Badge>
-                    )}
-                    {block.acres && <span className="text-sm text-muted-foreground">{block.acres} acres</span>}
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      )}
+      {/* Tabs: Blocks + Weather */}
+      <Tabs defaultValue="blocks" className="space-y-4">
+        <TabsList className="w-full">
+          <TabsTrigger value="blocks" className="flex-1 gap-2">
+            <Grid3x3 className="h-4 w-4" /> Blocks
+          </TabsTrigger>
+          <TabsTrigger value="weather" className="flex-1 gap-2">
+            <CloudSun className="h-4 w-4" /> Weather
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="blocks">
+          {loadingBlocks ? (
+            <div className="animate-pulse text-muted-foreground">Loading blocks...</div>
+          ) : blocks?.length === 0 ? (
+            <Card className="border-dashed border-2 border-border">
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <h3 className="font-display text-lg font-semibold mb-2">No blocks yet</h3>
+                <p className="text-muted-foreground mb-4">Add blocks to track individual vineyard sections</p>
+                <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />Add Block</Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {blocks?.map((block) => (
+                <Link to={`/operations/${vineyardId}/blocks/${block.id}`} key={block.id}>
+                  <Card className="hover:shadow-lg transition-shadow border-none shadow-md cursor-pointer group">
+                    <CardHeader className="flex flex-row items-start justify-between pb-2">
+                      <div>
+                        <CardTitle className="text-lg font-display">{block.name}</CardTitle>
+                        {block.variety && <p className="text-sm text-muted-foreground mt-1">{block.variety}</p>}
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {block.lifecycle_stage && (
+                          <Badge variant="secondary" className={LIFECYCLE_COLORS[block.lifecycle_stage]}>
+                            {LIFECYCLE_LABELS[block.lifecycle_stage]}
+                          </Badge>
+                        )}
+                        {block.acres && <span className="text-sm text-muted-foreground">{block.acres} acres</span>}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="weather">
+          <WeatherTab vineyardId={vineyardId!} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

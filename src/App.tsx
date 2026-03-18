@@ -19,6 +19,7 @@ import VesselDetail from "./pages/cellar/VesselDetail";
 import BarrelInventory from "./pages/cellar/BarrelInventory";
 import BlendingTrials from "./pages/cellar/BlendingTrials";
 import TrialDetail from "./pages/cellar/TrialDetail";
+import WeatherSettings from "./pages/settings/WeatherSettings";
 import NotFound from "./pages/NotFound";
 import VineyardList from "./pages/operations/VineyardList";
 import VineyardDetail from "./pages/operations/VineyardDetail";
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="/sales" element={<ComingSoon />} />
               <Route path="/data-import" element={<DataImport />} />
               <Route path="/settings" element={<ComingSoon />} />
+              <Route path="/settings/weather" element={<WeatherSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
