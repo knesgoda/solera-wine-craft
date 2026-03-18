@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ShoppingCart, Plus, Minus, X, Wine, Loader2 } from "lucide-react";
+import { CardHeader, CardTitle } from "@/components/ui/card";
+import { ShoppingCart, Plus, Minus, X, Wine, Loader2, GlassWater } from "lucide-react";
 import { toast } from "sonner";
 
 interface CartItem {
@@ -73,6 +74,55 @@ const PublicStore = () => {
     },
     enabled: ageVerified,
   });
+
+  const { data: wineClubs = [] } = useQuery({
+    queryKey: ["public-wine-clubs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wine_clubs")
+        .select("*")
+        .eq("active", true);
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: ageVerified,
+  });
+
+  const [joiningClub, setJoiningClub] = useState<string | null>(null);
+  const [clubName, setClubName] = useState("");
+  const [clubEmail, setClubEmail] = useState("");
+  const [clubAddress, setClubAddress] = useState({ line1: "", city: "", state: "", zip: "" });
+
+  const handleJoinClub = async (club: any) => {
+    if (!clubName.trim() || !clubEmail.trim()) {
+      toast.error("Please fill in name and email");
+      return;
+    }
+    try {
+      const orgId = storeConfig?.org_id;
+      if (!orgId) throw new Error("Store not configured");
+      const { data, error } = await supabase.functions.invoke("club-subscribe", {
+        body: {
+          org_id: orgId,
+          club_id: club.id,
+          customer_name: clubName,
+          customer_email: clubEmail,
+          shipping_address: clubAddress.line1 ? clubAddress : null,
+          success_url: `${window.location.origin}/store?club_success=true`,
+          cancel_url: `${window.location.origin}/store?club_canceled=true`,
+        },
+      });
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url;
+    } catch (e: any) {
+      toast.error(e.message || "Failed to start subscription");
+    }
+  };
+
+  const FREQ_LABELS: Record<string, string> = {
+    monthly: "Monthly", bimonthly: "Every 2 Months", quarterly: "Quarterly",
+    twice_yearly: "Twice a Year", annual: "Annually",
+  };
 
   const addToCart = (sku: any) => {
     setCart((prev) => {
@@ -164,6 +214,12 @@ const PublicStore = () => {
       window.history.replaceState({}, "", "/store");
     } else if (params.get("canceled") === "true") {
       toast.info("Checkout canceled");
+      window.history.replaceState({}, "", "/store");
+    } else if (params.get("club_success") === "true") {
+      toast.success("Welcome to the wine club! Check your email for details.");
+      window.history.replaceState({}, "", "/store");
+    } else if (params.get("club_canceled") === "true") {
+      toast.info("Club signup canceled");
       window.history.replaceState({}, "", "/store");
     }
   }, []);
@@ -294,7 +350,63 @@ const PublicStore = () => {
             <p className="text-lg">No wines available at this time</p>
           </div>
         )}
+
+        {/* Wine Club Section */}
+        {wineClubs.length > 0 && (
+          <div className="mt-16">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-display font-bold text-foreground flex items-center justify-center gap-2">
+                <GlassWater className="h-6 w-6 text-primary" /> Join Our Wine Club
+              </h2>
+              <p className="text-muted-foreground mt-2">Exclusive selections delivered to your door</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {wineClubs.map((club: any) => (
+                <Card key={club.id} className="border-none shadow-md hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="font-display">{club.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {club.description && <p className="text-sm text-muted-foreground">{club.description}</p>}
+                    <div className="text-sm space-y-1">
+                      <p><span className="text-muted-foreground">Frequency:</span> {FREQ_LABELS[club.frequency] || club.frequency}</p>
+                      <p><span className="text-muted-foreground">Bottles:</span> {club.bottles_per_shipment} per shipment</p>
+                    </div>
+                    <div className="flex items-center justify-between pt-2">
+                      <span className="text-xl font-bold text-foreground">${Number(club.price_per_shipment).toFixed(2)}</span>
+                      <Button onClick={() => setJoiningClub(club.id)}>Join Club</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
+
+      {/* Club Signup Dialog */}
+      <Dialog open={!!joiningClub} onOpenChange={(open) => !open && setJoiningClub(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle className="font-display">Join Wine Club</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div><Label>Full Name *</Label><Input value={clubName} onChange={(e) => setClubName(e.target.value)} placeholder="John Smith" /></div>
+            <div><Label>Email *</Label><Input type="email" value={clubEmail} onChange={(e) => setClubEmail(e.target.value)} placeholder="john@example.com" /></div>
+            <div className="space-y-2">
+              <Label>Shipping Address</Label>
+              <Input placeholder="Address" value={clubAddress.line1} onChange={(e) => setClubAddress({ ...clubAddress, line1: e.target.value })} />
+              <div className="grid grid-cols-3 gap-2">
+                <Input placeholder="City" value={clubAddress.city} onChange={(e) => setClubAddress({ ...clubAddress, city: e.target.value })} />
+                <Input placeholder="State" value={clubAddress.state} onChange={(e) => setClubAddress({ ...clubAddress, state: e.target.value })} />
+                <Input placeholder="ZIP" value={clubAddress.zip} onChange={(e) => setClubAddress({ ...clubAddress, zip: e.target.value })} />
+              </div>
+            </div>
+            <Button className="w-full" onClick={() => { const club = wineClubs.find((c: any) => c.id === joiningClub); if (club) handleJoinClub(club); }}>
+              Subscribe — ${Number(wineClubs.find((c: any) => c.id === joiningClub)?.price_per_shipment || 0).toFixed(2)}/shipment
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">You'll be redirected to Stripe for secure payment</p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Checkout dialog */}
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>

@@ -36,6 +36,9 @@ import OrderList from "./pages/orders/OrderList";
 import OrderDetail from "./pages/orders/OrderDetail";
 import CustomerList from "./pages/customers/CustomerList";
 import CustomerDetail from "./pages/customers/CustomerDetail";
+import ClubList from "./pages/club/ClubList";
+import ClubDetail from "./pages/club/ClubDetail";
+import ClubShipments from "./pages/club/ClubShipments";
 import NotFound from "./pages/NotFound";
 import VineyardList from "./pages/operations/VineyardList";
 import VineyardDetail from "./pages/operations/VineyardDetail";
@@ -103,6 +106,9 @@ const App = () => (
               <Route path="/orders/:orderId" element={<OrderDetail />} />
               <Route path="/customers" element={<CustomerList />} />
               <Route path="/customers/:customerId" element={<CustomerDetail />} />
+              <Route path="/club" element={<ClubList />} />
+              <Route path="/club/:clubId" element={<ClubDetail />} />
+              <Route path="/club/shipments" element={<ClubShipments />} />
               <Route path="/settings" element={<ComingSoon />} />
               <Route path="/settings/weather" element={<WeatherSettings />} />
               <Route path="/settings/alerts" element={<AlertSettings />} />
