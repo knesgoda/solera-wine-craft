@@ -22,8 +22,21 @@ import TaskList from "./pages/tasks/TaskList";
 import TaskDetail from "./pages/tasks/TaskDetail";
 import VintageList from "./pages/vintages/VintageList";
 import VintageDetail from "./pages/vintages/VintageDetail";
+import { OfflineBanner } from "./components/OfflineBanner";
+import { PushPrompt } from "./components/PushPrompt";
+import { useOfflineSync } from "./hooks/useOfflineSync";
 
 const queryClient = new QueryClient();
+
+const AppInner = () => {
+  const { isOnline, pendingCount } = useOfflineSync();
+  return (
+    <>
+      <OfflineBanner isOnline={isOnline} pendingCount={pendingCount} />
+      <PushPrompt />
+    </>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -32,6 +45,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <AppInner />
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/login" element={<Login />} />

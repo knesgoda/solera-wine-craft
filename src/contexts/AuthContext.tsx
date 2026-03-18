@@ -10,6 +10,7 @@ interface Profile {
   last_name: string | null;
   email: string | null;
   avatar_url: string | null;
+  push_subscription: any | null;
 }
 
 interface Organization {

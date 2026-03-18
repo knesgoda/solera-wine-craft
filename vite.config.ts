@@ -2,8 +2,8 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { VitePWA } from "vite-plugin-pwa";
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
@@ -12,7 +12,52 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [
+    react(),
+    mode === "development" && componentTagger(),
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: ["favicon.ico", "icon-192.png", "icon-512.png"],
+      manifest: {
+        name: "Solera",
+        short_name: "Solera",
+        description: "Winery Management Platform",
+        theme_color: "#6B1B2A",
+        background_color: "#F5F0E8",
+        display: "standalone",
+        start_url: "/",
+        icons: [
+          { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+        ],
+      },
+      workbox: {
+        navigateFallbackDenylist: [/^\/~oauth/],
+        runtimeCaching: [
+          {
+            urlPattern: /\/rest\/v1\/tasks/,
+            handler: "NetworkFirst",
+            options: { cacheName: "tasks-cache", expiration: { maxEntries: 100, maxAgeSeconds: 86400 } },
+          },
+          {
+            urlPattern: /\/rest\/v1\/lab_samples/,
+            handler: "NetworkFirst",
+            options: { cacheName: "lab-cache", expiration: { maxEntries: 200, maxAgeSeconds: 86400 } },
+          },
+          {
+            urlPattern: /\/rest\/v1\/blocks/,
+            handler: "StaleWhileRevalidate",
+            options: { cacheName: "blocks-cache", expiration: { maxEntries: 100, maxAgeSeconds: 86400 } },
+          },
+          {
+            urlPattern: /\/rest\/v1\/vintages/,
+            handler: "StaleWhileRevalidate",
+            options: { cacheName: "vintages-cache", expiration: { maxEntries: 100, maxAgeSeconds: 86400 } },
+          },
+        ],
+      },
+    }),
+  ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
