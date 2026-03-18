@@ -90,6 +90,7 @@ import TermsPage from "./pages/marketing/TermsPage";
 import BlogIndex from "./pages/marketing/BlogIndex";
 import BlogPost from "./pages/marketing/BlogPost";
 import BlogAdmin from "./pages/admin/BlogAdmin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import ContactPage from "./pages/marketing/ContactPage";
 
 const queryClient = new QueryClient();
@@ -128,6 +129,7 @@ const App = () => (
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/contact" element={<ContactPage />} />
             </Route>
+            <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/blog" element={<BlogAdmin />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
