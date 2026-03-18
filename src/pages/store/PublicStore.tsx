@@ -457,6 +457,13 @@ const PublicStore = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Footer */}
+      <footer className="mt-16 py-8 border-t text-center">
+        <p className="text-sm text-muted-foreground">
+          Powered by <a href="https://solera.vin" className="text-primary hover:underline font-medium">Solera</a> — Winery management from vine to bottle to doorstep.
+        </p>
+      </footer>
     </div>
   );
 };
