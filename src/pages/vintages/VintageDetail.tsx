@@ -152,6 +152,7 @@ export default function VintageDetail() {
               </Select>
             </div>
           )}
+        </CardContent>
       </Card>
 
       {/* Milestone Timeline */}
