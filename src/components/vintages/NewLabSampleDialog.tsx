@@ -34,7 +34,7 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange }: Props) {
 
   const create = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("lab_samples").insert({
+      const record = {
         vintage_id: vintageId,
         sampled_at: new Date(sampledAt).toISOString(),
         brix: brix ? parseFloat(brix) : null,
@@ -46,8 +46,14 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange }: Props) {
         alcohol: alcohol ? parseFloat(alcohol) : null,
         rs: rs ? parseFloat(rs) : null,
         notes: notes || null,
-      } as any);
+      };
+      const { error } = await supabase.from("lab_samples").insert(record as any);
       if (error) throw error;
+
+      // Evaluate alert rules asynchronously
+      supabase.functions.invoke("evaluate-alerts", {
+        body: { type: "lab_sample", record },
+      }).catch((e) => console.error("Alert evaluation failed:", e));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["lab-samples", vintageId] });
