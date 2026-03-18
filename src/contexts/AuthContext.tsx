@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 
 interface Profile {
   id: string;
@@ -51,21 +50,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data: profileData } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
 
+    if (profileError) {
+      console.error("fetchProfile error:", profileError.message);
+      return;
+    }
+
     if (profileData) {
       setProfile(profileData);
       if (profileData.org_id) {
-        const { data: orgData } = await supabase
+        const { data: orgData, error: orgError } = await supabase
           .from("organizations")
           .select("*")
           .eq("id", profileData.org_id)
           .single();
-        setOrganization(orgData);
+        if (orgError) {
+          console.error("fetchOrg error:", orgError.message);
+        } else {
+          setOrganization(orgData);
+        }
       }
     }
   };
@@ -88,15 +96,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
       }
     );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-      setLoading(false);
-    });
 
     return () => subscription.unsubscribe();
   }, []);
