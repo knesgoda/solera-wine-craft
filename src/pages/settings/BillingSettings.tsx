@@ -1,11 +1,16 @@
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, CreditCard, ArrowRight, Info } from "lucide-react";
+import { Check, CreditCard, ArrowRight, Info, Loader2 } from "lucide-react";
 import { getTierDisplay } from "@/hooks/useTierGate";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const PLANS = [
   {
@@ -34,6 +39,8 @@ const BillingSettings = () => {
   const { organization } = useAuth();
   const currentTier = organization?.tier || "hobbyist";
   const hasStripeCustomer = !!(organization as any)?.stripe_customer_id;
+  const [downgradeTarget, setDowngradeTarget] = useState<string | null>(null);
+  const [downgradeLoading, setDowngradeLoading] = useState(false);
 
   const handleManageBilling = async () => {
     if (!hasStripeCustomer) return;
@@ -45,6 +52,30 @@ const BillingSettings = () => {
       if (data?.url) window.open(data.url, "_blank");
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleDowngrade = (tier: string) => {
+    if (!hasStripeCustomer) {
+      toast({ title: "No active subscription", description: "No active subscription to downgrade.", variant: "destructive" });
+      return;
+    }
+    setDowngradeTarget(tier);
+  };
+
+  const confirmDowngrade = async () => {
+    setDowngradeLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("stripe-portal", {
+        body: { org_id: organization?.id },
+      });
+      if (error) throw error;
+      if (data?.url) window.open(data.url, "_blank");
+    } catch (e: any) {
+      toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" });
+    } finally {
+      setDowngradeLoading(false);
+      setDowngradeTarget(null);
     }
   };
 
@@ -125,7 +156,7 @@ const BillingSettings = () => {
                     Upgrade <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 ) : (
-                  <Button variant="ghost" className="w-full text-muted-foreground" onClick={handleManageBilling}>
+                  <Button variant="ghost" className="w-full text-muted-foreground" onClick={() => handleDowngrade(plan.tier)}>
                     Downgrade
                   </Button>
                 )}
@@ -134,6 +165,23 @@ const BillingSettings = () => {
           );
         })}
       </div>
+
+      <AlertDialog open={!!downgradeTarget} onOpenChange={(open) => !open && setDowngradeTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Downgrade to {downgradeTarget ? getTierDisplay(downgradeTarget) : ""}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your plan will change at the end of your current billing period. You may lose access to some features.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={downgradeLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDowngrade} disabled={downgradeLoading}>
+              {downgradeLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading…</> : "Confirm Downgrade"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
