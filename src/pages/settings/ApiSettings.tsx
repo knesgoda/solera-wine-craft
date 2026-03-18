@@ -126,7 +126,7 @@ export default function ApiSettings() {
 
     const { error } = await supabase.from("webhook_subscriptions").insert({
       org_id: organization!.id,
-      event_type: newWebhookEvent,
+      event_type: newWebhookEvent as any,
       endpoint_url: newWebhookUrl,
       secret_hash: hash,
     });
