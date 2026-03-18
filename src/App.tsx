@@ -62,6 +62,8 @@ import ClientVintagesList from "./pages/client/ClientVintagesList";
 import ClientVintageDetail from "./pages/client/ClientVintageDetail";
 import ClientDocuments from "./pages/client/ClientDocuments";
 import ClientMessages from "./pages/client/ClientMessages";
+import ComplianceSettings from "./pages/compliance/ComplianceSettings";
+import ComplianceReports from "./pages/compliance/ComplianceReports";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PushPrompt } from "./components/PushPrompt";
 import { useOfflineSync } from "./hooks/useOfflineSync";
@@ -139,6 +141,8 @@ const App = () => (
               <Route path="/settings/integrations/winedirect" element={<WineDirectSettings />} />
               <Route path="/settings/integrations/shopify" element={<ShopifySettings />} />
               <Route path="/settings/integrations/shipcompliant" element={<ShipCompliantSettings />} />
+              <Route path="/compliance" element={<ComplianceReports />} />
+              <Route path="/compliance/settings" element={<ComplianceSettings />} />
             </Route>
             {/* Client Portal Routes */}
             <Route path="/client/login" element={<ClientLogin />} />
