@@ -48,7 +48,7 @@ export function MarketingNavbar() {
             <Link
               key={l.to}
               to={l.to}
-              className="text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+              className={`text-sm font-medium ${textMuted} hover:${textClass} transition-colors`}
             >
               {l.label}
             </Link>
