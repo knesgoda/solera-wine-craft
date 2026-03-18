@@ -25,8 +25,9 @@ export default function VintageDetail() {
   const { vintageId } = useParams<{ vintageId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { organization } = useAuth();
+  const { organization, profile } = useAuth();
   const [labDialogOpen, setLabDialogOpen] = useState(false);
+  const orgId = profile?.org_id;
 
   const { data: vintage, isLoading } = useQuery({
     queryKey: ["vintage", vintageId],
