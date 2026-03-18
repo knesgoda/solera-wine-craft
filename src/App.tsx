@@ -19,6 +19,8 @@ import VineyardDetail from "./pages/operations/VineyardDetail";
 import BlockDetail from "./pages/operations/BlockDetail";
 import TaskList from "./pages/tasks/TaskList";
 import TaskDetail from "./pages/tasks/TaskDetail";
+import VintageList from "./pages/vintages/VintageList";
+import VintageDetail from "./pages/vintages/VintageDetail";
 
 const queryClient = new QueryClient();
 
@@ -44,7 +46,8 @@ const App = () => (
               <Route path="/tasks" element={<TaskList />} />
               <Route path="/tasks/:taskId" element={<TaskDetail />} />
               <Route path="/vineyard-ops" element={<Navigate to="/operations" replace />} />
-              <Route path="/vintages" element={<ComingSoon />} />
+              <Route path="/vintages" element={<VintageList />} />
+              <Route path="/vintages/:vintageId" element={<VintageDetail />} />
               <Route path="/cellar" element={<ComingSoon />} />
               <Route path="/ask-solera" element={<ComingSoon />} />
               <Route path="/sales" element={<ComingSoon />} />
