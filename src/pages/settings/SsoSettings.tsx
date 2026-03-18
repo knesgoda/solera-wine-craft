@@ -253,7 +253,7 @@ export default function SsoSettings() {
             <Switch checked={form.enforce_sso} onCheckedChange={(v) => setForm((f) => ({ ...f, enforce_sso: v }))} />
           </div>
           {form.enforce_sso && (
-            <div className="p-3 rounded-md bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm flex items-start gap-2">
+            <div className="p-3 rounded-md bg-accent/10 border border-accent/30 text-accent-foreground text-sm flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
               When enforced, all non-owner users must use SSO. The organization owner retains email/password access as a fallback.
             </div>
