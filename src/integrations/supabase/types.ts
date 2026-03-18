@@ -2054,6 +2054,9 @@ export type Database = {
           name: string
           needs_onboarding_call: boolean
           onboarding_completed: boolean
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_status: string | null
           tier: Database["public"]["Enums"]["org_tier"] | null
           type: string | null
           updated_at: string
@@ -2065,6 +2068,9 @@ export type Database = {
           name: string
           needs_onboarding_call?: boolean
           onboarding_completed?: boolean
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
           tier?: Database["public"]["Enums"]["org_tier"] | null
           type?: string | null
           updated_at?: string
@@ -2076,6 +2082,9 @@ export type Database = {
           name?: string
           needs_onboarding_call?: boolean
           onboarding_completed?: boolean
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
           tier?: Database["public"]["Enums"]["org_tier"] | null
           type?: string | null
           updated_at?: string
