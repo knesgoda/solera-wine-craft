@@ -21,6 +21,8 @@ interface ConfigRow {
   longitude: number | null;
   gdd_base_temp_f: number;
   active: boolean;
+  weather_source: string;
+  tomorrow_io_api_key: string | null;
 }
 
 export default function WeatherSettings() {
