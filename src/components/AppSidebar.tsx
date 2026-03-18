@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings, ClipboardList,
+  LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings, ClipboardList, Cylinder, Beaker,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -15,6 +15,8 @@ const items = [
   { title: "Tasks", url: "/tasks", icon: ClipboardList },
   { title: "Vintages", url: "/vintages", icon: Wine },
   { title: "Cellar", url: "/cellar", icon: Warehouse },
+  { title: "Barrels", url: "/cellar/barrels", icon: Cylinder, indent: true },
+  { title: "Blending", url: "/cellar/blending", icon: Beaker, indent: true },
   { title: "Ask Solera", url: "/ask-solera", icon: Bot },
   { title: "Sales", url: "/sales", icon: ShoppingCart },
   { title: "Data Import", url: "/data-import", icon: Upload },
@@ -41,12 +43,12 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
-                      end={item.url === "/dashboard"}
-                      className="hover:bg-sidebar-accent/50 text-sidebar-foreground/80 py-3"
+                      end={item.url === "/dashboard" || item.url === "/cellar"}
+                      className={`hover:bg-sidebar-accent/50 text-sidebar-foreground/80 py-3 ${(item as any).indent && !collapsed ? "pl-10" : ""}`}
                       activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
                     >
-                      <item.icon className="mr-3 h-5 w-5 shrink-0" />
-                      {!collapsed && <span>{item.title}</span>}
+                      <item.icon className={`mr-3 h-5 w-5 shrink-0 ${(item as any).indent ? "h-4 w-4" : ""}`} />
+                      {!collapsed && <span className={(item as any).indent ? "text-sm" : ""}>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

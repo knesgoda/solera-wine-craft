@@ -14,11 +14,49 @@ export type Database = {
   }
   public: {
     Tables: {
+      barrel_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "barrel_groups_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       barrels: {
         Row: {
+          barrel_group_id: string | null
           barrel_id: string | null
           cooperage: string | null
           created_at: string
+          empty_date: string | null
+          fill_date: string | null
           id: string
           org_id: string
           size_liters: number | null
@@ -30,9 +68,12 @@ export type Database = {
           vintage_id: string | null
         }
         Insert: {
+          barrel_group_id?: string | null
           barrel_id?: string | null
           cooperage?: string | null
           created_at?: string
+          empty_date?: string | null
+          fill_date?: string | null
           id?: string
           org_id: string
           size_liters?: number | null
@@ -44,9 +85,12 @@ export type Database = {
           vintage_id?: string | null
         }
         Update: {
+          barrel_group_id?: string | null
           barrel_id?: string | null
           cooperage?: string | null
           created_at?: string
+          empty_date?: string | null
+          fill_date?: string | null
           id?: string
           org_id?: string
           size_liters?: number | null
@@ -59,6 +103,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "barrels_barrel_group_id_fkey"
+            columns: ["barrel_group_id"]
+            isOneToOne: false
+            referencedRelation: "barrel_groups"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "barrels_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
@@ -67,6 +118,112 @@ export type Database = {
           },
           {
             foreignKeyName: "barrels_vintage_id_fkey"
+            columns: ["vintage_id"]
+            isOneToOne: false
+            referencedRelation: "vintages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blending_trial_lots: {
+        Row: {
+          barrel_id: string | null
+          created_at: string
+          id: string
+          percentage: number
+          trial_id: string
+          vintage_id: string | null
+          volume_liters: number | null
+        }
+        Insert: {
+          barrel_id?: string | null
+          created_at?: string
+          id?: string
+          percentage: number
+          trial_id: string
+          vintage_id?: string | null
+          volume_liters?: number | null
+        }
+        Update: {
+          barrel_id?: string | null
+          created_at?: string
+          id?: string
+          percentage?: number
+          trial_id?: string
+          vintage_id?: string | null
+          volume_liters?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blending_trial_lots_barrel_id_fkey"
+            columns: ["barrel_id"]
+            isOneToOne: false
+            referencedRelation: "barrels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blending_trial_lots_trial_id_fkey"
+            columns: ["trial_id"]
+            isOneToOne: false
+            referencedRelation: "blending_trials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blending_trial_lots_vintage_id_fkey"
+            columns: ["vintage_id"]
+            isOneToOne: false
+            referencedRelation: "vintages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blending_trials: {
+        Row: {
+          created_at: string
+          finalized: boolean
+          id: string
+          name: string
+          notes: string | null
+          org_id: string
+          stars: number | null
+          total_volume_liters: number | null
+          updated_at: string
+          vintage_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          finalized?: boolean
+          id?: string
+          name: string
+          notes?: string | null
+          org_id: string
+          stars?: number | null
+          total_volume_liters?: number | null
+          updated_at?: string
+          vintage_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          finalized?: boolean
+          id?: string
+          name?: string
+          notes?: string | null
+          org_id?: string
+          stars?: number | null
+          total_volume_liters?: number | null
+          updated_at?: string
+          vintage_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blending_trials_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blending_trials_vintage_id_fkey"
             columns: ["vintage_id"]
             isOneToOne: false
             referencedRelation: "vintages"
@@ -139,6 +296,54 @@ export type Database = {
           },
         ]
       }
+      fermentation_logs: {
+        Row: {
+          brix: number | null
+          created_at: string
+          id: string
+          logged_at: string
+          notes: string | null
+          temp_f: number | null
+          vessel_id: string
+          vintage_id: string | null
+        }
+        Insert: {
+          brix?: number | null
+          created_at?: string
+          id?: string
+          logged_at?: string
+          notes?: string | null
+          temp_f?: number | null
+          vessel_id: string
+          vintage_id?: string | null
+        }
+        Update: {
+          brix?: number | null
+          created_at?: string
+          id?: string
+          logged_at?: string
+          notes?: string | null
+          temp_f?: number | null
+          vessel_id?: string
+          vintage_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fermentation_logs_vessel_id_fkey"
+            columns: ["vessel_id"]
+            isOneToOne: false
+            referencedRelation: "fermentation_vessels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fermentation_logs_vintage_id_fkey"
+            columns: ["vintage_id"]
+            isOneToOne: false
+            referencedRelation: "vintages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fermentation_vessels: {
         Row: {
           capacity_liters: number | null
@@ -146,8 +351,11 @@ export type Database = {
           id: string
           material: string | null
           name: string
+          notes: string | null
           org_id: string
+          temp_controlled: boolean
           updated_at: string
+          vintage_id: string | null
         }
         Insert: {
           capacity_liters?: number | null
@@ -155,8 +363,11 @@ export type Database = {
           id?: string
           material?: string | null
           name: string
+          notes?: string | null
           org_id: string
+          temp_controlled?: boolean
           updated_at?: string
+          vintage_id?: string | null
         }
         Update: {
           capacity_liters?: number | null
@@ -164,8 +375,11 @@ export type Database = {
           id?: string
           material?: string | null
           name?: string
+          notes?: string | null
           org_id?: string
+          temp_controlled?: boolean
           updated_at?: string
+          vintage_id?: string | null
         }
         Relationships: [
           {
@@ -173,6 +387,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fermentation_vessels_vintage_id_fkey"
+            columns: ["vintage_id"]
+            isOneToOne: false
+            referencedRelation: "vintages"
             referencedColumns: ["id"]
           },
         ]
@@ -744,7 +965,9 @@ export type Database = {
     }
     Functions: {
       get_import_job_org_id: { Args: { _job_id: string }; Returns: string }
+      get_trial_org_id: { Args: { _trial_id: string }; Returns: string }
       get_user_org_id: { Args: { _user_id: string }; Returns: string }
+      get_vessel_org_id: { Args: { _vessel_id: string }; Returns: string }
       get_vineyard_org_id: { Args: { _vineyard_id: string }; Returns: string }
       get_vintage_org_id: { Args: { _vintage_id: string }; Returns: string }
       has_role: {

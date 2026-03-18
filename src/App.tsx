@@ -14,6 +14,11 @@ import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import ComingSoon from "./pages/ComingSoon";
 import DataImport from "./pages/DataImport";
+import CellarDashboard from "./pages/cellar/CellarDashboard";
+import VesselDetail from "./pages/cellar/VesselDetail";
+import BarrelInventory from "./pages/cellar/BarrelInventory";
+import BlendingTrials from "./pages/cellar/BlendingTrials";
+import TrialDetail from "./pages/cellar/TrialDetail";
 import NotFound from "./pages/NotFound";
 import VineyardList from "./pages/operations/VineyardList";
 import VineyardDetail from "./pages/operations/VineyardDetail";
@@ -63,7 +68,11 @@ const App = () => (
               <Route path="/vineyard-ops" element={<Navigate to="/operations" replace />} />
               <Route path="/vintages" element={<VintageList />} />
               <Route path="/vintages/:vintageId" element={<VintageDetail />} />
-              <Route path="/cellar" element={<ComingSoon />} />
+              <Route path="/cellar" element={<CellarDashboard />} />
+              <Route path="/cellar/vessels/:vesselId" element={<VesselDetail />} />
+              <Route path="/cellar/barrels" element={<BarrelInventory />} />
+              <Route path="/cellar/blending" element={<BlendingTrials />} />
+              <Route path="/cellar/blending/:trialId" element={<TrialDetail />} />
               <Route path="/ask-solera" element={<ComingSoon />} />
               <Route path="/sales" element={<ComingSoon />} />
               <Route path="/data-import" element={<DataImport />} />
