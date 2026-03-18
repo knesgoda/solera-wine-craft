@@ -39,6 +39,8 @@ const BillingSettings = () => {
   const { organization } = useAuth();
   const currentTier = organization?.tier || "hobbyist";
   const hasStripeCustomer = !!(organization as any)?.stripe_customer_id;
+  const [downgradeTarget, setDowngradeTarget] = useState<string | null>(null);
+  const [downgradeLoading, setDowngradeLoading] = useState(false);
 
   const handleManageBilling = async () => {
     if (!hasStripeCustomer) return;
