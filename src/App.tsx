@@ -52,7 +52,7 @@ const App = () => (
               <Route path="/cellar" element={<ComingSoon />} />
               <Route path="/ask-solera" element={<ComingSoon />} />
               <Route path="/sales" element={<ComingSoon />} />
-              <Route path="/data-import" element={<ComingSoon />} />
+              <Route path="/data-import" element={<DataImport />} />
               <Route path="/settings" element={<ComingSoon />} />
             </Route>
             <Route path="*" element={<NotFound />} />
