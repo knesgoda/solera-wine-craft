@@ -57,10 +57,10 @@ export function MarketingNavbar() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/10" asChild>
+          <Button variant="ghost" className={`${textClass} ${solid ? "hover:bg-primary-foreground/10" : "hover:bg-foreground/10"}`} asChild>
             <Link to="/login">Log In</Link>
           </Button>
-          <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90" asChild>
+          <Button className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>
             <Link to="/signup">Start Free</Link>
           </Button>
         </div>
