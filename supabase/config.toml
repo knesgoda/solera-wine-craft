@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.generate-ttb-report]
 verify_jwt = false
+
+[functions.api-v1]
+verify_jwt = false
+
+[functions.webhook-dispatch]
+verify_jwt = false
