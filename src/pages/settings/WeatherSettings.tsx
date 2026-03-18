@@ -110,6 +110,8 @@ export default function WeatherSettings() {
 
   const isLoading = loadingV || loadingC;
 
+  const isEnterprise = organization?.tier === "enterprise";
+
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto pb-24 md:pb-6">
       <div className="flex items-center gap-3 mb-6">
@@ -121,6 +123,23 @@ export default function WeatherSettings() {
         Configure weather data ingestion for each vineyard. Coordinates are pre-populated from your vineyard records.
         When activated, historical data from April 1 of the current season will be backfilled automatically.
       </p>
+
+      {isEnterprise && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Weather Data Source</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Enterprise plans can use Tomorrow.io for premium agricultural weather data including
+              evapotranspiration, soil moisture, and spray window predictions.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Select the weather source per vineyard below. If using Tomorrow.io, add your API key in the vineyard config card.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -140,8 +159,9 @@ export default function WeatherSettings() {
               vineyard={v}
               config={configMap.get(v.id)}
               isBackfilling={backfilling === v.id}
-              onSave={(lat, lng, baseTemp, active) =>
-                saveConfig.mutate({ vineyardId: v.id, lat, lng, baseTemp, active })
+              isEnterprise={isEnterprise}
+              onSave={(lat, lng, baseTemp, active, weatherSource, tomorrowKey) =>
+                saveConfig.mutate({ vineyardId: v.id, lat, lng, baseTemp, active, weatherSource, tomorrowKey })
               }
               isSaving={saveConfig.isPending}
             />
