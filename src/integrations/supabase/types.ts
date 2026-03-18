@@ -277,6 +277,7 @@ export type Database = {
           cooperage: string | null
           created_at: string
           empty_date: string | null
+          facility_id: string | null
           fill_date: string | null
           id: string
           org_id: string
@@ -294,6 +295,7 @@ export type Database = {
           cooperage?: string | null
           created_at?: string
           empty_date?: string | null
+          facility_id?: string | null
           fill_date?: string | null
           id?: string
           org_id: string
@@ -311,6 +313,7 @@ export type Database = {
           cooperage?: string | null
           created_at?: string
           empty_date?: string | null
+          facility_id?: string | null
           fill_date?: string | null
           id?: string
           org_id?: string
@@ -328,6 +331,13 @@ export type Database = {
             columns: ["barrel_group_id"]
             isOneToOne: false
             referencedRelation: "barrel_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "barrels_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
             referencedColumns: ["id"]
           },
           {
@@ -973,6 +983,150 @@ export type Database = {
           },
         ]
       }
+      facilities: {
+        Row: {
+          active: boolean
+          address: string | null
+          created_at: string
+          facility_type: Database["public"]["Enums"]["facility_type"]
+          id: string
+          name: string
+          parent_org_id: string
+          region: string | null
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          created_at?: string
+          facility_type?: Database["public"]["Enums"]["facility_type"]
+          id?: string
+          name: string
+          parent_org_id: string
+          region?: string | null
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          created_at?: string
+          facility_type?: Database["public"]["Enums"]["facility_type"]
+          id?: string
+          name?: string
+          parent_org_id?: string
+          region?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facilities_parent_org_id_fkey"
+            columns: ["parent_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facility_transfers: {
+        Row: {
+          bottles: number
+          cases: number
+          created_at: string
+          from_facility_id: string
+          id: string
+          notes: string | null
+          org_id: string
+          sku_id: string
+          to_facility_id: string
+          transferred_at: string
+        }
+        Insert: {
+          bottles?: number
+          cases?: number
+          created_at?: string
+          from_facility_id: string
+          id?: string
+          notes?: string | null
+          org_id: string
+          sku_id: string
+          to_facility_id: string
+          transferred_at?: string
+        }
+        Update: {
+          bottles?: number
+          cases?: number
+          created_at?: string
+          from_facility_id?: string
+          id?: string
+          notes?: string | null
+          org_id?: string
+          sku_id?: string
+          to_facility_id?: string
+          transferred_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facility_transfers_from_facility_id_fkey"
+            columns: ["from_facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_transfers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_transfers_sku_id_fkey"
+            columns: ["sku_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_skus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_transfers_to_facility_id_fkey"
+            columns: ["to_facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facility_users: {
+        Row: {
+          active: boolean
+          created_at: string
+          facility_id: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          facility_id: string
+          id?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          facility_id?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facility_users_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fermentation_logs: {
         Row: {
           brix: number | null
@@ -1025,6 +1179,7 @@ export type Database = {
         Row: {
           capacity_liters: number | null
           created_at: string
+          facility_id: string | null
           id: string
           material: string | null
           name: string
@@ -1037,6 +1192,7 @@ export type Database = {
         Insert: {
           capacity_liters?: number | null
           created_at?: string
+          facility_id?: string | null
           id?: string
           material?: string | null
           name: string
@@ -1049,6 +1205,7 @@ export type Database = {
         Update: {
           capacity_liters?: number | null
           created_at?: string
+          facility_id?: string | null
           id?: string
           material?: string | null
           name?: string
@@ -1059,6 +1216,13 @@ export type Database = {
           vintage_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fermentation_vessels_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fermentation_vessels_org_id_fkey"
             columns: ["org_id"]
@@ -1425,6 +1589,7 @@ export type Database = {
           cases: number | null
           cost_per_bottle: number | null
           created_at: string
+          facility_id: string | null
           id: string
           label: string | null
           label_image_url: string | null
@@ -1445,6 +1610,7 @@ export type Database = {
           cases?: number | null
           cost_per_bottle?: number | null
           created_at?: string
+          facility_id?: string | null
           id?: string
           label?: string | null
           label_image_url?: string | null
@@ -1465,6 +1631,7 @@ export type Database = {
           cases?: number | null
           cost_per_bottle?: number | null
           created_at?: string
+          facility_id?: string | null
           id?: string
           label?: string | null
           label_image_url?: string | null
@@ -1478,6 +1645,13 @@ export type Database = {
           vintage_year?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "inventory_skus_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "inventory_skus_org_id_fkey"
             columns: ["org_id"]
@@ -2427,6 +2601,7 @@ export type Database = {
           acres: number | null
           coordinates: string | null
           created_at: string
+          facility_id: string | null
           id: string
           name: string
           org_id: string
@@ -2437,6 +2612,7 @@ export type Database = {
           acres?: number | null
           coordinates?: string | null
           created_at?: string
+          facility_id?: string | null
           id?: string
           name: string
           org_id: string
@@ -2447,6 +2623,7 @@ export type Database = {
           acres?: number | null
           coordinates?: string | null
           created_at?: string
+          facility_id?: string | null
           id?: string
           name?: string
           org_id?: string
@@ -2454,6 +2631,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "vineyards_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vineyards_org_id_fkey"
             columns: ["org_id"]
@@ -2726,6 +2910,7 @@ export type Database = {
         Args: { _conversation_id: string }
         Returns: string
       }
+      get_facility_org_id: { Args: { _facility_id: string }; Returns: string }
       get_import_job_org_id: { Args: { _job_id: string }; Returns: string }
       get_sheet_connection_org_id: {
         Args: { _connection_id: string }
@@ -2806,6 +2991,12 @@ export type Database = {
         | "shipping"
         | "completed"
       conflict_resolution: "solera_wins" | "sheet_wins" | "flag_for_review"
+      facility_type:
+        | "winery"
+        | "vineyard"
+        | "custom_crush"
+        | "storage"
+        | "tasting_room"
       import_source_type: "csv" | "innovint" | "vinnow"
       import_status:
         | "pending"
@@ -3038,6 +3229,13 @@ export const Constants = {
         "completed",
       ],
       conflict_resolution: ["solera_wins", "sheet_wins", "flag_for_review"],
+      facility_type: [
+        "winery",
+        "vineyard",
+        "custom_crush",
+        "storage",
+        "tasting_room",
+      ],
       import_source_type: ["csv", "innovint", "vinnow"],
       import_status: [
         "pending",
