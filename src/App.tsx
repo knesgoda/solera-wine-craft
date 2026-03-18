@@ -83,6 +83,7 @@ const App = () => (
               <Route path="/ask-solera" element={<AskSolera />} />
               <Route path="/sales" element={<ComingSoon />} />
               <Route path="/reports" element={<Reports />} />
+              <Route path="/reports/builder" element={<ReportsBuilder />} />
               <Route path="/data-import" element={<DataImport />} />
               <Route path="/settings" element={<ComingSoon />} />
               <Route path="/settings/weather" element={<WeatherSettings />} />

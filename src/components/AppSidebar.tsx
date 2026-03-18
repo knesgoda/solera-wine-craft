@@ -20,6 +20,7 @@ const items = [
   { title: "Blending", url: "/cellar/blending", icon: Beaker, indent: true },
   { title: "Ask Solera", url: "/ask-solera", icon: Bot },
   { title: "Reports", url: "/reports", icon: FileText },
+  { title: "Report Builder", url: "/reports/builder", icon: PenTool, indent: true },
   { title: "Sales", url: "/sales", icon: ShoppingCart },
   { title: "Data Import", url: "/data-import", icon: Upload },
   { title: "Notifications", url: "/notifications", icon: Bell },
