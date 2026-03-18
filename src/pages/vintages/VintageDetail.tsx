@@ -13,6 +13,7 @@ import { useState } from "react";
 import { NewLabSampleDialog } from "@/components/vintages/NewLabSampleDialog";
 import { LabChart } from "@/components/vintages/LabChart";
 import { TtbAdditionsTab } from "@/components/vintages/TtbAdditionsTab";
+import { AnomaliesTab } from "@/components/vintages/AnomaliesTab";
 
 const statusLabels: Record<string, string> = {
   planned: "Planned", in_progress: "In Progress", harvested: "Harvested",
