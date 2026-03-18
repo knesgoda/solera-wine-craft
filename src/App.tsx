@@ -30,6 +30,12 @@ import RatingsSettings from "./pages/settings/RatingsSettings";
 import AnalogExplorer from "./pages/analytics/AnalogExplorer";
 import InventoryList from "./pages/inventory/InventoryList";
 import SkuDetail from "./pages/inventory/SkuDetail";
+import PublicStore from "./pages/store/PublicStore";
+import StorefrontSettings from "./pages/settings/StorefrontSettings";
+import OrderList from "./pages/orders/OrderList";
+import OrderDetail from "./pages/orders/OrderDetail";
+import CustomerList from "./pages/customers/CustomerList";
+import CustomerDetail from "./pages/customers/CustomerDetail";
 import NotFound from "./pages/NotFound";
 import VineyardList from "./pages/operations/VineyardList";
 import VineyardDetail from "./pages/operations/VineyardDetail";
@@ -68,6 +74,7 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/store" element={<PublicStore />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
@@ -92,9 +99,15 @@ const App = () => (
               <Route path="/analytics/analog" element={<AnalogExplorer />} />
               <Route path="/inventory" element={<InventoryList />} />
               <Route path="/inventory/:skuId" element={<SkuDetail />} />
+              <Route path="/orders" element={<OrderList />} />
+              <Route path="/orders/:orderId" element={<OrderDetail />} />
+              <Route path="/customers" element={<CustomerList />} />
+              <Route path="/customers/:customerId" element={<CustomerDetail />} />
               <Route path="/settings" element={<ComingSoon />} />
               <Route path="/settings/weather" element={<WeatherSettings />} />
               <Route path="/settings/alerts" element={<AlertSettings />} />
+              <Route path="/settings/ratings" element={<RatingsSettings />} />
+              <Route path="/settings/storefront" element={<StorefrontSettings />} />
               <Route path="/settings/ratings" element={<RatingsSettings />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings/integrations/google-sheets" element={<GoogleSheetsSettings />} />
