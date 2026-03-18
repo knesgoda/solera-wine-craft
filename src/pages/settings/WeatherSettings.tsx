@@ -239,9 +239,38 @@ function VineyardWeatherCard({
           <Label>Enable Weather Ingestion</Label>
           <Switch checked={active} onCheckedChange={setActive} />
         </div>
+        {isEnterprise && (
+          <>
+            <Separator />
+            <div className="space-y-2">
+              <Label>Weather Source</Label>
+              <Select value={weatherSource} onValueChange={setWeatherSource}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="open_meteo">Open-Meteo (Free)</SelectItem>
+                  <SelectItem value="tomorrow_io">Tomorrow.io (Premium)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {weatherSource === "tomorrow_io" && (
+              <div className="space-y-2">
+                <Label>Tomorrow.io API Key</Label>
+                <Input
+                  type="password"
+                  value={tomorrowKey}
+                  onChange={(e) => setTomorrowKey(e.target.value)}
+                  placeholder="Enter your Tomorrow.io API key"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Provides evapotranspiration, soil moisture, and spray window predictions.
+                </p>
+              </div>
+            )}
+          </>
+        )}
         <Button
           className="w-full min-h-[44px]"
-          onClick={() => onSave(lat, lng, baseTemp, active)}
+          onClick={() => onSave(lat, lng, baseTemp, active, weatherSource, tomorrowKey)}
           disabled={isSaving || isBackfilling || !lat || !lng}
         >
           {(isSaving || isBackfilling) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
