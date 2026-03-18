@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings,
+  LayoutDashboard, Grape, Wine, Warehouse, Bot, ShoppingCart, Upload, Settings, ClipboardList,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -12,6 +12,7 @@ import soleraLogo from "@/assets/solera-logo.png";
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Vineyard Ops", url: "/operations", icon: Grape },
+  { title: "Tasks", url: "/tasks", icon: ClipboardList },
   { title: "Vintages", url: "/vintages", icon: Wine },
   { title: "Cellar", url: "/cellar", icon: Warehouse },
   { title: "Ask Solera", url: "/ask-solera", icon: Bot },

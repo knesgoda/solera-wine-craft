@@ -1,4 +1,4 @@
-import { LayoutDashboard, Grape, Wine, Warehouse, MoreHorizontal, Bot, ShoppingCart, Upload, Settings } from "lucide-react";
+import { LayoutDashboard, Grape, Wine, ClipboardList, MoreHorizontal, Bot, ShoppingCart, Upload, Settings, Warehouse } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -6,11 +6,12 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 const mainTabs = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Vineyard", url: "/operations", icon: Grape },
+  { title: "Tasks", url: "/tasks", icon: ClipboardList },
   { title: "Vintages", url: "/vintages", icon: Wine },
-  { title: "Cellar", url: "/cellar", icon: Warehouse },
 ];
 
 const moreTabs = [
+  { title: "Cellar", url: "/cellar", icon: Warehouse },
   { title: "Ask Solera", url: "/ask-solera", icon: Bot },
   { title: "Sales", url: "/sales", icon: ShoppingCart },
   { title: "Data Import", url: "/data-import", icon: Upload },
