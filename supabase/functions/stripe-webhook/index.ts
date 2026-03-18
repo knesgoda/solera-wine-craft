@@ -96,6 +96,7 @@ async function resolveSubscriptionTier(sub: any, stripeKey: string, fallbackTier
 
   return sub.metadata?.target_tier || fallbackTier || "pro";
 }
+Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
