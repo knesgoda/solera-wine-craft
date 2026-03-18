@@ -155,7 +155,7 @@ const App = () => (
               <Route path="/cellar/blending" element={<BlendingTrials />} />
               <Route path="/cellar/blending/:trialId" element={<TrialDetail />} />
               <Route path="/ask-solera" element={<AskSolera />} />
-              <Route path="/sales" element={<ComingSoon />} />
+              <Route path="/sales" element={<Navigate to="/inventory" replace />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/reports/builder" element={<ReportsBuilder />} />
               <Route path="/data-import" element={<DataImport />} />
@@ -171,12 +171,11 @@ const App = () => (
               <Route path="/club/shipments" element={<ClubShipments />} />
               <Route path="/clients" element={<ClientList />} />
               <Route path="/clients/:clientId" element={<ClientDetail />} />
-              <Route path="/settings" element={<ComingSoon />} />
+              <Route path="/settings" element={<Navigate to="/settings/billing" replace />} />
               <Route path="/settings/weather" element={<WeatherSettings />} />
               <Route path="/settings/alerts" element={<AlertSettings />} />
               <Route path="/settings/ratings" element={<RatingsSettings />} />
               <Route path="/settings/storefront" element={<StorefrontSettings />} />
-              <Route path="/settings/ratings" element={<RatingsSettings />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings/integrations" element={<IntegrationsHub />} />
               <Route path="/settings/integrations/google-sheets" element={<GoogleSheetsSettings />} />
