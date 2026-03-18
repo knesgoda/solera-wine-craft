@@ -87,7 +87,15 @@ function mapSubscriptionStatus(stripeStatus: string): string {
   return statusMap[stripeStatus] || stripeStatus;
 }
 
-Deno.serve(async (req) => {
+async function resolveSubscriptionTier(sub: any, stripeKey: string, fallbackTier?: string): Promise<string> {
+  const priceId = sub.items?.data?.[0]?.price?.id;
+  if (priceId) {
+    const price = await stripeGet(`prices/${priceId}`, stripeKey);
+    if (price.metadata?.tier) return price.metadata.tier;
+  }
+
+  return sub.metadata?.target_tier || fallbackTier || "pro";
+}
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
