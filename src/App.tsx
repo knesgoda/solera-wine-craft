@@ -31,6 +31,7 @@ import Commerce7Settings from "./pages/settings/Commerce7Settings";
 import WineDirectSettings from "./pages/settings/WineDirectSettings";
 import ShopifySettings from "./pages/settings/ShopifySettings";
 import ShipCompliantSettings from "./pages/settings/ShipCompliantSettings";
+import QuickBooksSettings from "./pages/settings/QuickBooksSettings";
 import RatingsSettings from "./pages/settings/RatingsSettings";
 import AnalogExplorer from "./pages/analytics/AnalogExplorer";
 import InventoryList from "./pages/inventory/InventoryList";
