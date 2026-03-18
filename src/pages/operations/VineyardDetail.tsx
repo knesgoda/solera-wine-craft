@@ -14,8 +14,6 @@ import { ArrowLeft, Plus, ChevronRight, MapPin, Trash2, CloudSun, Grid3x3 } from
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { WeatherTab } from "@/components/weather/WeatherTab";
-import { toast } from "sonner";
-import type { Database } from "@/integrations/supabase/types";
 
 type LifecycleStage = Database["public"]["Enums"]["block_lifecycle_stage"];
 
