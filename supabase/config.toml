@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.sync-quickbooks]
 verify_jwt = false
+
+[functions.og-image]
+verify_jwt = false
