@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ShoppingCart, Plus, Minus, X, Wine, Loader2 } from "lucide-react";
+import { CardHeader, CardTitle } from "@/components/ui/card";
+import { ShoppingCart, Plus, Minus, X, Wine, Loader2, GlassWater } from "lucide-react";
 import { toast } from "sonner";
 
 interface CartItem {
