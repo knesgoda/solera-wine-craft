@@ -72,6 +72,27 @@ export default function VintageDetail() {
     },
   });
 
+  const { data: clientOrgs = [] } = useQuery({
+    queryKey: ["client-orgs-for-assign", orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("client_orgs").select("id, name").eq("parent_org_id", orgId!).eq("active", true);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!orgId,
+  });
+
+  const assignClient = useMutation({
+    mutationFn: async (clientOrgId: string | null) => {
+      const { error } = await supabase.from("vintages").update({ client_org_id: clientOrgId }).eq("id", vintageId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vintage", vintageId] });
+      toast.success("Client assignment updated");
+    },
+  });
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
