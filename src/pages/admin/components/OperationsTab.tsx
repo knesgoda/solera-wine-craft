@@ -3,13 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { ChevronDown, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { ChevronDown, CheckCircle2, XCircle, AlertCircle, Clock, Wifi } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 interface Props {
   api: (action: string, payload?: any) => Promise<any>;
@@ -40,6 +40,7 @@ export function OperationsTab({ api }: Props) {
 
   const errorJobs = data?.errorJobs || [];
   const systemStatus = data?.systemStatus || [];
+  const offlineSyncFailures = data?.offlineSyncFailures || [];
 
   return (
     <div className="space-y-8">
@@ -101,6 +102,55 @@ export function OperationsTab({ api }: Props) {
                   </Collapsible>
                 ))}
               </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Offline Sync Failures */}
+      <section>
+        <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: "#6B1B2A" }}>
+          Offline Sync Failures
+        </h2>
+        <Card className="bg-white shadow-sm">
+          <CardContent className="p-0">
+            {isLoading ? <Skeleton className="h-32 w-full m-4" /> : offlineSyncFailures.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">
+                <Wifi className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                No stale offline records
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Org</TableHead>
+                    <TableHead>Record Type</TableHead>
+                    <TableHead>Record ID</TableHead>
+                    <TableHead>Queued At</TableHead>
+                    <TableHead>Age</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {offlineSyncFailures.map((item: any) => (
+                    <TableRow key={`${item.type}-${item.id}`}>
+                      <TableCell className="font-medium">{item.orgName}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">{item.type.replace("_", " ")}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs font-mono text-muted-foreground">{item.id.slice(0, 8)}…</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {new Date(item.queuedAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="text-xs">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {formatDistanceToNow(new Date(item.queuedAt), { addSuffix: false })}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
