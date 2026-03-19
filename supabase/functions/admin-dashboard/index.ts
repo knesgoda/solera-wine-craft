@@ -694,11 +694,19 @@ Deno.serve(async (req) => {
           .lt("created_at", fortyEightHoursAgo),
       ]);
 
+      // Resolve vintage_id → org_id for stale lab samples
+      const staleLabVintageIds = [...new Set((staleLabsRes.data || []).map((l: any) => l.vintage_id).filter(Boolean))];
+      let vintageOrgMap: Record<string, string> = {};
+      if (staleLabVintageIds.length > 0) {
+        const { data: vintages } = await supabase.from("vintages").select("id, org_id").in("id", staleLabVintageIds);
+        for (const v of (vintages || [])) vintageOrgMap[v.id] = v.org_id;
+      }
+
       // Map org names for error jobs
       const orgIds = [...new Set((errorJobsRes.data || []).map((j: any) => j.org_id))];
-      // Also collect org_ids from stale tasks
       const taskOrgIds = [...new Set((staleTasksRes.data || []).map((t: any) => t.org_id))];
-      const allOrgIds = [...new Set([...orgIds, ...taskOrgIds])];
+      const labOrgIds = Object.values(vintageOrgMap);
+      const allOrgIds = [...new Set([...orgIds, ...taskOrgIds, ...labOrgIds])];
       const safeIds = allOrgIds.length ? allOrgIds : ["00000000-0000-0000-0000-000000000000"];
       const { data: orgs } = await supabase.from("organizations").select("id, name").in("id", safeIds);
       const orgMap: Record<string, string> = {};
@@ -713,12 +721,13 @@ Deno.serve(async (req) => {
       // Build offline sync failures grouped by org
       const offlineSyncFailures: any[] = [];
       for (const lab of (staleLabsRes.data || [])) {
+        const labOrgId = vintageOrgMap[lab.vintage_id] || null;
         offlineSyncFailures.push({
           id: lab.id,
           type: "lab_sample",
           queuedAt: lab.sampled_at,
-          orgId: null, // lab_samples don't have org_id directly
-          orgName: "—",
+          orgId: labOrgId,
+          orgName: labOrgId ? (orgMap[labOrgId] || "Unknown") : "Unknown",
         });
       }
       for (const task of (staleTasksRes.data || [])) {
