@@ -127,6 +127,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <ImpersonationProvider>
           <AppInner />
           <Routes>
             {/* Marketing routes */}
