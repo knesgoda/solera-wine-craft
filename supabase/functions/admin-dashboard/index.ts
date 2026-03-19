@@ -319,12 +319,12 @@ Deno.serve(async (req) => {
       if (!stripeKey) return json({ weeks: [] });
       
       // Get all subscriptions including canceled ones for historical view
-      const [activeSubs, canceledSubs] = await Promise.all([
-        stripeGet("/subscriptions?status=active&limit=100", stripeKey),
-        stripeGet("/subscriptions?status=canceled&limit=100", stripeKey),
+      const [activeSubsAll, canceledSubsAll] = await Promise.all([
+        stripeGetAll("/subscriptions?status=active&expand[]=data.items", stripeKey),
+        stripeGetAll("/subscriptions?status=canceled&expand[]=data.items", stripeKey),
       ]);
 
-      const allSubs = [...(activeSubs.data || []), ...(canceledSubs.data || [])];
+      const allSubs = [...activeSubsAll, ...canceledSubsAll];
       const weeks: any[] = [];
       const now = new Date();
 
@@ -337,9 +337,7 @@ Deno.serve(async (req) => {
         
         for (const sub of allSubs) {
           if (sub.created <= weekEndTs && (!sub.canceled_at || sub.canceled_at > weekEndTs)) {
-            const monthly = sub.plan?.interval === "year"
-              ? (sub.plan?.amount || 0) / 12 / 100
-              : (sub.plan?.amount || 0) / 100;
+            const monthly = getSubMonthlyAmount(sub);
             weekMrr += monthly;
             const tier = sub.metadata?.target_tier || "small_boutique";
             tierMrr[tier] = (tierMrr[tier] || 0) + monthly;
