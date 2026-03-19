@@ -369,6 +369,7 @@ export function CustomersTab({ api, password }: Props) {
                   <TabsTrigger value="subscription">Subscription</TabsTrigger>
                   <TabsTrigger value="timeline">Activity</TabsTrigger>
                   <TabsTrigger value="notes">Notes</TabsTrigger>
+                  <TabsTrigger value="support">Support</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-4 mt-4">
