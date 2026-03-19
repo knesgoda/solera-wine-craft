@@ -228,8 +228,8 @@ Deno.serve(async (req) => {
 
       const thirtyDaysAgoTs = Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000);
 
-      const [subs, failedEvents, deletedEvents, updatedEvents] = await Promise.all([
-        stripeGet("/subscriptions?status=active&limit=100&expand[]=data.customer", stripeKey),
+      const [subsAll, failedEvents, deletedEvents, updatedEvents] = await Promise.all([
+        stripeGetAll("/subscriptions?status=active&expand[]=data.customer&expand[]=data.items", stripeKey),
         stripeGet(`/events?type=payment_intent.payment_failed&created[gte]=${thirtyDaysAgoTs}&limit=100`, stripeKey),
         stripeGet(`/events?type=customer.subscription.deleted&created[gte]=${Math.floor((Date.now() - 90 * 24 * 60 * 60 * 1000) / 1000)}&limit=100`, stripeKey),
         stripeGet(`/events?type=customer.subscription.updated&created[gte]=${Math.floor((Date.now() - 90 * 24 * 60 * 60 * 1000) / 1000)}&limit=100`, stripeKey),
@@ -245,19 +245,17 @@ Deno.serve(async (req) => {
       }
 
       let mrr = 0;
-      const subscriptions = (subs.data || []).map((sub: any) => {
-        const monthlyAmount = sub.plan?.interval === "year"
-          ? (sub.plan?.amount || 0) / 12 / 100
-          : (sub.plan?.amount || 0) / 100;
+      const subscriptions = subsAll.map((sub: any) => {
+        const monthlyAmount = getSubMonthlyAmount(sub);
         mrr += monthlyAmount;
         const org = orgByStripeCustomer[sub.customer?.id || sub.customer] || orgByStripeSub[sub.id];
         return {
           id: sub.id,
           orgName: org?.name || sub.customer?.name || sub.customer?.email || "Unknown",
           orgId: org?.id,
-          plan: sub.plan?.nickname || org?.tier || "Unknown",
+          plan: sub.items?.data?.[0]?.price?.nickname || sub.plan?.nickname || org?.tier || "Unknown",
           mrr: Math.round(monthlyAmount),
-          billingCycle: sub.plan?.interval || "month",
+          billingCycle: sub.items?.data?.[0]?.price?.recurring?.interval || sub.plan?.interval || "month",
           nextBilling: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
           cardLast4: sub.default_payment_method?.card?.last4 || null,
           cardExpiry: sub.default_payment_method?.card?.exp_month 
