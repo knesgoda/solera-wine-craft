@@ -161,15 +161,13 @@ Deno.serve(async (req) => {
       let stripeSummary = { mrr: 0, activeSubscriptions: 0, failedPayments7d: 0, mrrAdded7d: 0, mrrChurned7d: 0 };
       if (stripeKey) {
         try {
-          // Active subscriptions
-          const subs = await stripeGet("/subscriptions?status=active&limit=100", stripeKey);
+          // Active subscriptions — paginated
+          const allSubs = await stripeGetAll("/subscriptions?status=active&expand[]=data.items", stripeKey);
           let mrr = 0;
           let mrrAdded7d = 0;
           const sevenDaysAgoTs = Math.floor(new Date(sevenDaysAgo).getTime() / 1000);
-          for (const sub of (subs.data || [])) {
-            const monthlyAmount = sub.plan?.interval === "year" 
-              ? (sub.plan?.amount || 0) / 12 / 100 
-              : (sub.plan?.amount || 0) / 100;
+          for (const sub of allSubs) {
+            const monthlyAmount = getSubMonthlyAmount(sub);
             mrr += monthlyAmount;
             if (sub.created >= sevenDaysAgoTs) mrrAdded7d += monthlyAmount;
           }
@@ -182,10 +180,7 @@ Deno.serve(async (req) => {
           let mrrChurned = 0;
           for (const evt of (churnedEvents.data || [])) {
             const sub = evt.data?.object;
-            const amount = sub?.plan?.interval === "year" 
-              ? (sub?.plan?.amount || 0) / 12 / 100 
-              : (sub?.plan?.amount || 0) / 100;
-            mrrChurned += amount;
+            mrrChurned += getSubMonthlyAmount(sub);
           }
 
           if ((failedEvents.data || []).length > 0) {
@@ -194,7 +189,7 @@ Deno.serve(async (req) => {
 
           stripeSummary = {
             mrr: Math.round(mrr),
-            activeSubscriptions: (subs.data || []).length,
+            activeSubscriptions: allSubs.length,
             failedPayments7d: (failedEvents.data || []).length,
             mrrAdded7d: Math.round(mrrAdded7d),
             mrrChurned7d: Math.round(mrrChurned),
