@@ -395,14 +395,13 @@ Deno.serve(async (req) => {
         supabase.from("user_roles").select("user_id, role"),
       ]);
 
-      // Activity timeline - recent events from multiple tables
+      // Activity timeline
       const [labsRes, tasksRes, aiRes] = await Promise.all([
         supabase.from("lab_samples").select("id, sampled_at, brix, ph").order("sampled_at", { ascending: false }).limit(5),
         supabase.from("tasks").select("id, title, status, created_at, completed_at").eq("org_id", orgId).order("created_at", { ascending: false }).limit(10),
         supabase.from("ai_conversations").select("id, title, created_at").eq("org_id", orgId).order("created_at", { ascending: false }).limit(5),
       ]);
 
-      // Build activity timeline
       const timeline: any[] = [];
       for (const u of (usersRes.data || [])) {
         if (u.last_active_at) timeline.push({ type: "login", label: `${u.first_name} ${u.last_name} logged in`, at: u.last_active_at });
@@ -421,6 +420,48 @@ Deno.serve(async (req) => {
       }
       timeline.sort((a, b) => b.at.localeCompare(a.at));
 
+      // Subscription detail from Stripe
+      let subscriptionDetail = null;
+      const org = orgRes.data;
+      if (stripeKey && org?.stripe_customer_id) {
+        try {
+          const custSubs = await stripeGet(`/subscriptions?customer=${org.stripe_customer_id}&limit=1&expand[]=data.default_payment_method`, stripeKey);
+          const sub = (custSubs.data || [])[0];
+          if (sub) {
+            const pm = sub.default_payment_method;
+            subscriptionDetail = {
+              plan: sub.plan?.nickname || org.tier || "Unknown",
+              billingCycle: sub.plan?.interval || "month",
+              mrr: sub.plan?.interval === "year" ? Math.round((sub.plan?.amount || 0) / 12 / 100) : Math.round((sub.plan?.amount || 0) / 100),
+              nextBilling: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
+              startedAt: new Date(sub.created * 1000).toISOString(),
+              cardLast4: pm?.card?.last4 || null,
+              cardExpiry: pm?.card?.exp_month ? `${pm.card.exp_month}/${pm.card.exp_year}` : null,
+              cardBrand: pm?.card?.brand || null,
+              cardStatus: pm ? "healthy" : "missing",
+              status: sub.status,
+            };
+          }
+        } catch (e) {
+          console.error("Stripe sub detail error:", e);
+        }
+      }
+
+      // Stripe events for upgrade/downgrade history
+      let upgradeHistory: any[] = [];
+      if (stripeKey && org?.stripe_customer_id) {
+        try {
+          const events = await stripeGet(`/events?type=customer.subscription.updated&limit=20`, stripeKey);
+          upgradeHistory = (events.data || [])
+            .filter((evt: any) => evt.data?.object?.customer === org.stripe_customer_id && evt.data?.previous_attributes?.plan)
+            .map((evt: any) => ({
+              fromPlan: evt.data.previous_attributes.plan?.nickname || "Previous",
+              toPlan: evt.data.object.plan?.nickname || "Current",
+              date: new Date(evt.created * 1000).toISOString(),
+            }));
+        } catch {}
+      }
+
       return json({
         org: orgRes.data,
         users: usersRes.data || [],
@@ -428,6 +469,8 @@ Deno.serve(async (req) => {
         imports: importsRes.data || [],
         notes: notesRes.data || [],
         timeline: timeline.slice(0, 20),
+        subscription: subscriptionDetail,
+        upgradeHistory,
       });
     }
 
