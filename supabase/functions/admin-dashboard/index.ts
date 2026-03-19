@@ -332,7 +332,7 @@ Deno.serve(async (req) => {
       const orgIds = (orgs || []).map((o: any) => o.id);
       const safeIds = orgIds.length ? orgIds : ["00000000-0000-0000-0000-000000000000"];
 
-      const [profilesRes, vintagesRes, blocksRes, labsRes, tasksRes, importsRes, notesRes] = await Promise.all([
+      const [profilesRes, vintagesRes, blocksRes, labsRes, tasksRes, importsRes, notesRes, vineyardsRes] = await Promise.all([
         supabase.from("profiles").select("id, org_id, last_active_at").in("org_id", safeIds),
         supabase.from("vintages").select("id, org_id").in("org_id", safeIds),
         supabase.from("blocks").select("id, vineyard_id").limit(1000),
@@ -340,13 +340,25 @@ Deno.serve(async (req) => {
         supabase.from("tasks").select("id, org_id").in("org_id", safeIds),
         supabase.from("import_jobs").select("id, org_id").in("org_id", safeIds),
         supabase.from("admin_org_notes").select("org_id").in("org_id", safeIds),
+        supabase.from("vineyards").select("id, org_id").in("org_id", safeIds),
       ]);
 
       const profiles = profilesRes.data || [];
       const vintages = vintagesRes.data || [];
+      const blocks = blocksRes.data || [];
+      const labs = labsRes.data || [];
       const tasks = tasksRes.data || [];
       const imports = importsRes.data || [];
       const noteOrgs = new Set((notesRes.data || []).map((n: any) => n.org_id));
+      const vineyards = vineyardsRes.data || [];
+
+      // Map vineyard->org for block counting
+      const vineyardOrgMap: Record<string, string> = {};
+      for (const v of vineyards) vineyardOrgMap[v.id] = v.org_id;
+
+      // Map vintage->org for lab sample counting
+      const vintageOrgMap: Record<string, string> = {};
+      for (const v of vintages) vintageOrgMap[v.id] = v.org_id;
 
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -366,10 +378,20 @@ Deno.serve(async (req) => {
         else if (!lastActive || lastActive < thirtyDaysAgo) lifecycle = "churned";
         else if (lastActive < fourteenDaysAgo) lifecycle = "at-risk";
 
+        // Count blocks for this org
+        const orgVineyardIds = vineyards.filter(v => v.org_id === org.id).map(v => v.id);
+        const blockCount = blocks.filter(b => orgVineyardIds.includes(b.vineyard_id)).length;
+
+        // Count lab samples for this org
+        const orgVintageIds = vintages.filter(v => v.org_id === org.id).map(v => v.id);
+        const labCount = labs.filter(l => orgVintageIds.includes(l.vintage_id)).length;
+
         return {
           ...org,
           userCount: orgProfiles.length,
           vintageCount: vintages.filter((v: any) => v.org_id === org.id).length,
+          blockCount,
+          labCount,
           taskCount: tasks.filter((t: any) => t.org_id === org.id).length,
           importCount: imports.filter((i: any) => i.org_id === org.id).length,
           lastActive,
