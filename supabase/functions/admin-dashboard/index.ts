@@ -286,12 +286,12 @@ Deno.serve(async (req) => {
         const sub = evt.data?.object;
         const prev = evt.data?.previous_attributes;
         const org = orgByStripeCustomer[sub?.customer] || orgByStripeSub[sub?.id];
-        const prevAmount = prev?.plan?.amount ? prev.plan.amount / 100 : 0;
-        const newAmount = sub?.plan?.amount ? sub.plan.amount / 100 : 0;
+        const prevAmount = getSubMonthlyAmount({ ...sub, items: prev?.items || sub?.items, plan: prev?.plan || sub?.plan });
+        const newAmount = getSubMonthlyAmount(sub);
         return {
           orgName: org?.name || "Unknown",
-          fromPlan: prev?.plan?.nickname || "Previous",
-          toPlan: sub?.plan?.nickname || "Current",
+          fromPlan: prev?.plan?.nickname || prev?.items?.data?.[0]?.price?.nickname || "Previous",
+          toPlan: sub?.plan?.nickname || sub?.items?.data?.[0]?.price?.nickname || "Current",
           date: new Date(evt.created * 1000).toISOString(),
           mrrImpact: Math.round(newAmount - prevAmount),
         };
