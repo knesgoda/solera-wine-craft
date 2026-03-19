@@ -700,31 +700,69 @@ Deno.serve(async (req) => {
 
     // ─── Upsell Queue ───
     if (action === "upsell-queue") {
-      const { data: hobbyistOrgs } = await supabase.from("organizations")
+      // Get hobbyist AND pro orgs for different upsell reasons
+      const { data: upsellOrgs } = await supabase.from("organizations")
         .select("id, name, tier, created_at")
-        .eq("tier", "hobbyist");
+        .in("tier", ["hobbyist", "small_boutique"]);
 
-      const orgIds = (hobbyistOrgs || []).map(o => o.id);
+      const orgIds = (upsellOrgs || []).map(o => o.id);
       const safeIds = orgIds.length ? orgIds : ["00000000-0000-0000-0000-000000000000"];
 
-      const [profilesRes, vintagesRes] = await Promise.all([
+      const [profilesRes, blocksRes, labsRes, aiRes] = await Promise.all([
         supabase.from("profiles").select("org_id, last_active_at").in("org_id", safeIds),
-        supabase.from("vintages").select("org_id").in("org_id", safeIds),
+        supabase.from("blocks").select("id, vineyard_id").limit(1000),
+        supabase.from("lab_samples").select("id, vintage_id").limit(1000),
+        supabase.from("ai_conversations").select("id, org_id").in("org_id", safeIds),
       ]);
 
-      const flagged = (hobbyistOrgs || []).map(org => {
+      // Map vineyards to orgs for block counting
+      const { data: vineyards } = await supabase.from("vineyards").select("id, org_id").in("org_id", safeIds);
+      const vineyardOrgMap: Record<string, string> = {};
+      for (const v of (vineyards || [])) vineyardOrgMap[v.id] = v.org_id;
+
+      // Map vintages to orgs for lab sample counting
+      const { data: vintages } = await supabase.from("vintages").select("id, org_id").in("org_id", safeIds);
+      const vintageOrgMap: Record<string, string> = {};
+      for (const v of (vintages || [])) vintageOrgMap[v.id] = v.org_id;
+
+      // Count blocks per org
+      const blocksPerOrg: Record<string, number> = {};
+      for (const b of (blocksRes.data || [])) {
+        const orgId = vineyardOrgMap[b.vineyard_id];
+        if (orgId) blocksPerOrg[orgId] = (blocksPerOrg[orgId] || 0) + 1;
+      }
+
+      // Count lab samples per org
+      const labsPerOrg: Record<string, number> = {};
+      for (const l of (labsRes.data || [])) {
+        const orgId = vintageOrgMap[l.vintage_id];
+        if (orgId) labsPerOrg[orgId] = (labsPerOrg[orgId] || 0) + 1;
+      }
+
+      // Count AI convos per org
+      const aiPerOrg: Record<string, number> = {};
+      for (const a of (aiRes.data || [])) {
+        aiPerOrg[a.org_id] = (aiPerOrg[a.org_id] || 0) + 1;
+      }
+
+      const flagged = (upsellOrgs || []).map(org => {
         const lastActive = (profilesRes.data || [])
           .filter(p => p.org_id === org.id)
           .reduce((latest: string | null, p: any) => {
             if (!p.last_active_at) return latest;
             return !latest || p.last_active_at > latest ? p.last_active_at : latest;
           }, null);
-        const vintageCount = (vintagesRes.data || []).filter(v => v.org_id === org.id).length;
         
         const flags: string[] = [];
-        if (vintageCount > 3) flags.push("Power user — many vintages on free tier");
+        if (org.tier === "hobbyist") {
+          if ((blocksPerOrg[org.id] || 0) > 2) flags.push("Hobbyist with > 2 blocks (hitting limit)");
+          if ((labsPerOrg[org.id] || 0) > 500) flags.push("Hobbyist with > 500 lab samples (power user)");
+        }
+        if (org.tier === "small_boutique") {
+          if ((aiPerOrg[org.id] || 0) > 0) flags.push("Pro org using Ask Solera (Growth feature)");
+        }
         
-        return { ...org, lastActive, vintageCount, flags };
+        return { ...org, lastActive, flags };
       }).filter(o => o.flags.length > 0);
 
       return json({ flagged });
