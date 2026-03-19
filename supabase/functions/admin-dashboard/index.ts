@@ -20,6 +20,47 @@ async function stripeGet(endpoint: string, stripeKey: string) {
   return res.json();
 }
 
+// Paginate through all Stripe list results
+async function stripeGetAll(endpoint: string, stripeKey: string): Promise<any[]> {
+  const allItems: any[] = [];
+  let url = endpoint.includes("?")
+    ? `${endpoint}&limit=100`
+    : `${endpoint}?limit=100`;
+  while (true) {
+    const res = await stripeGet(url, stripeKey);
+    const items = res.data || [];
+    allItems.push(...items);
+    if (!res.has_more || items.length === 0) break;
+    const lastId = items[items.length - 1].id;
+    url = endpoint.includes("?")
+      ? `${endpoint}&limit=100&starting_after=${lastId}`
+      : `${endpoint}?limit=100&starting_after=${lastId}`;
+  }
+  return allItems;
+}
+
+// Extract monthly amount from a subscription using items/prices (not legacy plan)
+function getSubMonthlyAmount(sub: any): number {
+  // Prefer items array (Prices API)
+  if (sub.items?.data?.length) {
+    let total = 0;
+    for (const item of sub.items.data) {
+      const price = item.price || item.plan;
+      if (!price) continue;
+      const amount = (price.unit_amount || price.amount || 0) / 100;
+      const qty = item.quantity || 1;
+      const interval = price.recurring?.interval || price.interval || "month";
+      if (interval === "year") total += (amount * qty) / 12;
+      else total += amount * qty;
+    }
+    return total;
+  }
+  // Fallback to legacy plan field
+  const interval = sub.plan?.interval || "month";
+  const amount = (sub.plan?.amount || 0) / 100;
+  return interval === "year" ? amount / 12 : amount;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
