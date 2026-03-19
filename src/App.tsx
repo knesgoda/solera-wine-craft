@@ -77,6 +77,7 @@ import SmsSettings from "./pages/settings/SmsSettings";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PushPrompt } from "./components/PushPrompt";
 import { useOfflineSync } from "./hooks/useOfflineSync";
+import { ImpersonationProvider, useImpersonation } from "./contexts/ImpersonationContext";
 import { MarketingLayout } from "./components/marketing/MarketingLayout";
 import Homepage from "./pages/marketing/Homepage";
 import FeaturesPage from "./pages/marketing/FeaturesPage";
@@ -95,10 +96,24 @@ import ContactPage from "./pages/marketing/ContactPage";
 
 const queryClient = new QueryClient();
 
+const ImpersonationBanner = () => {
+  const { active, orgName, stopImpersonation } = useImpersonation();
+  if (!active) return null;
+  return (
+    <div className="fixed top-0 left-0 right-0 z-[9999] bg-red-600 text-white text-center py-2 text-sm font-medium flex items-center justify-center gap-3">
+      <span>⚠️ Admin Mode: Viewing as {orgName}</span>
+      <button onClick={() => { stopImpersonation(); window.location.href = "/admin"; }} className="underline font-bold hover:text-red-100">
+        Exit
+      </button>
+    </div>
+  );
+};
+
 const AppInner = () => {
   const { isOnline, pendingCount } = useOfflineSync();
   return (
     <>
+      <ImpersonationBanner />
       <OfflineBanner isOnline={isOnline} pendingCount={pendingCount} />
       <PushPrompt />
     </>
@@ -112,6 +127,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <ImpersonationProvider>
           <AppInner />
           <Routes>
             {/* Marketing routes */}
@@ -206,6 +222,7 @@ const App = () => (
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </ImpersonationProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
