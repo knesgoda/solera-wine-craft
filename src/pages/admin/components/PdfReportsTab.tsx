@@ -186,6 +186,16 @@ export function PdfReportsTab({ api }: Props) {
   const generateWeeklyPdf = async () => {
     setGeneratingWeekly(true);
     try {
+      // Fetch cohort + module data alongside existing data
+      let engagementData: any = null;
+      let analyticsData: any = null;
+      try {
+        [engagementData, analyticsData] = await Promise.all([
+          api("engagement-stats"),
+          api("product-analytics"),
+        ]);
+      } catch {}
+
       const doc = new jsPDF();
       const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
@@ -214,12 +224,51 @@ export function PdfReportsTab({ api }: Props) {
           startY: y,
           head: [["Week", "MRR", "Pro", "Growth", "Enterprise"]],
           body: weeks.slice(-8).map((w: any) => [
-            w.weekOf,
-            `$${w.mrr}`,
-            `$${w.mrr_small_boutique || 0}`,
-            `$${w.mrr_mid_size || 0}`,
-            `$${w.mrr_enterprise || 0}`,
+            w.weekOf, `$${w.mrr}`, `$${w.mrr_small_boutique || 0}`, `$${w.mrr_mid_size || 0}`, `$${w.mrr_enterprise || 0}`,
           ]),
+          theme: "striped",
+          headStyles: { fillColor: [107, 27, 42] },
+          margin: { left: 15, right: 15 },
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      }
+
+      // User Cohorts
+      if (engagementData?.signupsByWeek?.length) {
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(107, 27, 42);
+        doc.text("User Cohorts", 15, y);
+        y += 8;
+
+        const tierDist = engagementData.tierDistribution || [];
+        autoTable(doc, {
+          startY: y,
+          head: [["Week", "New Signups", "Hobbyist", "Pro", "Growth", "Enterprise"]],
+          body: engagementData.signupsByWeek.map((w: any, i: number) => {
+            const td = tierDist[i] || {};
+            return [w.weekOf, String(w.signups), String(td.Hobbyist || 0), String(td.Pro || 0), String(td.Growth || 0), String(td.Enterprise || 0)];
+          }),
+          theme: "striped",
+          headStyles: { fillColor: [107, 27, 42] },
+          margin: { left: 15, right: 15 },
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      }
+
+      // Module Adoption
+      if (analyticsData?.modules?.length) {
+        if (y > 240) { doc.addPage(); y = 20; }
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(107, 27, 42);
+        doc.text("Module Adoption", 15, y);
+        y += 8;
+
+        autoTable(doc, {
+          startY: y,
+          head: [["Module", "Adoption %"]],
+          body: analyticsData.modules.map((m: any) => [m.name, `${m.adoption}%`]),
           theme: "striped",
           headStyles: { fillColor: [107, 27, 42] },
           margin: { left: 15, right: 15 },
@@ -230,6 +279,7 @@ export function PdfReportsTab({ api }: Props) {
       // Search Console
       const metrics = metricsData?.metrics || [];
       if (metrics.length > 0) {
+        if (y > 240) { doc.addPage(); y = 20; }
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(107, 27, 42);
