@@ -561,7 +561,9 @@ Deno.serve(async (req) => {
 
     // ─── Operations Data ───
     if (action === "operations-data") {
-      const [errorJobsRes, errorDetailsRes] = await Promise.all([
+      const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+
+      const [errorJobsRes, errorDetailsRes, staleLabsRes, staleTasksRes] = await Promise.all([
         supabase.from("import_jobs")
           .select("id, org_id, source_type, started_at, error_rows, status, created_at")
           .eq("status", "error")
@@ -569,11 +571,22 @@ Deno.serve(async (req) => {
         supabase.from("import_errors")
           .select("id, job_id, row_number, error_message, source_data")
           .limit(200),
+        supabase.from("lab_samples")
+          .select("id, vintage_id, sampled_at, offline_queued")
+          .eq("offline_queued", true)
+          .lt("sampled_at", fortyEightHoursAgo),
+        supabase.from("tasks")
+          .select("id, org_id, title, created_at, offline_queued")
+          .eq("offline_queued", true)
+          .lt("created_at", fortyEightHoursAgo),
       ]);
 
-      // Map org names
+      // Map org names for error jobs
       const orgIds = [...new Set((errorJobsRes.data || []).map((j: any) => j.org_id))];
-      const safeIds = orgIds.length ? orgIds : ["00000000-0000-0000-0000-000000000000"];
+      // Also collect org_ids from stale tasks
+      const taskOrgIds = [...new Set((staleTasksRes.data || []).map((t: any) => t.org_id))];
+      const allOrgIds = [...new Set([...orgIds, ...taskOrgIds])];
+      const safeIds = allOrgIds.length ? allOrgIds : ["00000000-0000-0000-0000-000000000000"];
       const { data: orgs } = await supabase.from("organizations").select("id, name").in("id", safeIds);
       const orgMap: Record<string, string> = {};
       for (const o of (orgs || [])) orgMap[o.id] = o.name;
@@ -584,11 +597,33 @@ Deno.serve(async (req) => {
         errors: (errorDetailsRes.data || []).filter((e: any) => e.job_id === j.id),
       }));
 
+      // Build offline sync failures grouped by org
+      const offlineSyncFailures: any[] = [];
+      for (const lab of (staleLabsRes.data || [])) {
+        offlineSyncFailures.push({
+          id: lab.id,
+          type: "lab_sample",
+          queuedAt: lab.sampled_at,
+          orgId: null, // lab_samples don't have org_id directly
+          orgName: "—",
+        });
+      }
+      for (const task of (staleTasksRes.data || [])) {
+        offlineSyncFailures.push({
+          id: task.id,
+          type: "task",
+          title: task.title,
+          queuedAt: task.created_at,
+          orgId: task.org_id,
+          orgName: orgMap[task.org_id] || "Unknown",
+        });
+      }
+
       // System status
       const { data: systemStatus } = await supabase.from("admin_system_status")
         .select("*").order("service");
 
-      return json({ errorJobs, systemStatus: systemStatus || [] });
+      return json({ errorJobs, offlineSyncFailures, systemStatus: systemStatus || [] });
     }
 
     // ─── Admin Metrics CRUD ───
