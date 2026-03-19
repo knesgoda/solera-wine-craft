@@ -613,19 +613,30 @@ Deno.serve(async (req) => {
 
       modules.sort((a, b) => b.adoption - a.adoption);
 
-      // Feature usage over time (last 8 weeks)
+      // Feature usage over time (last 8 weeks) — real data
       const now = new Date();
       const featureUsage: any[] = [];
-      // Simplified - would need per-week queries in production
       for (let i = 7; i >= 0; i--) {
         const weekEnd = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+        const weekStart = new Date(weekEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const ws = weekStart.toISOString();
+        const we = weekEnd.toISOString();
+
+        const [labCount, taskCount, importCount, vintageCount, aiCount] = await Promise.all([
+          supabase.from("lab_samples").select("id", { count: "exact", head: true }).gte("sampled_at", ws).lt("sampled_at", we),
+          supabase.from("tasks").select("id", { count: "exact", head: true }).not("completed_at", "is", null).gte("completed_at", ws).lt("completed_at", we),
+          supabase.from("import_jobs").select("id", { count: "exact", head: true }).eq("status", "completed").gte("completed_at", ws).lt("completed_at", we),
+          supabase.from("vintages").select("id", { count: "exact", head: true }).gte("created_at", ws).lt("created_at", we),
+          supabase.from("ai_conversations").select("id", { count: "exact", head: true }).gte("created_at", ws).lt("created_at", we),
+        ]);
+
         featureUsage.push({
           weekOf: weekEnd.toISOString().slice(0, 10),
-          labSamples: Math.floor(Math.random() * 50) + 10,
-          tasks: Math.floor(Math.random() * 30) + 5,
-          imports: Math.floor(Math.random() * 10) + 1,
-          vintages: Math.floor(Math.random() * 8) + 1,
-          aiQueries: Math.floor(Math.random() * 20) + 3,
+          labSamples: labCount.count || 0,
+          tasks: taskCount.count || 0,
+          imports: importCount.count || 0,
+          vintages: vintageCount.count || 0,
+          aiQueries: aiCount.count || 0,
         });
       }
 

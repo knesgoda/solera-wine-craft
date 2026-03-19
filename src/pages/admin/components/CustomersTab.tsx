@@ -128,17 +128,81 @@ export function CustomersTab({ api, password }: Props) {
 
   const sub = orgDetail?.subscription;
 
+  // ─── Create Customer State ───
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [createUserForm, setCreateUserForm] = useState({ firstName: "", lastName: "", email: "", userPassword: "", orgName: "", tier: "enterprise" });
+  const [creatingUser, setCreatingUser] = useState(false);
+
+  // ─── Support Context State ───
+  const [supportContext, setSupportContext] = useState<string | null>(null);
+  const [loadingSupportCtx, setLoadingSupportCtx] = useState(false);
+
+  const handleCreateUser = async () => {
+    setCreatingUser(true);
+    try {
+      const result = await api("create-user", createUserForm);
+      toast.success(`User created! Org ID: ${result.orgId}`);
+      setShowCreateUser(false);
+      setCreateUserForm({ firstName: "", lastName: "", email: "", userPassword: "", orgName: "", tier: "enterprise" });
+      queryClient.invalidateQueries({ queryKey: ["admin-customers"] });
+    } catch (e: any) { toast.error(e.message); }
+    setCreatingUser(false);
+  };
+
+  const handleGenerateSupportCtx = async () => {
+    setLoadingSupportCtx(true);
+    try {
+      const result = await api("support-context", { orgId: selectedOrgId });
+      setSupportContext(result.context);
+    } catch (e: any) { toast.error(e.message); }
+    setLoadingSupportCtx(false);
+  };
+
   return (
     <div className="space-y-4">
       {/* Sub tabs */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         <Button variant={activeSubTab === "main" ? "default" : "outline"} size="sm" onClick={() => setActiveSubTab("main")}>
           All Customers
         </Button>
         <Button variant={activeSubTab === "upsell" ? "default" : "outline"} size="sm" onClick={() => setActiveSubTab("upsell")}>
           Upsell Queue
         </Button>
+        <div className="ml-auto">
+          <Button size="sm" onClick={() => setShowCreateUser(true)}>
+            <Plus className="h-4 w-4 mr-1" /> Create Customer
+          </Button>
+        </div>
       </div>
+
+      {/* Create Customer Modal */}
+      <Sheet open={showCreateUser} onOpenChange={setShowCreateUser}>
+        <SheetContent className="w-[420px] overflow-auto">
+          <SheetHeader className="mb-4"><SheetTitle>Create Customer</SheetTitle></SheetHeader>
+          <div className="space-y-3">
+            <div><label className="text-xs font-medium">First Name</label><Input value={createUserForm.firstName} onChange={e => setCreateUserForm({...createUserForm, firstName: e.target.value})} /></div>
+            <div><label className="text-xs font-medium">Last Name</label><Input value={createUserForm.lastName} onChange={e => setCreateUserForm({...createUserForm, lastName: e.target.value})} /></div>
+            <div><label className="text-xs font-medium">Email</label><Input type="email" value={createUserForm.email} onChange={e => setCreateUserForm({...createUserForm, email: e.target.value})} /></div>
+            <div><label className="text-xs font-medium">Password</label><Input type="password" value={createUserForm.userPassword} onChange={e => setCreateUserForm({...createUserForm, userPassword: e.target.value})} /></div>
+            <div><label className="text-xs font-medium">Org Name</label><Input value={createUserForm.orgName} onChange={e => setCreateUserForm({...createUserForm, orgName: e.target.value})} /></div>
+            <div>
+              <label className="text-xs font-medium">Tier</label>
+              <Select value={createUserForm.tier} onValueChange={v => setCreateUserForm({...createUserForm, tier: v})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hobbyist">Hobbyist</SelectItem>
+                  <SelectItem value="small_boutique">Pro</SelectItem>
+                  <SelectItem value="mid_size">Growth</SelectItem>
+                  <SelectItem value="enterprise">Enterprise</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button className="w-full" onClick={handleCreateUser} disabled={creatingUser || !createUserForm.email || !createUserForm.userPassword}>
+              {creatingUser ? "Creating…" : "Create Customer"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {activeSubTab === "upsell" ? (
         <Card className="bg-white shadow-sm">
@@ -305,6 +369,7 @@ export function CustomersTab({ api, password }: Props) {
                   <TabsTrigger value="subscription">Subscription</TabsTrigger>
                   <TabsTrigger value="timeline">Activity</TabsTrigger>
                   <TabsTrigger value="notes">Notes</TabsTrigger>
+                  <TabsTrigger value="support">Support</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-4 mt-4">
@@ -435,6 +500,25 @@ export function CustomersTab({ api, password }: Props) {
                       </CardContent>
                     </Card>
                   ))}
+                </TabsContent>
+
+                {/* Support Context Tab */}
+                <TabsContent value="support" className="mt-4 space-y-4">
+                  <Button onClick={handleGenerateSupportCtx} disabled={loadingSupportCtx}>
+                    {loadingSupportCtx ? "Generating…" : "Generate Support Brief"}
+                  </Button>
+                  {supportContext && (
+                    <Card className="shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="flex justify-end mb-2">
+                          <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(supportContext); toast.success("Copied!"); }}>
+                            Copy to clipboard
+                          </Button>
+                        </div>
+                        <pre className="text-xs whitespace-pre-wrap max-h-96 overflow-auto font-mono bg-muted p-3 rounded">{supportContext}</pre>
+                      </CardContent>
+                    </Card>
+                  )}
                 </TabsContent>
               </Tabs>
             </>
