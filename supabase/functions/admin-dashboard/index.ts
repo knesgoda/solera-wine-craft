@@ -479,14 +479,14 @@ Deno.serve(async (req) => {
       const org = orgRes.data;
       if (stripeKey && org?.stripe_customer_id) {
         try {
-          const custSubs = await stripeGet(`/subscriptions?customer=${org.stripe_customer_id}&limit=1&expand[]=data.default_payment_method`, stripeKey);
+          const custSubs = await stripeGet(`/subscriptions?customer=${org.stripe_customer_id}&limit=1&expand[]=data.default_payment_method&expand[]=data.items`, stripeKey);
           const sub = (custSubs.data || [])[0];
           if (sub) {
             const pm = sub.default_payment_method;
             subscriptionDetail = {
-              plan: sub.plan?.nickname || org.tier || "Unknown",
-              billingCycle: sub.plan?.interval || "month",
-              mrr: sub.plan?.interval === "year" ? Math.round((sub.plan?.amount || 0) / 12 / 100) : Math.round((sub.plan?.amount || 0) / 100),
+              plan: sub.items?.data?.[0]?.price?.nickname || sub.plan?.nickname || org.tier || "Unknown",
+              billingCycle: sub.items?.data?.[0]?.price?.recurring?.interval || sub.plan?.interval || "month",
+              mrr: Math.round(getSubMonthlyAmount(sub)),
               nextBilling: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
               startedAt: new Date(sub.created * 1000).toISOString(),
               cardLast4: pm?.card?.last4 || null,
