@@ -508,27 +508,43 @@ Deno.serve(async (req) => {
 
     // ─── Engagement Stats ───
     if (action === "engagement-stats") {
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
       const [profilesRes, orgsRes] = await Promise.all([
         supabase.from("profiles").select("id, org_id, last_active_at"),
-        supabase.from("organizations").select("id, created_at"),
+        supabase.from("organizations").select("id, tier, created_at"),
       ]);
+
+      const now = new Date();
+      const allOrgs = orgsRes.data || [];
 
       // Signups per week for last 8 weeks
       const signupsByWeek: any[] = [];
-      const now = new Date();
       for (let i = 7; i >= 0; i--) {
         const weekStart = new Date(now.getTime() - (i + 1) * 7 * 24 * 60 * 60 * 1000);
         const weekEnd = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
-        const count = (orgsRes.data || []).filter(o => {
+        const count = allOrgs.filter(o => {
           const d = new Date(o.created_at);
           return d >= weekStart && d < weekEnd;
         }).length;
         signupsByWeek.push({ weekOf: weekEnd.toISOString().slice(0, 10), signups: count });
       }
 
-      return json({ signupsByWeek });
+      // Tier distribution over time (last 8 weeks)
+      const tierDistribution: any[] = [];
+      for (let i = 7; i >= 0; i--) {
+        const weekEnd = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+        const orgsAtTime = allOrgs.filter(o => new Date(o.created_at) <= weekEnd);
+        const counts: Record<string, number> = { hobbyist: 0, small_boutique: 0, mid_size: 0, enterprise: 0 };
+        for (const o of orgsAtTime) counts[o.tier || "hobbyist"] = (counts[o.tier || "hobbyist"] || 0) + 1;
+        tierDistribution.push({
+          weekOf: weekEnd.toISOString().slice(0, 10),
+          Hobbyist: counts.hobbyist,
+          Pro: counts.small_boutique,
+          Growth: counts.mid_size,
+          Enterprise: counts.enterprise,
+        });
+      }
+
+      return json({ signupsByWeek, tierDistribution });
     }
 
     // ─── Product Analytics ───
