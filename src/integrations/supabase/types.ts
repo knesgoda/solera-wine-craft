@@ -14,6 +14,122 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_keywords: {
+        Row: {
+          created_at: string | null
+          current_ranking: number | null
+          id: string
+          keyword: string
+          notes: string | null
+          target_page: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_ranking?: number | null
+          id?: string
+          keyword: string
+          notes?: string | null
+          target_page?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_ranking?: number | null
+          id?: string
+          keyword?: string
+          notes?: string | null
+          target_page?: string | null
+        }
+        Relationships: []
+      }
+      admin_metrics: {
+        Row: {
+          created_at: string | null
+          id: string
+          notes: string | null
+          sc_avg_position: number | null
+          sc_clicks: number | null
+          sc_impressions: number | null
+          sc_top_queries: Json | null
+          week_of: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          sc_avg_position?: number | null
+          sc_clicks?: number | null
+          sc_impressions?: number | null
+          sc_top_queries?: Json | null
+          week_of: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          sc_avg_position?: number | null
+          sc_clicks?: number | null
+          sc_impressions?: number | null
+          sc_top_queries?: Json | null
+          week_of?: string
+        }
+        Relationships: []
+      }
+      admin_org_notes: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          note: string
+          org_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          note: string
+          org_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          note?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_org_notes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_system_status: {
+        Row: {
+          id: string
+          notes: string | null
+          service: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          notes?: string | null
+          service: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          notes?: string | null
+          service?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       ai_conversations: {
         Row: {
           created_at: string
@@ -624,6 +740,7 @@ export type Database = {
           category: string
           content_markdown: string
           created_at: string
+          current_ranking: number | null
           excerpt: string | null
           featured: boolean
           id: string
@@ -635,14 +752,18 @@ export type Database = {
           reading_time_minutes: number
           slug: string
           tags_array: string[]
+          target_keyword: string | null
           title: string
           updated_at: string
+          weekly_clicks: number | null
+          weekly_impressions: number | null
         }
         Insert: {
           author_name?: string
           category?: string
           content_markdown?: string
           created_at?: string
+          current_ranking?: number | null
           excerpt?: string | null
           featured?: boolean
           id?: string
@@ -654,14 +775,18 @@ export type Database = {
           reading_time_minutes?: number
           slug: string
           tags_array?: string[]
+          target_keyword?: string | null
           title: string
           updated_at?: string
+          weekly_clicks?: number | null
+          weekly_impressions?: number | null
         }
         Update: {
           author_name?: string
           category?: string
           content_markdown?: string
           created_at?: string
+          current_ranking?: number | null
           excerpt?: string | null
           featured?: boolean
           id?: string
@@ -673,8 +798,11 @@ export type Database = {
           reading_time_minutes?: number
           slug?: string
           tags_array?: string[]
+          target_keyword?: string | null
           title?: string
           updated_at?: string
+          weekly_clicks?: number | null
+          weekly_impressions?: number | null
         }
         Relationships: []
       }
