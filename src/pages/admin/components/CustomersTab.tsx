@@ -501,6 +501,25 @@ export function CustomersTab({ api, password }: Props) {
                     </Card>
                   ))}
                 </TabsContent>
+
+                {/* Support Context Tab */}
+                <TabsContent value="support" className="mt-4 space-y-4">
+                  <Button onClick={handleGenerateSupportCtx} disabled={loadingSupportCtx}>
+                    {loadingSupportCtx ? "Generating…" : "Generate Support Brief"}
+                  </Button>
+                  {supportContext && (
+                    <Card className="shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="flex justify-end mb-2">
+                          <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(supportContext); toast.success("Copied!"); }}>
+                            Copy to clipboard
+                          </Button>
+                        </div>
+                        <pre className="text-xs whitespace-pre-wrap max-h-96 overflow-auto font-mono bg-muted p-3 rounded">{supportContext}</pre>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
               </Tabs>
             </>
           ) : null}
