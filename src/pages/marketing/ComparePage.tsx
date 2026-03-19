@@ -51,7 +51,7 @@ const COMPETITORS = [
     name: "WineDirect",
     summary: "WineDirect is DTC-only. It handles ecommerce but doesn't touch your cellar, vineyard, or compliance. Solera gives you DTC plus everything else — at a lower price.",
     features: {
-      "Starting price": ["$129/mo", "$399/mo"],
+      "Starting price": ["$69/mo", "$399/mo"],
       "Free tier": [true, false],
       "Vineyard ops": [true, false],
       "Lab tracking": [true, false],
