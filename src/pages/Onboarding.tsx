@@ -12,8 +12,8 @@ import soleraLogo from "@/assets/solera-logo.png";
 
 const TIERS = [
   { value: "hobbyist" as const, label: "Hobbyist", desc: "Personal or hobby winemaking" },
-  { value: "small_boutique" as const, label: "Small Boutique", desc: "Under 5,000 cases/year" },
-  { value: "mid_size" as const, label: "Mid-Size", desc: "5,000–50,000 cases/year" },
+  { value: "small_boutique" as const, label: "Pro", desc: "Small boutique winery, under 5,000 cases/year" },
+  { value: "mid_size" as const, label: "Growth", desc: "Mid-size operation, 5,000–50,000 cases/year" },
   { value: "enterprise" as const, label: "Enterprise", desc: "50,000+ cases/year" },
 ];
 

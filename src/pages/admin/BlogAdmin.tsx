@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,25 +50,6 @@ export default function BlogAdmin() {
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    try {
-      const { data } = await supabase.functions.invoke("api-v1", {
-        body: { action: "verify-admin", password },
-      });
-      // Fallback: use edge function to verify, or check directly
-      // For simplicity, we verify via a dedicated edge function
-      setAuthenticated(true);
-    } catch {
-      // Try direct verification via a simple check
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/og-image?admin_check=${encodeURIComponent(password)}`
-      );
-      // We'll use a dedicated verification approach
-      toast.error("Verification failed");
-    }
-  };
-
-  // Simple client-side admin auth via edge function
   const verifyPassword = async () => {
     try {
       const response = await supabase.functions.invoke("verify-admin", {
@@ -86,9 +67,6 @@ export default function BlogAdmin() {
   };
 
   const loadPosts = async () => {
-    // Use authenticated user session to read all posts (including unpublished)
-    // Since RLS only allows reading published, we need service role
-    // We'll fetch via edge function
     try {
       const response = await supabase.functions.invoke("verify-admin", {
         body: { password, action: "list-posts" },
@@ -96,7 +74,7 @@ export default function BlogAdmin() {
       if (response.data?.posts) {
         setPosts(response.data.posts);
       }
-    } catch (e) {
+    } catch {
       toast.error("Failed to load posts");
     }
   };
@@ -216,10 +194,7 @@ export default function BlogAdmin() {
 
         <div className="space-y-3">
           {posts.map((post) => (
-            <div
-              key={post.id}
-              className="flex items-center gap-4 p-4 bg-card border border-border rounded-lg"
-            >
+            <div key={post.id} className="flex items-center gap-4 p-4 bg-card border border-border rounded-lg">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="font-semibold text-foreground truncate">{post.title}</h3>
@@ -256,12 +231,7 @@ export default function BlogAdmin() {
 }
 
 function PostEditor({
-  post,
-  onSave,
-  onCancel,
-  loading,
-  showPreview,
-  setShowPreview,
+  post, onSave, onCancel, loading, showPreview, setShowPreview,
 }: {
   post: BlogPost;
   onSave: (p: Partial<BlogPost> & { id?: string }) => void;
@@ -319,10 +289,7 @@ function PostEditor({
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-4">
-              <div>
-                <Label>Title</Label>
-                <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-              </div>
+              <div><Label>Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
               <div>
                 <Label>Slug</Label>
                 <div className="flex gap-2">
@@ -330,18 +297,10 @@ function PostEditor({
                   <Button variant="outline" onClick={generateSlug} type="button">Auto</Button>
                 </div>
               </div>
-              <div>
-                <Label>Excerpt</Label>
-                <Textarea value={form.excerpt || ""} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} rows={3} />
-              </div>
+              <div><Label>Excerpt</Label><Textarea value={form.excerpt || ""} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} rows={3} /></div>
               <div>
                 <Label>Content (Markdown)</Label>
-                <Textarea
-                  value={form.content_markdown}
-                  onChange={(e) => setForm({ ...form, content_markdown: e.target.value })}
-                  rows={20}
-                  className="font-mono text-sm"
-                />
+                <Textarea value={form.content_markdown} onChange={(e) => setForm({ ...form, content_markdown: e.target.value })} rows={20} className="font-mono text-sm" />
               </div>
             </div>
             <div className="space-y-4">
@@ -349,45 +308,17 @@ function PostEditor({
                 <Label>Category</Label>
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Author</Label>
-                <Input value={form.author_name} onChange={(e) => setForm({ ...form, author_name: e.target.value })} />
-              </div>
-              <div>
-                <Label>Tags (comma-separated)</Label>
-                <Input value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} />
-              </div>
-              <div>
-                <Label>Reading Time (minutes)</Label>
-                <Input type="number" value={form.reading_time_minutes} onChange={(e) => setForm({ ...form, reading_time_minutes: parseInt(e.target.value) || 5 })} />
-              </div>
-              <div>
-                <Label>Meta Title</Label>
-                <Input value={form.meta_title || ""} onChange={(e) => setForm({ ...form, meta_title: e.target.value })} />
-              </div>
-              <div>
-                <Label>Meta Description</Label>
-                <Textarea value={form.meta_description || ""} onChange={(e) => setForm({ ...form, meta_description: e.target.value })} rows={2} />
-              </div>
-              <div>
-                <Label>OG Image URL</Label>
-                <Input value={form.og_image_url || ""} onChange={(e) => setForm({ ...form, og_image_url: e.target.value })} />
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} />
-                <Label>Featured Post</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={form.published} onCheckedChange={(v) => setForm({ ...form, published: v, published_at: v && !form.published_at ? new Date().toISOString() : form.published_at })} />
-                <Label>Published</Label>
-              </div>
+              <div><Label>Author</Label><Input value={form.author_name} onChange={(e) => setForm({ ...form, author_name: e.target.value })} /></div>
+              <div><Label>Tags (comma-separated)</Label><Input value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} /></div>
+              <div><Label>Reading Time (minutes)</Label><Input type="number" value={form.reading_time_minutes} onChange={(e) => setForm({ ...form, reading_time_minutes: parseInt(e.target.value) || 5 })} /></div>
+              <div><Label>Meta Title</Label><Input value={form.meta_title || ""} onChange={(e) => setForm({ ...form, meta_title: e.target.value })} /></div>
+              <div><Label>Meta Description</Label><Textarea value={form.meta_description || ""} onChange={(e) => setForm({ ...form, meta_description: e.target.value })} rows={2} /></div>
+              <div><Label>OG Image URL</Label><Input value={form.og_image_url || ""} onChange={(e) => setForm({ ...form, og_image_url: e.target.value })} /></div>
+              <div className="flex items-center gap-2"><Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} /><Label>Featured Post</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={form.published} onCheckedChange={(v) => setForm({ ...form, published: v, published_at: v && !form.published_at ? new Date().toISOString() : form.published_at })} /><Label>Published</Label></div>
             </div>
           </div>
         )}
