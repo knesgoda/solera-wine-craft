@@ -20,25 +20,21 @@ interface Props {
 export function WeeklyStrategyTab({ api }: Props) {
   const queryClient = useQueryClient();
 
-  // MRR Trend
   const { data: mrrData, isLoading: mrrLoading } = useQuery({
     queryKey: ["admin-weekly-mrr"],
     queryFn: () => api("stripe-weekly-mrr"),
   });
 
-  // Engagement / signups
   const { data: engData, isLoading: engLoading } = useQuery({
     queryKey: ["admin-engagement"],
     queryFn: () => api("engagement-stats"),
   });
 
-  // Search Console metrics
   const { data: metricsData, isLoading: metricsLoading } = useQuery({
     queryKey: ["admin-metrics"],
     queryFn: () => api("admin-metrics-list"),
   });
 
-  // Form state
   const [scForm, setScForm] = useState({
     week_of: new Date().toISOString().slice(0, 10),
     sc_impressions: 0,
@@ -78,6 +74,7 @@ export function WeeklyStrategyTab({ api }: Props) {
   const weeks = mrrData?.weeks || [];
   const metrics = metricsData?.metrics || [];
   const signups = engData?.signupsByWeek || [];
+  const tierDist = engData?.tierDistribution || [];
 
   return (
     <div className="space-y-8">
@@ -131,22 +128,45 @@ export function WeeklyStrategyTab({ api }: Props) {
         <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: "#6B1B2A" }}>
           User Cohorts
         </h2>
-        <Card className="bg-white shadow-sm">
-          <CardHeader><CardTitle className="text-sm">New Signups per Week</CardTitle></CardHeader>
-          <CardContent>
-            {engLoading ? <Skeleton className="h-48 w-full" /> : (
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={signups}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="weekOf" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="signups" stroke="#6B1B2A" strokeWidth={2} dot={{ fill: "#C8902A" }} />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card className="bg-white shadow-sm">
+            <CardHeader><CardTitle className="text-sm">New Signups per Week</CardTitle></CardHeader>
+            <CardContent>
+              {engLoading ? <Skeleton className="h-48 w-full" /> : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={signups}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="weekOf" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="signups" stroke="#6B1B2A" strokeWidth={2} dot={{ fill: "#C8902A" }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white shadow-sm">
+            <CardHeader><CardTitle className="text-sm">Tier Distribution Over Time</CardTitle></CardHeader>
+            <CardContent>
+              {engLoading ? <Skeleton className="h-48 w-full" /> : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <AreaChart data={tierDist}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="weekOf" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} />
+                    <Tooltip />
+                    <Legend />
+                    <Area type="monotone" dataKey="Hobbyist" stackId="1" fill="#94a3b8" stroke="#94a3b8" />
+                    <Area type="monotone" dataKey="Pro" stackId="1" fill="#C8902A" stroke="#C8902A" />
+                    <Area type="monotone" dataKey="Growth" stackId="1" fill="#6B1B2A" stroke="#6B1B2A" />
+                    <Area type="monotone" dataKey="Enterprise" stackId="1" fill="#1A1A1A" stroke="#1A1A1A" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </section>
 
       {/* Search Console Form */}

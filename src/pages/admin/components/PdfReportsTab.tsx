@@ -1,9 +1,9 @@
 import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Download, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { FileText, Download, Loader2, Eye } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -14,6 +14,10 @@ interface Props {
 export function PdfReportsTab({ api }: Props) {
   const [generatingStandup, setGeneratingStandup] = useState(false);
   const [generatingWeekly, setGeneratingWeekly] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [pendingDoc, setPendingDoc] = useState<jsPDF | null>(null);
+  const [pendingFilename, setPendingFilename] = useState("");
 
   const { data: dashData } = useQuery({
     queryKey: ["admin-dashboard-stats"],
@@ -30,14 +34,30 @@ export function PdfReportsTab({ api }: Props) {
     queryFn: () => api("admin-metrics-list"),
   });
 
+  const showPreview = (doc: jsPDF, filename: string) => {
+    const blobUrl = doc.output("bloburl") as unknown as string;
+    setPreviewUrl(blobUrl);
+    setPendingDoc(doc);
+    setPendingFilename(filename);
+    setPreviewOpen(true);
+  };
+
+  const handleDownload = () => {
+    if (pendingDoc) {
+      pendingDoc.save(pendingFilename);
+    }
+    setPreviewOpen(false);
+    setPreviewUrl(null);
+    setPendingDoc(null);
+  };
+
   const generateStandupPdf = async () => {
     setGeneratingStandup(true);
     try {
       const doc = new jsPDF();
       const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
-      // Header
-      doc.setFillColor(107, 27, 42); // #6B1B2A
+      doc.setFillColor(107, 27, 42);
       doc.rect(0, 0, 210, 30, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(18);
@@ -157,7 +177,7 @@ export function PdfReportsTab({ api }: Props) {
       }
 
       const dateStr = new Date().toISOString().slice(0, 10);
-      doc.save(`solera-standup-${dateStr}.pdf`);
+      showPreview(doc, `solera-standup-${dateStr}.pdf`);
     } finally {
       setGeneratingStandup(false);
     }
@@ -169,7 +189,6 @@ export function PdfReportsTab({ api }: Props) {
       const doc = new jsPDF();
       const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
-      // Header
       doc.setFillColor(107, 27, 42);
       doc.rect(0, 0, 210, 30, "F");
       doc.setTextColor(255, 255, 255);
@@ -229,7 +248,6 @@ export function PdfReportsTab({ api }: Props) {
         });
         y = (doc as any).lastAutoTable.finalY + 10;
 
-        // Notes from most recent
         const latest = metrics[0];
         if (latest?.notes) {
           doc.setFontSize(14);
@@ -255,7 +273,7 @@ export function PdfReportsTab({ api }: Props) {
       }
 
       const dateStr = new Date().toISOString().slice(0, 10);
-      doc.save(`solera-weekly-${dateStr}.pdf`);
+      showPreview(doc, `solera-weekly-${dateStr}.pdf`);
     } finally {
       setGeneratingWeekly(false);
     }
@@ -284,8 +302,8 @@ export function PdfReportsTab({ api }: Props) {
               onClick={generateStandupPdf}
               disabled={generatingStandup || !dashData}
             >
-              {generatingStandup ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-              Generate & Download
+              {generatingStandup ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />}
+              Preview & Download
             </Button>
             <p className="text-xs text-muted-foreground mt-2">
               Filename: solera-standup-{new Date().toISOString().slice(0, 10)}.pdf
@@ -313,8 +331,8 @@ export function PdfReportsTab({ api }: Props) {
               onClick={generateWeeklyPdf}
               disabled={generatingWeekly}
             >
-              {generatingWeekly ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-              Generate & Download
+              {generatingWeekly ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />}
+              Preview & Download
             </Button>
             <p className="text-xs text-muted-foreground mt-2">
               Filename: solera-weekly-{new Date().toISOString().slice(0, 10)}.pdf
@@ -322,6 +340,30 @@ export function PdfReportsTab({ api }: Props) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Print Preview Modal */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>PDF Preview — {pendingFilename}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0">
+            {previewUrl && (
+              <iframe
+                src={previewUrl}
+                className="w-full h-full border rounded-lg"
+                title="PDF Preview"
+              />
+            )}
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setPreviewOpen(false)}>Cancel</Button>
+            <Button onClick={handleDownload} style={{ background: "#6B1B2A" }}>
+              <Download className="h-4 w-4 mr-2" /> Download PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -332,7 +332,7 @@ Deno.serve(async (req) => {
       const orgIds = (orgs || []).map((o: any) => o.id);
       const safeIds = orgIds.length ? orgIds : ["00000000-0000-0000-0000-000000000000"];
 
-      const [profilesRes, vintagesRes, blocksRes, labsRes, tasksRes, importsRes, notesRes] = await Promise.all([
+      const [profilesRes, vintagesRes, blocksRes, labsRes, tasksRes, importsRes, notesRes, vineyardsRes] = await Promise.all([
         supabase.from("profiles").select("id, org_id, last_active_at").in("org_id", safeIds),
         supabase.from("vintages").select("id, org_id").in("org_id", safeIds),
         supabase.from("blocks").select("id, vineyard_id").limit(1000),
@@ -340,13 +340,25 @@ Deno.serve(async (req) => {
         supabase.from("tasks").select("id, org_id").in("org_id", safeIds),
         supabase.from("import_jobs").select("id, org_id").in("org_id", safeIds),
         supabase.from("admin_org_notes").select("org_id").in("org_id", safeIds),
+        supabase.from("vineyards").select("id, org_id").in("org_id", safeIds),
       ]);
 
       const profiles = profilesRes.data || [];
       const vintages = vintagesRes.data || [];
+      const blocks = blocksRes.data || [];
+      const labs = labsRes.data || [];
       const tasks = tasksRes.data || [];
       const imports = importsRes.data || [];
       const noteOrgs = new Set((notesRes.data || []).map((n: any) => n.org_id));
+      const vineyards = vineyardsRes.data || [];
+
+      // Map vineyard->org for block counting
+      const vineyardOrgMap: Record<string, string> = {};
+      for (const v of vineyards) vineyardOrgMap[v.id] = v.org_id;
+
+      // Map vintage->org for lab sample counting
+      const vintageOrgMap: Record<string, string> = {};
+      for (const v of vintages) vintageOrgMap[v.id] = v.org_id;
 
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -366,10 +378,20 @@ Deno.serve(async (req) => {
         else if (!lastActive || lastActive < thirtyDaysAgo) lifecycle = "churned";
         else if (lastActive < fourteenDaysAgo) lifecycle = "at-risk";
 
+        // Count blocks for this org
+        const orgVineyardIds = vineyards.filter(v => v.org_id === org.id).map(v => v.id);
+        const blockCount = blocks.filter(b => orgVineyardIds.includes(b.vineyard_id)).length;
+
+        // Count lab samples for this org
+        const orgVintageIds = vintages.filter(v => v.org_id === org.id).map(v => v.id);
+        const labCount = labs.filter(l => orgVintageIds.includes(l.vintage_id)).length;
+
         return {
           ...org,
           userCount: orgProfiles.length,
           vintageCount: vintages.filter((v: any) => v.org_id === org.id).length,
+          blockCount,
+          labCount,
           taskCount: tasks.filter((t: any) => t.org_id === org.id).length,
           importCount: imports.filter((i: any) => i.org_id === org.id).length,
           lastActive,
@@ -395,14 +417,13 @@ Deno.serve(async (req) => {
         supabase.from("user_roles").select("user_id, role"),
       ]);
 
-      // Activity timeline - recent events from multiple tables
+      // Activity timeline
       const [labsRes, tasksRes, aiRes] = await Promise.all([
         supabase.from("lab_samples").select("id, sampled_at, brix, ph").order("sampled_at", { ascending: false }).limit(5),
         supabase.from("tasks").select("id, title, status, created_at, completed_at").eq("org_id", orgId).order("created_at", { ascending: false }).limit(10),
         supabase.from("ai_conversations").select("id, title, created_at").eq("org_id", orgId).order("created_at", { ascending: false }).limit(5),
       ]);
 
-      // Build activity timeline
       const timeline: any[] = [];
       for (const u of (usersRes.data || [])) {
         if (u.last_active_at) timeline.push({ type: "login", label: `${u.first_name} ${u.last_name} logged in`, at: u.last_active_at });
@@ -421,6 +442,48 @@ Deno.serve(async (req) => {
       }
       timeline.sort((a, b) => b.at.localeCompare(a.at));
 
+      // Subscription detail from Stripe
+      let subscriptionDetail = null;
+      const org = orgRes.data;
+      if (stripeKey && org?.stripe_customer_id) {
+        try {
+          const custSubs = await stripeGet(`/subscriptions?customer=${org.stripe_customer_id}&limit=1&expand[]=data.default_payment_method`, stripeKey);
+          const sub = (custSubs.data || [])[0];
+          if (sub) {
+            const pm = sub.default_payment_method;
+            subscriptionDetail = {
+              plan: sub.plan?.nickname || org.tier || "Unknown",
+              billingCycle: sub.plan?.interval || "month",
+              mrr: sub.plan?.interval === "year" ? Math.round((sub.plan?.amount || 0) / 12 / 100) : Math.round((sub.plan?.amount || 0) / 100),
+              nextBilling: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
+              startedAt: new Date(sub.created * 1000).toISOString(),
+              cardLast4: pm?.card?.last4 || null,
+              cardExpiry: pm?.card?.exp_month ? `${pm.card.exp_month}/${pm.card.exp_year}` : null,
+              cardBrand: pm?.card?.brand || null,
+              cardStatus: pm ? "healthy" : "missing",
+              status: sub.status,
+            };
+          }
+        } catch (e) {
+          console.error("Stripe sub detail error:", e);
+        }
+      }
+
+      // Stripe events for upgrade/downgrade history
+      let upgradeHistory: any[] = [];
+      if (stripeKey && org?.stripe_customer_id) {
+        try {
+          const events = await stripeGet(`/events?type=customer.subscription.updated&limit=20`, stripeKey);
+          upgradeHistory = (events.data || [])
+            .filter((evt: any) => evt.data?.object?.customer === org.stripe_customer_id && evt.data?.previous_attributes?.plan)
+            .map((evt: any) => ({
+              fromPlan: evt.data.previous_attributes.plan?.nickname || "Previous",
+              toPlan: evt.data.object.plan?.nickname || "Current",
+              date: new Date(evt.created * 1000).toISOString(),
+            }));
+        } catch {}
+      }
+
       return json({
         org: orgRes.data,
         users: usersRes.data || [],
@@ -428,6 +491,8 @@ Deno.serve(async (req) => {
         imports: importsRes.data || [],
         notes: notesRes.data || [],
         timeline: timeline.slice(0, 20),
+        subscription: subscriptionDetail,
+        upgradeHistory,
       });
     }
 
@@ -443,27 +508,43 @@ Deno.serve(async (req) => {
 
     // ─── Engagement Stats ───
     if (action === "engagement-stats") {
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
       const [profilesRes, orgsRes] = await Promise.all([
         supabase.from("profiles").select("id, org_id, last_active_at"),
-        supabase.from("organizations").select("id, created_at"),
+        supabase.from("organizations").select("id, tier, created_at"),
       ]);
+
+      const now = new Date();
+      const allOrgs = orgsRes.data || [];
 
       // Signups per week for last 8 weeks
       const signupsByWeek: any[] = [];
-      const now = new Date();
       for (let i = 7; i >= 0; i--) {
         const weekStart = new Date(now.getTime() - (i + 1) * 7 * 24 * 60 * 60 * 1000);
         const weekEnd = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
-        const count = (orgsRes.data || []).filter(o => {
+        const count = allOrgs.filter(o => {
           const d = new Date(o.created_at);
           return d >= weekStart && d < weekEnd;
         }).length;
         signupsByWeek.push({ weekOf: weekEnd.toISOString().slice(0, 10), signups: count });
       }
 
-      return json({ signupsByWeek });
+      // Tier distribution over time (last 8 weeks)
+      const tierDistribution: any[] = [];
+      for (let i = 7; i >= 0; i--) {
+        const weekEnd = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+        const orgsAtTime = allOrgs.filter(o => new Date(o.created_at) <= weekEnd);
+        const counts: Record<string, number> = { hobbyist: 0, small_boutique: 0, mid_size: 0, enterprise: 0 };
+        for (const o of orgsAtTime) counts[o.tier || "hobbyist"] = (counts[o.tier || "hobbyist"] || 0) + 1;
+        tierDistribution.push({
+          weekOf: weekEnd.toISOString().slice(0, 10),
+          Hobbyist: counts.hobbyist,
+          Pro: counts.small_boutique,
+          Growth: counts.mid_size,
+          Enterprise: counts.enterprise,
+        });
+      }
+
+      return json({ signupsByWeek, tierDistribution });
     }
 
     // ─── Product Analytics ───
@@ -561,7 +642,9 @@ Deno.serve(async (req) => {
 
     // ─── Operations Data ───
     if (action === "operations-data") {
-      const [errorJobsRes, errorDetailsRes] = await Promise.all([
+      const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+
+      const [errorJobsRes, errorDetailsRes, staleLabsRes, staleTasksRes] = await Promise.all([
         supabase.from("import_jobs")
           .select("id, org_id, source_type, started_at, error_rows, status, created_at")
           .eq("status", "error")
@@ -569,11 +652,22 @@ Deno.serve(async (req) => {
         supabase.from("import_errors")
           .select("id, job_id, row_number, error_message, source_data")
           .limit(200),
+        supabase.from("lab_samples")
+          .select("id, vintage_id, sampled_at, offline_queued")
+          .eq("offline_queued", true)
+          .lt("sampled_at", fortyEightHoursAgo),
+        supabase.from("tasks")
+          .select("id, org_id, title, created_at, offline_queued")
+          .eq("offline_queued", true)
+          .lt("created_at", fortyEightHoursAgo),
       ]);
 
-      // Map org names
+      // Map org names for error jobs
       const orgIds = [...new Set((errorJobsRes.data || []).map((j: any) => j.org_id))];
-      const safeIds = orgIds.length ? orgIds : ["00000000-0000-0000-0000-000000000000"];
+      // Also collect org_ids from stale tasks
+      const taskOrgIds = [...new Set((staleTasksRes.data || []).map((t: any) => t.org_id))];
+      const allOrgIds = [...new Set([...orgIds, ...taskOrgIds])];
+      const safeIds = allOrgIds.length ? allOrgIds : ["00000000-0000-0000-0000-000000000000"];
       const { data: orgs } = await supabase.from("organizations").select("id, name").in("id", safeIds);
       const orgMap: Record<string, string> = {};
       for (const o of (orgs || [])) orgMap[o.id] = o.name;
@@ -584,11 +678,33 @@ Deno.serve(async (req) => {
         errors: (errorDetailsRes.data || []).filter((e: any) => e.job_id === j.id),
       }));
 
+      // Build offline sync failures grouped by org
+      const offlineSyncFailures: any[] = [];
+      for (const lab of (staleLabsRes.data || [])) {
+        offlineSyncFailures.push({
+          id: lab.id,
+          type: "lab_sample",
+          queuedAt: lab.sampled_at,
+          orgId: null, // lab_samples don't have org_id directly
+          orgName: "—",
+        });
+      }
+      for (const task of (staleTasksRes.data || [])) {
+        offlineSyncFailures.push({
+          id: task.id,
+          type: "task",
+          title: task.title,
+          queuedAt: task.created_at,
+          orgId: task.org_id,
+          orgName: orgMap[task.org_id] || "Unknown",
+        });
+      }
+
       // System status
       const { data: systemStatus } = await supabase.from("admin_system_status")
         .select("*").order("service");
 
-      return json({ errorJobs, systemStatus: systemStatus || [] });
+      return json({ errorJobs, offlineSyncFailures, systemStatus: systemStatus || [] });
     }
 
     // ─── Admin Metrics CRUD ───
@@ -665,31 +781,69 @@ Deno.serve(async (req) => {
 
     // ─── Upsell Queue ───
     if (action === "upsell-queue") {
-      const { data: hobbyistOrgs } = await supabase.from("organizations")
+      // Get hobbyist AND pro orgs for different upsell reasons
+      const { data: upsellOrgs } = await supabase.from("organizations")
         .select("id, name, tier, created_at")
-        .eq("tier", "hobbyist");
+        .in("tier", ["hobbyist", "small_boutique"]);
 
-      const orgIds = (hobbyistOrgs || []).map(o => o.id);
+      const orgIds = (upsellOrgs || []).map(o => o.id);
       const safeIds = orgIds.length ? orgIds : ["00000000-0000-0000-0000-000000000000"];
 
-      const [profilesRes, vintagesRes] = await Promise.all([
+      const [profilesRes, blocksRes, labsRes, aiRes] = await Promise.all([
         supabase.from("profiles").select("org_id, last_active_at").in("org_id", safeIds),
-        supabase.from("vintages").select("org_id").in("org_id", safeIds),
+        supabase.from("blocks").select("id, vineyard_id").limit(1000),
+        supabase.from("lab_samples").select("id, vintage_id").limit(1000),
+        supabase.from("ai_conversations").select("id, org_id").in("org_id", safeIds),
       ]);
 
-      const flagged = (hobbyistOrgs || []).map(org => {
+      // Map vineyards to orgs for block counting
+      const { data: vineyards } = await supabase.from("vineyards").select("id, org_id").in("org_id", safeIds);
+      const vineyardOrgMap: Record<string, string> = {};
+      for (const v of (vineyards || [])) vineyardOrgMap[v.id] = v.org_id;
+
+      // Map vintages to orgs for lab sample counting
+      const { data: vintages } = await supabase.from("vintages").select("id, org_id").in("org_id", safeIds);
+      const vintageOrgMap: Record<string, string> = {};
+      for (const v of (vintages || [])) vintageOrgMap[v.id] = v.org_id;
+
+      // Count blocks per org
+      const blocksPerOrg: Record<string, number> = {};
+      for (const b of (blocksRes.data || [])) {
+        const orgId = vineyardOrgMap[b.vineyard_id];
+        if (orgId) blocksPerOrg[orgId] = (blocksPerOrg[orgId] || 0) + 1;
+      }
+
+      // Count lab samples per org
+      const labsPerOrg: Record<string, number> = {};
+      for (const l of (labsRes.data || [])) {
+        const orgId = vintageOrgMap[l.vintage_id];
+        if (orgId) labsPerOrg[orgId] = (labsPerOrg[orgId] || 0) + 1;
+      }
+
+      // Count AI convos per org
+      const aiPerOrg: Record<string, number> = {};
+      for (const a of (aiRes.data || [])) {
+        aiPerOrg[a.org_id] = (aiPerOrg[a.org_id] || 0) + 1;
+      }
+
+      const flagged = (upsellOrgs || []).map(org => {
         const lastActive = (profilesRes.data || [])
           .filter(p => p.org_id === org.id)
           .reduce((latest: string | null, p: any) => {
             if (!p.last_active_at) return latest;
             return !latest || p.last_active_at > latest ? p.last_active_at : latest;
           }, null);
-        const vintageCount = (vintagesRes.data || []).filter(v => v.org_id === org.id).length;
         
         const flags: string[] = [];
-        if (vintageCount > 3) flags.push("Power user — many vintages on free tier");
+        if (org.tier === "hobbyist") {
+          if ((blocksPerOrg[org.id] || 0) > 2) flags.push("Hobbyist with > 2 blocks (hitting limit)");
+          if ((labsPerOrg[org.id] || 0) > 500) flags.push("Hobbyist with > 500 lab samples (power user)");
+        }
+        if (org.tier === "small_boutique") {
+          if ((aiPerOrg[org.id] || 0) > 0) flags.push("Pro org using Ask Solera (Growth feature)");
+        }
         
-        return { ...org, lastActive, vintageCount, flags };
+        return { ...org, lastActive, flags };
       }).filter(o => o.flags.length > 0);
 
       return json({ flagged });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,8 +14,8 @@ import { toast } from "sonner";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { useNavigate } from "react-router-dom";
 import {
-  Eye, StickyNote, Plus, Search, ChevronLeft, ChevronRight,
-  Copy, ArrowUpRight, Send,
+  Eye, Plus, Search, ChevronLeft, ChevronRight, Send,
+  ArrowUp, ArrowDown, CreditCard, CalendarDays, DollarSign,
 } from "lucide-react";
 
 interface Props {
@@ -33,18 +33,23 @@ const LIFECYCLE_COLORS: Record<string, string> = {
 
 const PAGE_SIZE = 25;
 
+type SortKey = "name" | "tier" | "userCount" | "vintageCount" | "blockCount" | "labCount" | "taskCount" | "importCount" | "lastActive" | "created_at";
+
 export function CustomersTab({ api, password }: Props) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { startImpersonation } = useImpersonation();
   const [search, setSearch] = useState("");
   const [tierFilter, setTierFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [lifecycleFilter, setLifecycleFilter] = useState("all");
   const [page, setPage] = useState(0);
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState("main");
   const [newNote, setNewNote] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("created_at");
+  const [sortAsc, setSortAsc] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-customers"],
@@ -72,13 +77,40 @@ export function CustomersTab({ api, password }: Props) {
     },
   });
 
-  const customers = (data?.customers || [])
-    .filter((c: any) => {
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortAsc(!sortAsc);
+    else { setSortKey(key); setSortAsc(true); }
+  };
+
+  const SortHeader = ({ label, field }: { label: string; field: SortKey }) => (
+    <TableHead className="cursor-pointer select-none hover:text-foreground" onClick={() => handleSort(field)}>
+      <div className="flex items-center gap-1">
+        {label}
+        {sortKey === field && (sortAsc ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
+      </div>
+    </TableHead>
+  );
+
+  const customers = useMemo(() => {
+    let filtered = (data?.customers || []).filter((c: any) => {
       if (search && !c.name?.toLowerCase().includes(search.toLowerCase())) return false;
       if (tierFilter !== "all" && (c.tier || "hobbyist") !== tierFilter) return false;
+      if (typeFilter !== "all" && (c.type || "") !== typeFilter) return false;
       if (lifecycleFilter !== "all" && c.lifecycle !== lifecycleFilter) return false;
       return true;
     });
+
+    filtered.sort((a: any, b: any) => {
+      let aVal = a[sortKey];
+      let bVal = b[sortKey];
+      if (aVal == null) aVal = "";
+      if (bVal == null) bVal = "";
+      if (typeof aVal === "number" && typeof bVal === "number") return sortAsc ? aVal - bVal : bVal - aVal;
+      return sortAsc ? String(aVal).localeCompare(String(bVal)) : String(bVal).localeCompare(String(aVal));
+    });
+
+    return filtered;
+  }, [data, search, tierFilter, typeFilter, lifecycleFilter, sortKey, sortAsc]);
 
   const totalPages = Math.ceil(customers.length / PAGE_SIZE);
   const pageCustomers = customers.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
@@ -93,6 +125,8 @@ export function CustomersTab({ api, password }: Props) {
     startImpersonation(orgDetail.org.id, orgDetail.org.name);
     navigate("/dashboard");
   };
+
+  const sub = orgDetail?.subscription;
 
   return (
     <div className="space-y-4">
@@ -149,7 +183,7 @@ export function CustomersTab({ api, password }: Props) {
       ) : (
         <>
           {/* Filters */}
-          <div className="flex gap-3 items-center">
+          <div className="flex gap-3 items-center flex-wrap">
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search org name…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} className="pl-9" />
@@ -162,6 +196,14 @@ export function CustomersTab({ api, password }: Props) {
                 <SelectItem value="small_boutique">Pro</SelectItem>
                 <SelectItem value="mid_size">Growth</SelectItem>
                 <SelectItem value="enterprise">Enterprise</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setPage(0); }}>
+              <SelectTrigger className="w-40"><SelectValue placeholder="Type" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="winery">Winery</SelectItem>
+                <SelectItem value="custom_crush">Custom Crush</SelectItem>
               </SelectContent>
             </Select>
             <Select value={lifecycleFilter} onValueChange={(v) => { setLifecycleFilter(v); setPage(0); }}>
@@ -184,14 +226,16 @@ export function CustomersTab({ api, password }: Props) {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Org Name</TableHead>
-                      <TableHead>Tier</TableHead>
-                      <TableHead>Users</TableHead>
-                      <TableHead>Vintages</TableHead>
-                      <TableHead>Tasks</TableHead>
-                      <TableHead>Imports</TableHead>
-                      <TableHead>Last Login</TableHead>
-                      <TableHead>Created</TableHead>
+                      <SortHeader label="Org Name" field="name" />
+                      <SortHeader label="Tier" field="tier" />
+                      <SortHeader label="Users" field="userCount" />
+                      <SortHeader label="Vintages" field="vintageCount" />
+                      <SortHeader label="Blocks" field="blockCount" />
+                      <SortHeader label="Lab Samples" field="labCount" />
+                      <SortHeader label="Tasks" field="taskCount" />
+                      <SortHeader label="Imports" field="importCount" />
+                      <SortHeader label="Last Login" field="lastActive" />
+                      <SortHeader label="Created" field="created_at" />
                       <TableHead>Stage</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
@@ -205,6 +249,8 @@ export function CustomersTab({ api, password }: Props) {
                         <TableCell><Badge variant="outline">{TIER_LABELS[c.tier || "hobbyist"]}</Badge></TableCell>
                         <TableCell>{c.userCount}</TableCell>
                         <TableCell>{c.vintageCount}</TableCell>
+                        <TableCell>{c.blockCount ?? 0}</TableCell>
+                        <TableCell>{c.labCount ?? 0}</TableCell>
                         <TableCell>{c.taskCount}</TableCell>
                         <TableCell>{c.importCount}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{c.lastActive ? new Date(c.lastActive).toLocaleDateString() : "Never"}</TableCell>
@@ -256,6 +302,7 @@ export function CustomersTab({ api, password }: Props) {
               <Tabs defaultValue="overview" className="mt-4">
                 <TabsList className="w-full justify-start flex-wrap h-auto gap-1">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="subscription">Subscription</TabsTrigger>
                   <TabsTrigger value="timeline">Activity</TabsTrigger>
                   <TabsTrigger value="notes">Notes</TabsTrigger>
                 </TabsList>
@@ -281,6 +328,79 @@ export function CustomersTab({ api, password }: Props) {
                   <Button variant="outline" className="w-full" onClick={handleImpersonate}>
                     <Eye className="h-4 w-4 mr-2" /> View as this org
                   </Button>
+                </TabsContent>
+
+                {/* Subscription Tab */}
+                <TabsContent value="subscription" className="space-y-4 mt-4">
+                  {sub ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Card className="bg-white shadow-sm">
+                          <CardContent className="p-4 flex items-center gap-3">
+                            <CreditCard className="h-5 w-5" style={{ color: "#6B1B2A" }} />
+                            <div>
+                              <p className="text-xs text-muted-foreground">Current Plan</p>
+                              <p className="font-bold text-lg capitalize">{sub.plan}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        <Card className="bg-white shadow-sm">
+                          <CardContent className="p-4 flex items-center gap-3">
+                            <DollarSign className="h-5 w-5" style={{ color: "#C8902A" }} />
+                            <div>
+                              <p className="text-xs text-muted-foreground">MRR</p>
+                              <p className="font-bold text-lg">${sub.mrr}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div><span className="text-muted-foreground">Billing Cycle:</span> <span className="capitalize">{sub.billingCycle}</span></div>
+                        <div><span className="text-muted-foreground">Next Billing:</span> {sub.nextBilling ? new Date(sub.nextBilling).toLocaleDateString() : "—"}</div>
+                        <div><span className="text-muted-foreground">Started:</span> {new Date(sub.startedAt).toLocaleDateString()}</div>
+                        <div><span className="text-muted-foreground">Status:</span> <Badge variant={sub.status === "active" ? "default" : "destructive"} className="capitalize">{sub.status}</Badge></div>
+                      </div>
+
+                      {sub.cardLast4 && (
+                        <div className="border rounded-lg p-3 text-sm">
+                          <p className="text-xs text-muted-foreground mb-1">Payment Method</p>
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4" />
+                            <span className="capitalize">{sub.cardBrand}</span>
+                            <span>•••• {sub.cardLast4}</span>
+                            <span className="text-muted-foreground">Exp {sub.cardExpiry}</span>
+                            <Badge variant="outline" className="text-green-700 border-green-300 ml-auto">
+                              {sub.cardStatus}
+                            </Badge>
+                          </div>
+                        </div>
+                      )}
+
+                      {(orgDetail.upgradeHistory || []).length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-sm mb-2">Upgrade / Downgrade History</h4>
+                          <div className="space-y-2">
+                            {orgDetail.upgradeHistory.map((evt: any, i: number) => (
+                              <div key={i} className="flex items-center gap-3 text-sm border-b pb-2 last:border-0">
+                                <CalendarDays className="h-3 w-3 text-muted-foreground" />
+                                <span>{evt.fromPlan}</span>
+                                <span>→</span>
+                                <span className="font-medium">{evt.toPlan}</span>
+                                <span className="text-xs text-muted-foreground ml-auto">{new Date(evt.date).toLocaleDateString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <CreditCard className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                      <p>No active subscription</p>
+                      <p className="text-xs">This org is on the free Hobbyist tier</p>
+                    </div>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="timeline" className="mt-4">
