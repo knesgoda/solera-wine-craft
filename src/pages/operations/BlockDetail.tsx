@@ -119,17 +119,20 @@ const BlockDetail = () => {
       {/* Harvest Window Prediction */}
       <HarvestWindowCard blockId={blockId!} vineyardId={vineyardId!} />
 
-      {/* Soil Info */}
-      <Card className="border-none shadow-md">
-        <CardHeader>
-          <CardTitle className="text-lg font-display">Soil Properties</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <InfoRow label="pH" value={block.soil_ph} />
-          <InfoRow label="Texture" value={block.soil_texture} />
-          <InfoRow label="Organic Matter" value={block.soil_organic_matter ? `${block.soil_organic_matter}%` : null} />
-        </CardContent>
-      </Card>
+      {/* Soil Profile */}
+      {(block.soil_ph || block.soil_texture || block.soil_organic_matter || (block as any).drainage) && (
+        <Card className="border-none shadow-md">
+          <CardHeader>
+            <CardTitle className="text-lg font-display">Soil Profile</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <InfoRow label="pH" value={block.soil_ph} />
+            <InfoRow label="Texture" value={block.soil_texture} />
+            <InfoRow label="Organic Matter" value={block.soil_organic_matter ? `${block.soil_organic_matter}%` : null} />
+            <InfoRow label="Drainage" value={(block as any).drainage} />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

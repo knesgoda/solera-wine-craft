@@ -173,18 +173,24 @@ const VineyardDetail = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Soil pH</Label>
                     <Input type="number" step="0.1" value={form.soil_ph} onChange={(e) => setForm({ ...form, soil_ph: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>Soil Texture</Label>
-                    <Input value={form.soil_texture} onChange={(e) => setForm({ ...form, soil_texture: e.target.value })} placeholder="e.g. Clay loam" />
+                    <Input value={form.soil_texture} onChange={(e) => setForm({ ...form, soil_texture: e.target.value })} placeholder="e.g. Sandy loam" />
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Organic Matter %</Label>
-                    <Input type="number" step="0.1" value={form.soil_organic_matter} onChange={(e) => setForm({ ...form, soil_organic_matter: e.target.value })} />
+                    <Input type="number" step="0.1" value={form.soil_organic_matter} onChange={(e) => setForm({ ...form, soil_organic_matter: e.target.value })} placeholder="% organic matter" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Drainage</Label>
+                    <Input value={form.drainage} onChange={(e) => setForm({ ...form, drainage: e.target.value })} placeholder="e.g. Well-drained" />
                   </div>
                 </div>
                 <Button type="submit" className="w-full" disabled={createBlock.isPending}>
