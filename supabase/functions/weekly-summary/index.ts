@@ -115,19 +115,20 @@ Weather: ${weatherSummary}`;
         let retries = 0;
         while (retries < 2) {
           try {
-            const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            const response = await fetch("https://api.anthropic.com/v1/messages", {
               method: "POST",
               headers: {
-                Authorization: `Bearer ${LOVABLE_API_KEY}`,
-                "Content-Type": "application/json",
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
               },
               body: JSON.stringify({
-                model: "google/gemini-2.5-flash",
+                model: "claude-sonnet-4-6",
+                max_tokens: 1500,
+                system: `You are a winery operations analyst. Here is this week's data:\n${context}`,
                 messages: [
-                  { role: "system", content: `You are a winery operations analyst. Here is this week's data:\n${context}` },
                   { role: "user", content: prompt },
                 ],
-                max_tokens: 1500,
               }),
             });
 
@@ -136,19 +137,19 @@ Weather: ${weatherSummary}`;
               console.error(`AI error (attempt ${retries + 1}):`, response.status, t);
               if (retries === 0) {
                 retries++;
-                await new Promise(r => setTimeout(r, 5 * 60 * 1000)); // Wait 5 min
+                await new Promise(r => setTimeout(r, 3000));
                 continue;
               }
               throw new Error(`AI failed after retry: ${response.status}`);
             }
 
             const data = await response.json();
-            aiContent = data.choices?.[0]?.message?.content || "";
+            aiContent = data.content?.[0]?.text || "";
             break;
           } catch (e) {
             if (retries === 0) {
               retries++;
-              await new Promise(r => setTimeout(r, 5 * 60 * 1000));
+              await new Promise(r => setTimeout(r, 3000));
               continue;
             }
             console.error(`Weekly summary AI failed for org ${orgId}:`, e);
