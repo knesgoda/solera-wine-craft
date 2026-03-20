@@ -80,48 +80,296 @@ Deno.serve(async (req) => {
       other: "Other",
     };
 
-    const html = `<html><body style="font-family:serif;padding:40px;max-width:900px;margin:0 auto;">
-      <div style="text-align:center;border-bottom:3px double #333;padding-bottom:16px;margin-bottom:20px;">
-        <h2 style="margin:0;">DEPARTMENT OF THE TREASURY — TTB</h2>
-        <h3 style="margin:4px 0;">REPORT OF WINE PREMISES OPERATIONS</h3>
-        <p style="margin:2px 0;font-size:13px;">TTB Form 5120.17</p>
-      </div>
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TTB Form 5120.17 — Report of Wine Premises Operations</title>
+<style>
+  @page {
+    size: letter;
+    margin: 0.6in 0.5in;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 11pt;
+    color: #000;
+    line-height: 1.35;
+    max-width: 8in;
+    margin: 0 auto;
+    padding: 0.6in 0.5in;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  @media print {
+    body { padding: 0; }
+    .no-print { display: none !important; }
+  }
 
-      <table style="width:100%;margin-bottom:20px;font-size:14px;" cellpadding="4">
-        <tr><td><strong>Bonded Winery Number:</strong> ${bondInfo?.bonded_winery_number || "___________"}</td>
-            <td><strong>Registry Number:</strong> ${bondInfo?.registry_number || "___________"}</td></tr>
-        <tr><td><strong>Proprietor:</strong> ${bondInfo?.proprietor_name || "___________"}</td>
-            <td><strong>Bond Number:</strong> ${bondInfo?.bond_number || "___________"}</td></tr>
-        <tr><td colspan="2"><strong>Premises:</strong> ${bondInfo?.premises_address || "___________"}</td></tr>
-        <tr><td colspan="2"><strong>Report Period:</strong> ${report.report_period_start} to ${report.report_period_end}</td></tr>
-      </table>
+  .form-header {
+    text-align: center;
+    border-bottom: 3px double #000;
+    padding-bottom: 10pt;
+    margin-bottom: 12pt;
+  }
+  .form-header h1 {
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 1.5pt;
+    font-weight: normal;
+    margin-bottom: 2pt;
+  }
+  .form-header h2 {
+    font-size: 13pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    margin-bottom: 2pt;
+  }
+  .form-header .form-number {
+    font-size: 9pt;
+    color: #444;
+  }
 
-      <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:13px;">
-        <tr style="background:#f0f0f0;">
-          <th>Wine Type</th><th>Beginning Inv.</th><th>Produced</th><th>Received</th><th>Bottled</th><th>Shipped</th><th>Dumped</th><th>Ending Inv.</th>
-        </tr>
-        ${(operations || []).map((op: any) => `<tr>
-          <td>${wineTypeLabels[op.wine_type] || op.wine_type}</td>
-          <td style="text-align:right;">${op.beginning_inventory_gallons?.toFixed(2)}</td>
-          <td style="text-align:right;">${op.produced_gallons?.toFixed(2)}</td>
-          <td style="text-align:right;">${op.received_gallons?.toFixed(2)}</td>
-          <td style="text-align:right;">${op.bottled_gallons?.toFixed(2)}</td>
-          <td style="text-align:right;">${op.shipped_gallons?.toFixed(2)}</td>
-          <td style="text-align:right;">${op.dumped_gallons?.toFixed(2)}</td>
-          <td style="text-align:right;">${op.ending_inventory_gallons?.toFixed(2)}</td>
-        </tr>`).join("")}
-      </table>
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1pt 24pt;
+    border: 1px solid #000;
+    padding: 8pt;
+    margin-bottom: 14pt;
+    font-size: 10pt;
+  }
+  .info-grid .field { padding: 3pt 0; }
+  .info-grid .field-label { font-weight: bold; font-size: 8pt; text-transform: uppercase; color: #333; display: block; margin-bottom: 1pt; }
+  .info-grid .field-value { font-size: 11pt; min-height: 14pt; border-bottom: 1px solid #999; padding-bottom: 1pt; }
+  .info-grid .full-width { grid-column: 1 / -1; }
 
-      <div style="margin-top:40px;font-size:13px;">
-        <p><strong>CERTIFICATION:</strong> I certify under penalties of perjury that this report has been examined by me and, to the best of my knowledge and belief, is a true, correct, and complete report.</p>
-        <div style="margin-top:30px;display:flex;justify-content:space-between;">
-          <div style="border-top:1px solid #333;width:45%;padding-top:4px;">Signature of Proprietor or Authorized Person</div>
-          <div style="border-top:1px solid #333;width:30%;padding-top:4px;">Date</div>
-        </div>
-      </div>
+  .section-label {
+    font-size: 9pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    background: #000;
+    color: #fff;
+    padding: 3pt 6pt;
+    margin-bottom: 0;
+  }
 
-      <p style="color:#888;font-size:11px;margin-top:30px;">Generated by Solera on ${new Date().toISOString().split("T")[0]}</p>
-    </body></html>`;
+  table.operations {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+    margin-bottom: 16pt;
+  }
+  table.operations th {
+    background: #e8e8e8;
+    border: 1px solid #000;
+    padding: 4pt 3pt;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.3pt;
+    text-align: center;
+    font-weight: bold;
+    vertical-align: bottom;
+  }
+  table.operations td {
+    border: 1px solid #000;
+    padding: 4pt 5pt;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-family: "Courier New", monospace;
+    font-size: 10pt;
+  }
+  table.operations td:first-child {
+    text-align: left;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 10pt;
+  }
+  table.operations tr.totals-row td {
+    font-weight: bold;
+    border-top: 2px solid #000;
+    background: #f5f5f5;
+  }
+
+  .certification {
+    border: 1px solid #000;
+    padding: 12pt;
+    margin-top: 20pt;
+    font-size: 10pt;
+    page-break-inside: avoid;
+  }
+  .certification h3 {
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    margin-bottom: 6pt;
+  }
+  .sig-line {
+    display: flex;
+    gap: 24pt;
+    margin-top: 28pt;
+  }
+  .sig-field {
+    flex: 1;
+    border-top: 1px solid #000;
+    padding-top: 3pt;
+    font-size: 8pt;
+    text-transform: uppercase;
+    color: #444;
+  }
+
+  .footer {
+    margin-top: 16pt;
+    font-size: 8pt;
+    color: #888;
+    text-align: center;
+    border-top: 1px solid #ccc;
+    padding-top: 6pt;
+  }
+
+  .print-banner {
+    background: #6B1B2A;
+    color: #fff;
+    padding: 12pt 16pt;
+    border-radius: 6px;
+    margin-bottom: 20pt;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13pt;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .print-banner button {
+    background: #fff;
+    color: #6B1B2A;
+    border: none;
+    padding: 8pt 20pt;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 12pt;
+    cursor: pointer;
+  }
+  .print-banner button:hover { opacity: 0.9; }
+</style>
+</head>
+<body>
+  <div class="print-banner no-print">
+    <span>TTB Form 5120.17 — Use <strong>⌘P</strong> or <strong>Ctrl+P</strong> to save as PDF</span>
+    <button onclick="window.print()">Print / Save PDF</button>
+  </div>
+
+  <div class="form-header">
+    <h1>Department of the Treasury — Alcohol and Tobacco Tax and Trade Bureau</h1>
+    <h2>Report of Wine Premises Operations</h2>
+    <div class="form-number">TTB F 5120.17 (OW-1)</div>
+  </div>
+
+  <div class="info-grid">
+    <div class="field">
+      <span class="field-label">1. Serial Number</span>
+      <div class="field-value">${report.id?.slice(0, 8).toUpperCase() || ""}</div>
+    </div>
+    <div class="field">
+      <span class="field-label">2. Bonded Wine Premises Number (BWN)</span>
+      <div class="field-value">${bondInfo?.bonded_winery_number || ""}</div>
+    </div>
+    <div class="field">
+      <span class="field-label">3. Proprietor Name</span>
+      <div class="field-value">${bondInfo?.proprietor_name || ""}</div>
+    </div>
+    <div class="field">
+      <span class="field-label">4. Registry / Permit Number</span>
+      <div class="field-value">${bondInfo?.registry_number || ""}</div>
+    </div>
+    <div class="field full-width">
+      <span class="field-label">5. Premises Location</span>
+      <div class="field-value">${bondInfo?.premises_address || ""}</div>
+    </div>
+    <div class="field">
+      <span class="field-label">6. Report Period — From</span>
+      <div class="field-value">${report.report_period_start}</div>
+    </div>
+    <div class="field">
+      <span class="field-label">6. Report Period — To</span>
+      <div class="field-value">${report.report_period_end}</div>
+    </div>
+    <div class="field">
+      <span class="field-label">7. Bond Number</span>
+      <div class="field-value">${bondInfo?.bond_number || ""}</div>
+    </div>
+    <div class="field">
+      <span class="field-label">8. Date Prepared</span>
+      <div class="field-value">${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+    </div>
+  </div>
+
+  <div class="section-label">Part I — Wine Operations (Wine Gallons)</div>
+  <table class="operations">
+    <thead>
+      <tr>
+        <th style="width:18%;">Wine Type</th>
+        <th>Line</th>
+        <th>Beginning<br>Inventory</th>
+        <th>Produced</th>
+        <th>Received</th>
+        <th>Bottled /<br>Packed</th>
+        <th>Shipped /<br>Removed</th>
+        <th>Dumped /<br>Lost</th>
+        <th>Ending<br>Inventory</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${(operations || []).map((op: any, i: number) => {
+        const label = wineTypeLabels[op.wine_type] || op.wine_type;
+        return `<tr>
+          <td>${label}</td>
+          <td style="text-align:center;font-family:serif;">${i + 1}</td>
+          <td>${op.beginning_inventory_gallons?.toFixed(2) ?? "—"}</td>
+          <td>${op.produced_gallons?.toFixed(2) ?? "—"}</td>
+          <td>${op.received_gallons?.toFixed(2) ?? "—"}</td>
+          <td>${op.bottled_gallons?.toFixed(2) ?? "—"}</td>
+          <td>${op.shipped_gallons?.toFixed(2) ?? "—"}</td>
+          <td>${op.dumped_gallons?.toFixed(2) ?? "—"}</td>
+          <td>${op.ending_inventory_gallons?.toFixed(2) ?? "—"}</td>
+        </tr>`;
+      }).join("")}
+      ${(() => {
+        const ops = operations || [];
+        if (ops.length < 2) return "";
+        const sum = (key: string) => ops.reduce((s: number, o: any) => s + (o[key] || 0), 0);
+        return `<tr class="totals-row">
+          <td>TOTALS</td>
+          <td style="text-align:center;font-family:serif;"></td>
+          <td>${sum("beginning_inventory_gallons").toFixed(2)}</td>
+          <td>${sum("produced_gallons").toFixed(2)}</td>
+          <td>${sum("received_gallons").toFixed(2)}</td>
+          <td>${sum("bottled_gallons").toFixed(2)}</td>
+          <td>${sum("shipped_gallons").toFixed(2)}</td>
+          <td>${sum("dumped_gallons").toFixed(2)}</td>
+          <td>${sum("ending_inventory_gallons").toFixed(2)}</td>
+        </tr>`;
+      })()}
+    </tbody>
+  </table>
+
+  <div class="certification">
+    <h3>Certification</h3>
+    <p>Under penalties of perjury, I declare that I have examined this report, including any accompanying schedules and statements, and to the best of my knowledge and belief, it is true, correct, and complete.</p>
+    <div class="sig-line">
+      <div class="sig-field" style="flex:2;">Signature of Proprietor or Authorized Person</div>
+      <div class="sig-field">Title</div>
+      <div class="sig-field">Date</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Generated by Solera Wine Craft on ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} •
+    This is a computer-generated reproduction of TTB F 5120.17 for reference purposes.
+  </div>
+</body>
+</html>`;
 
     const fileName = `ow1_${report.report_period_start}_${report.report_period_end}.html`;
     await supabaseAdmin.storage.from("ttb-reports").upload(`${orgId}/${fileName}`, new TextEncoder().encode(html), { contentType: "text/html", upsert: true });
