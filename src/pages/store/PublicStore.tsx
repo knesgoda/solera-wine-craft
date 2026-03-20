@@ -469,5 +469,6 @@ const PublicStore = () => {
     </div>
     </AgeVerificationGate>
   );
+};
 
 export default PublicStore;
