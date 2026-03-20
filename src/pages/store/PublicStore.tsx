@@ -468,6 +468,6 @@ const PublicStore = () => {
       </footer>
     </div>
     </AgeVerificationGate>
-};
+  );
 
 export default PublicStore;
