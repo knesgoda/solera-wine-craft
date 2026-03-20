@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 30 33% 95%;
+    --background: 37 42% 93%;
     --foreground: 0 0% 10%;
 
     --card: 0 0% 100%;
@@ -16,7 +16,7 @@
     --popover-foreground: 0 0% 10%;
 
     --primary: 348 58% 26%;
-    --primary-foreground: 30 33% 95%;
+    --primary-foreground: 37 42% 93%;
 
     --secondary: 36 64% 47%;
     --secondary-foreground: 0 0% 100%;
@@ -45,7 +45,7 @@
     --sidebar-border: 348 40% 28%;
     --sidebar-ring: 36 64% 47%;
 
-    --cream: 30 33% 95%;
+    --cream: 37 42% 93%;
     --crimson: 348 58% 26%;
     --gold: 36 64% 47%;
     --wine-dark: 348 58% 18%;
