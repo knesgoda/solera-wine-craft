@@ -10,11 +10,12 @@ import { toast } from "sonner";
 import { Check, Grape, Wine, Warehouse, Brain, ShoppingCart } from "lucide-react";
 import soleraLogo from "@/assets/solera-logo.png";
 
-const TIERS = [
-  { value: "hobbyist" as const, label: "Hobbyist", desc: "Personal or hobby winemaking" },
-  { value: "small_boutique" as const, label: "Pro", desc: "Small boutique winery, under 5,000 cases/year" },
-  { value: "mid_size" as const, label: "Growth", desc: "Mid-size operation, 5,000–50,000 cases/year" },
-  { value: "enterprise" as const, label: "Enterprise", desc: "50,000+ cases/year" },
+const OPERATION_TYPES = [
+  { value: "hobbyist", label: "Hobbyist", desc: "Home or hobby winemaker, <500 cases", type: "winery", tier: "hobbyist" },
+  { value: "small_boutique", label: "Small Boutique", desc: "Family winery, 500–5,000 cases, 1–3 staff", type: "winery", tier: "small_boutique" },
+  { value: "mid_size", label: "Mid-Size Winery", desc: "5,000–50,000 cases, dedicated teams", type: "winery", tier: "mid_size" },
+  { value: "custom_crush", label: "Custom Crush Facility", desc: "Make wine for 5–20+ client labels", type: "custom_crush", tier: "enterprise" },
+  { value: "enterprise", label: "Enterprise Winery", desc: "50,000+ cases, multi-facility", type: "winery", tier: "enterprise" },
 ];
 
 const MODULES = [
@@ -29,9 +30,11 @@ const Onboarding = () => {
   const navigate = useNavigate();
   const { profile, refreshProfile } = useAuth();
   const [step, setStep] = useState(1);
-  const [tier, setTier] = useState<"hobbyist" | "small_boutique" | "mid_size" | "enterprise" | null>(null);
+  const [selection, setSelection] = useState<string | null>(null);
   const [enabledModules, setEnabledModules] = useState<string[]>(["vineyard_ops", "vintage_management", "cellar_management"]);
   const [loading, setLoading] = useState(false);
+
+  const selectedType = OPERATION_TYPES.find((t) => t.value === selection);
 
   const toggleModule = (key: string) => {
     setEnabledModules((prev) =>
@@ -40,11 +43,16 @@ const Onboarding = () => {
   };
 
   const handleFinish = async () => {
-    if (!profile?.org_id || !tier) return;
+    if (!profile?.org_id || !selectedType) return;
     setLoading(true);
     const { error } = await supabase
       .from("organizations")
-      .update({ tier, enabled_modules: enabledModules, onboarding_completed: true })
+      .update({
+        tier: selectedType.tier,
+        type: selectedType.type,
+        enabled_modules: enabledModules,
+        onboarding_completed: true,
+      })
       .eq("id", profile.org_id);
 
     if (error) {
@@ -75,24 +83,24 @@ const Onboarding = () => {
               <CardDescription>This helps us tailor Solera to your needs</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {TIERS.map((t) => (
+              {OPERATION_TYPES.map((t) => (
                 <button
                   key={t.value}
-                  onClick={() => setTier(t.value)}
+                  onClick={() => setSelection(t.value)}
                   className={`p-4 rounded-lg border-2 text-left transition-all min-h-[80px] ${
-                    tier === t.value
+                    selection === t.value
                       ? "border-primary bg-primary/5 shadow-md"
                       : "border-border hover:border-secondary/50"
                   }`}
                 >
                   <div className="font-semibold text-foreground">{t.label}</div>
                   <div className="text-sm text-muted-foreground mt-1">{t.desc}</div>
-                  {tier === t.value && <Check className="h-4 w-4 text-primary mt-2" />}
+                  {selection === t.value && <Check className="h-4 w-4 text-primary mt-2" />}
                 </button>
               ))}
             </CardContent>
             <div className="p-6 pt-0">
-              <Button className="w-full" disabled={!tier} onClick={() => setStep(2)}>
+              <Button className="w-full" disabled={!selection} onClick={() => setStep(2)}>
                 Continue
               </Button>
             </div>
@@ -140,7 +148,10 @@ const Onboarding = () => {
             <CardContent className="space-y-6">
               <div className="p-4 rounded-lg bg-muted">
                 <div className="text-sm font-medium text-muted-foreground mb-1">Operation Type</div>
-                <div className="font-semibold text-foreground capitalize">{tier?.replace("_", " ")}</div>
+                <div className="font-semibold text-foreground">{selectedType?.label}</div>
+                <div className="text-xs text-muted-foreground mt-0.5 capitalize">
+                  {selectedType?.type === "custom_crush" ? "Custom Crush" : "Winery"} · {selectedType?.tier?.replace("_", " ")} tier
+                </div>
               </div>
               <div className="p-4 rounded-lg bg-muted">
                 <div className="text-sm font-medium text-muted-foreground mb-2">Enabled Modules</div>
