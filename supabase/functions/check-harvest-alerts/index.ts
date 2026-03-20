@@ -123,26 +123,57 @@ Deno.serve(async (req) => {
         week_start: weekStart,
       });
 
-      // Send push notifications to org members
+      // Get all org members
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, push_subscription")
-        .eq("org_id", v.org_id)
-        .not("push_subscription", "is", null);
+        .select("id, email")
+        .eq("org_id", v.org_id);
 
-      if (profiles?.length) {
-        for (const profile of profiles) {
+      const orgUsers = (profiles || []).filter((p: any) => p.email);
+
+      // Create notification records
+      if (orgUsers.length > 0) {
+        const notifications = orgUsers.map((p: any) => ({
+          org_id: v.org_id,
+          user_id: p.id,
+          message: alertText,
+          type: "harvest_window",
+          channel: "both",
+          read: false,
+        }));
+        await supabase.from("notifications").insert(notifications);
+      }
+
+      // Send emails via Resend
+      const resendKey = Deno.env.get("RESEND_API_KEY");
+      if (resendKey) {
+        const blockPath = `/operations/blocks/${v.block_id}`;
+        const emailHtml = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a1a;">
+            <h2 style="color: #6B1B2A; font-size: 20px; margin: 0 0 16px;">🍇 Harvest Window Alert</h2>
+            <p style="font-size: 15px; line-height: 1.6; margin: 0 0 24px; color: #333;">${alertText}</p>
+            <a href="https://solera-wine-craft.lovable.app${blockPath}" style="display: inline-block; background: #6B1B2A; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600;">View in Solera</a>
+            <p style="font-size: 12px; color: #999; margin: 32px 0 0;">Solera Wine Craft — Harvest Alerts</p>
+          </div>
+        `;
+        for (const p of orgUsers) {
           try {
-            const sub = profile.push_subscription as any;
-            if (sub?.endpoint) {
-              // Web Push would be sent here via web-push library
-              // For now we log it
-              console.log(`Push alert for user ${profile.id}: ${alertText}`);
-            }
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                from: "Solera Alerts <alerts@solera.vin>",
+                to: [p.email],
+                subject: `🍇 Harvest Window Alert: ${block.name}`,
+                html: emailHtml,
+              }),
+            });
           } catch (e) {
-            console.error("Push error:", e);
+            console.error(`Email error for ${p.id}:`, e);
           }
         }
+      } else {
+        console.warn("RESEND_API_KEY not configured — skipping harvest alert emails");
       }
 
       alerts.push({
