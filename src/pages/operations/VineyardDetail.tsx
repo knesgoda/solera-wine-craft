@@ -78,6 +78,7 @@ const VineyardDetail = () => {
         soil_ph: form.soil_ph ? parseFloat(form.soil_ph) : null,
         soil_texture: form.soil_texture || null,
         soil_organic_matter: form.soil_organic_matter ? parseFloat(form.soil_organic_matter) : null,
+        drainage: form.drainage || null,
       });
       if (error) throw error;
     },
