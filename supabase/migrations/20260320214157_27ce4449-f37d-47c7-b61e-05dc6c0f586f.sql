@@ -1,0 +1,1 @@
+ALTER TABLE public.webhook_subscriptions RENAME COLUMN secret_hash TO secret;

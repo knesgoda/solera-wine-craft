@@ -122,13 +122,12 @@ export default function ApiSettings() {
     }
     setLoading(true);
     const rawSecret = generateSecureKey();
-    const hash = await hashKey(rawSecret);
 
     const { error } = await supabase.from("webhook_subscriptions").insert({
       org_id: organization!.id,
       event_type: newWebhookEvent as any,
       endpoint_url: newWebhookUrl,
-      secret_hash: hash,
+      secret: rawSecret,
     });
 
     if (error) {

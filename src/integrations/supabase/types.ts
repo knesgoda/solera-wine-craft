@@ -3317,7 +3317,7 @@ export type Database = {
           id: string
           last_triggered_at: string | null
           org_id: string
-          secret_hash: string
+          secret: string
         }
         Insert: {
           active?: boolean
@@ -3328,7 +3328,7 @@ export type Database = {
           id?: string
           last_triggered_at?: string | null
           org_id: string
-          secret_hash: string
+          secret: string
         }
         Update: {
           active?: boolean
@@ -3339,7 +3339,7 @@ export type Database = {
           id?: string
           last_triggered_at?: string | null
           org_id?: string
-          secret_hash?: string
+          secret?: string
         }
         Relationships: [
           {
