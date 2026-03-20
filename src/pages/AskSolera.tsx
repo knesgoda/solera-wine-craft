@@ -223,7 +223,11 @@ const AskSolera = () => {
           if (jsonStr === "[DONE]") continue;
           try {
             const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (parsed.type === "message_stop") continue;
+            let content: string | undefined;
+            if (parsed.type === "content_block_delta" && parsed.delta?.type === "text_delta") {
+              content = parsed.delta.text;
+            }
             if (content) {
               assistantContent += content;
               setMessages((prev) => prev.map((m, i) =>
