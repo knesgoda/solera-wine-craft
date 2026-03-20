@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
         subscription_id: sub.id,
       });
 
-      const signature = await hmacSign(sub.secret_hash, eventPayload);
+      const signature = await hmacSign(sub.secret, eventPayload);
 
       let responseCode = 0;
       let responseBody = "";
