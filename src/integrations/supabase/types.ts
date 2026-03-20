@@ -674,6 +674,7 @@ export type Database = {
           acres: number | null
           clone: string | null
           created_at: string
+          drainage: string | null
           id: string
           lifecycle_stage:
             | Database["public"]["Enums"]["block_lifecycle_stage"]
@@ -692,6 +693,7 @@ export type Database = {
           acres?: number | null
           clone?: string | null
           created_at?: string
+          drainage?: string | null
           id?: string
           lifecycle_stage?:
             | Database["public"]["Enums"]["block_lifecycle_stage"]
@@ -710,6 +712,7 @@ export type Database = {
           acres?: number | null
           clone?: string | null
           created_at?: string
+          drainage?: string | null
           id?: string
           lifecycle_stage?:
             | Database["public"]["Enums"]["block_lifecycle_stage"]
