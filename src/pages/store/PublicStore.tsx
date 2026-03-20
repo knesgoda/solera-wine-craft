@@ -248,6 +248,7 @@ const PublicStore = () => {
   const storeName = storeConfig?.store_name || "Wine Shop";
 
   return (
+    <AgeVerificationGate>
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card sticky top-0 z-40">
