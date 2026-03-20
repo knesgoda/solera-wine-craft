@@ -48,7 +48,7 @@ const Onboarding = () => {
     const { error } = await supabase
       .from("organizations")
       .update({
-        tier: selectedType.tier,
+        tier: selectedType.tier as "hobbyist" | "small_boutique" | "mid_size" | "enterprise",
         type: selectedType.type,
         enabled_modules: enabledModules,
         onboarding_completed: true,
