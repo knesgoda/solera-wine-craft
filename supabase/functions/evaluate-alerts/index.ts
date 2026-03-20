@@ -133,10 +133,12 @@ Deno.serve(async (req) => {
     // Get all users in this org
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, push_subscription")
+      .select("id, email, push_subscription")
       .eq("org_id", orgId);
 
+    const orgUsers = (profiles || []).filter((p: any) => p.email);
     const userIds = profiles?.map((p: any) => p.id) || [];
+    const resendKey = Deno.env.get("RESEND_API_KEY");
 
     for (const match of matches) {
       const label = PARAM_LABELS[match.parameter] || match.parameter;
@@ -163,13 +165,40 @@ Deno.serve(async (req) => {
         .update({ last_triggered_at: now.toISOString() })
         .eq("id", match.ruleId);
 
-      // Push notifications for push/both channels
-      if (match.channel === "push" || match.channel === "both") {
-        for (const profile of (profiles || [])) {
-          const sub = profile.push_subscription as any;
-          if (sub?.endpoint) {
-            console.log(`Push notification for ${profile.id}: ${message}`);
+      // Send emails for email/both channels
+      if (match.channel === "email" || match.channel === "both") {
+        if (resendKey) {
+          const emailHtml = `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a1a;">
+              <h2 style="color: #6B1B2A; font-size: 20px; margin: 0 0 16px;">⚠️ Threshold Alert</h2>
+              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 8px; color: #333;">${message}</p>
+              <table style="margin: 16px 0 24px; font-size: 14px; color: #555;">
+                <tr><td style="padding: 4px 16px 4px 0; font-weight: 600;">Parameter</td><td>${label}</td></tr>
+                <tr><td style="padding: 4px 16px 4px 0; font-weight: 600;">Value</td><td>${match.actualValue}</td></tr>
+                <tr><td style="padding: 4px 16px 4px 0; font-weight: 600;">Threshold</td><td>${op} ${match.threshold}</td></tr>
+              </table>
+              <a href="https://solera-wine-craft.lovable.app/dashboard" style="display: inline-block; background: #6B1B2A; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600;">View in Solera</a>
+              <p style="font-size: 12px; color: #999; margin: 32px 0 0;">Solera Wine Craft — Alert Notifications</p>
+            </div>
+          `;
+          for (const p of orgUsers) {
+            try {
+              await fetch("https://api.resend.com/emails", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  from: "Solera Alerts <alerts@solera.vin>",
+                  to: [p.email],
+                  subject: `⚠️ Alert: ${label} ${op} ${match.threshold}`,
+                  html: emailHtml,
+                }),
+              });
+            } catch (e) {
+              console.error(`Email error for ${p.id}:`, e);
+            }
           }
+        } else {
+          console.warn("RESEND_API_KEY not configured — skipping alert emails");
         }
       }
     }
