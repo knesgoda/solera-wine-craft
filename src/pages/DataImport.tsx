@@ -167,8 +167,8 @@ export default function DataImport() {
             onConfirmMapping={handleConfirmMapping}
             onRunImport={handleRunImport}
             onReset={handleReset}
-            acceptFormats=".csv,.xlsx,.xls"
-            description="Upload a CSV or Excel file with your winery data"
+            acceptFormats=".csv,.xlsx,.xls,.tsv"
+            description="Upload a CSV, Excel, or TSV file with your winery data"
           />
         </TabsContent>
 
