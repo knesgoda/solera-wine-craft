@@ -107,13 +107,26 @@ const NAV_ITEMS = [
 ];
 
 // ─── Main Admin Dashboard ───
+const ADMIN_EMAILS = ["kevin@solera.vin", "kevin.nesgoda@gmail.com"];
+
 export default function AdminDashboard() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [auth, setAuth] = useState<{ authed: boolean; password: string }>({ authed: false, password: "" });
   const [activeTab, setActiveTab] = useState("dashboard");
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [refreshKey, setRefreshKey] = useState(0);
   const isMobile = useIsMobile();
   const api = useAdminApi(auth.password);
+
+  useEffect(() => {
+    if (user && !ADMIN_EMAILS.includes(user.email || "")) {
+      toast.error("Access denied");
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
+
+  if (!user || !ADMIN_EMAILS.includes(user.email || "")) return null;
 
   if (isMobile) return <MobileBlock />;
 
