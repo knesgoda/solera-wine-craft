@@ -35,7 +35,7 @@ const LIFECYCLE_COLORS: Record<LifecycleStage, string> = {
 
 const emptyBlock = {
   name: "", variety: "", clone: "", rootstock: "", acres: "",
-  lifecycle_stage: "" as string, soil_ph: "", soil_texture: "", soil_organic_matter: "",
+  lifecycle_stage: "" as string, soil_ph: "", soil_texture: "", soil_organic_matter: "", drainage: "",
 };
 
 const VineyardDetail = () => {
