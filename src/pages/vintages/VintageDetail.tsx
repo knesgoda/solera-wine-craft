@@ -37,6 +37,7 @@ export default function VintageDetail() {
   const [editingSample, setEditingSample] = useState<LabSampleData | null>(null);
   const [deletingSampleId, setDeletingSampleId] = useState<string | null>(null);
   const [isEditingVintage, setIsEditingVintage] = useState(false);
+  const [showDeleteVintage, setShowDeleteVintage] = useState(false);
   const [editHarvestDate, setEditHarvestDate] = useState<Date | undefined>(undefined);
   const [editTons, setEditTons] = useState("");
   const [editNotes, setEditNotes] = useState("");
