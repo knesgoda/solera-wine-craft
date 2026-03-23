@@ -8,7 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, FlaskConical, FileText, AlertTriangle, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, FlaskConical, FileText, AlertTriangle, MoreVertical, Pencil, Trash2, CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -31,6 +36,10 @@ export default function VintageDetail() {
   const [labDialogOpen, setLabDialogOpen] = useState(false);
   const [editingSample, setEditingSample] = useState<LabSampleData | null>(null);
   const [deletingSampleId, setDeletingSampleId] = useState<string | null>(null);
+  const [isEditingVintage, setIsEditingVintage] = useState(false);
+  const [editHarvestDate, setEditHarvestDate] = useState<Date | undefined>(undefined);
+  const [editTons, setEditTons] = useState("");
+  const [editNotes, setEditNotes] = useState("");
   const orgId = profile?.org_id;
 
   const deleteSample = useMutation({
@@ -110,6 +119,31 @@ export default function VintageDetail() {
     },
   });
 
+  const updateVintageDetails = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("vintages").update({
+        harvest_date: editHarvestDate ? format(editHarvestDate, "yyyy-MM-dd") : null,
+        tons_harvested: editTons ? parseFloat(editTons) : null,
+        notes: editNotes || null,
+      } as any).eq("id", vintageId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vintage", vintageId] });
+      queryClient.invalidateQueries({ queryKey: ["vintages"] });
+      toast.success("Vintage updated");
+      setIsEditingVintage(false);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const startEditingVintage = () => {
+    setEditHarvestDate(vintage?.harvest_date ? parseISO(vintage.harvest_date) : undefined);
+    setEditTons(vintage?.tons_harvested != null ? String(vintage.tons_harvested) : "");
+    setEditNotes(vintage?.notes || "");
+    setIsEditingVintage(true);
+  };
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
@@ -130,14 +164,21 @@ export default function VintageDetail() {
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
             <CardTitle className="text-xl">{vintage.year} Vintage</CardTitle>
-            <Select value={vintage.status} onValueChange={(v) => updateStatus.mutate(v)}>
-              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {statusOrder.map((s) => (
-                  <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              {!isEditingVintage && (
+                <Button variant="ghost" size="icon" onClick={startEditingVintage} className="h-9 w-9">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
+              <Select value={vintage.status} onValueChange={(v) => updateStatus.mutate(v)}>
+                <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {statusOrder.map((s) => (
+                    <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -148,15 +189,53 @@ export default function VintageDetail() {
               {vintage.blocks.vineyards?.name && <span className="text-muted-foreground"> · {vintage.blocks.vineyards.name}</span>}
             </div>
           )}
-          {vintage.harvest_date && (
-            <div className="text-sm"><span className="text-muted-foreground">Harvest Date:</span> <span className="font-medium text-foreground">{format(parseISO(vintage.harvest_date), "MMMM d, yyyy")}</span></div>
+
+          {isEditingVintage ? (
+            <div className="space-y-3 pt-1">
+              <div className="text-sm space-y-1">
+                <span className="text-muted-foreground">Harvest Date</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !editHarvestDate && "text-muted-foreground")}>
+                      <CalendarIcon className="h-4 w-4 mr-2" />
+                      {editHarvestDate ? format(editHarvestDate, "MMMM d, yyyy") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={editHarvestDate} onSelect={setEditHarvestDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="text-sm space-y-1">
+                <span className="text-muted-foreground">Tons Harvested</span>
+                <Input type="number" step="0.1" value={editTons} onChange={(e) => setEditTons(e.target.value)} placeholder="e.g. 2.5" />
+              </div>
+              <div className="text-sm space-y-1">
+                <span className="text-muted-foreground">Notes</span>
+                <Textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2} />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button size="sm" onClick={() => updateVintageDetails.mutate()} disabled={updateVintageDetails.isPending}>
+                  {updateVintageDetails.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Save
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setIsEditingVintage(false)}>Cancel</Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {vintage.harvest_date && (
+                <div className="text-sm"><span className="text-muted-foreground">Harvest Date:</span> <span className="font-medium text-foreground">{format(parseISO(vintage.harvest_date), "MMMM d, yyyy")}</span></div>
+              )}
+              {vintage.tons_harvested != null && (
+                <div className="text-sm"><span className="text-muted-foreground">Tons Harvested:</span> <span className="font-medium text-foreground">{vintage.tons_harvested}</span></div>
+              )}
+              {vintage.notes && (
+                <div className="text-sm"><span className="text-muted-foreground">Notes:</span> <span className="text-foreground">{vintage.notes}</span></div>
+              )}
+            </>
           )}
-          {vintage.tons_harvested != null && (
-            <div className="text-sm"><span className="text-muted-foreground">Tons Harvested:</span> <span className="font-medium text-foreground">{vintage.tons_harvested}</span></div>
-          )}
-          {vintage.notes && (
-            <div className="text-sm"><span className="text-muted-foreground">Notes:</span> <span className="text-foreground">{vintage.notes}</span></div>
-          )}
+
           {clientOrgs.length > 0 && (
             <div className="text-sm pt-2 border-t">
               <span className="text-muted-foreground">Client Assignment:</span>
