@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { SEOHead } from "@/components/SEOHead";
 import { ArrowLeft, Plus, Pencil, Eye, EyeOff, Trash2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { useRoleAccess } from "@/hooks/useRoleAccess";
+import { useNavigate } from "react-router-dom";
 
 const CATEGORIES = [
   "Winery Management",
