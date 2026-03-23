@@ -285,7 +285,32 @@ export default function VintageDetail() {
         </TabsContent>
       </Tabs>
 
-      <NewLabSampleDialog vintageId={vintageId!} open={labDialogOpen} onOpenChange={setLabDialogOpen} />
+      <NewLabSampleDialog
+        vintageId={vintageId!}
+        open={labDialogOpen}
+        onOpenChange={(open) => { setLabDialogOpen(open); if (!open) setEditingSample(null); }}
+        editingSample={editingSample}
+      />
+
+      <AlertDialog open={!!deletingSampleId} onOpenChange={(open) => { if (!open) setDeletingSampleId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete lab sample?</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone. The sample data will be permanently removed.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deletingSampleId && deleteSample.mutate(deletingSampleId)}
+              disabled={deleteSample.isPending}
+            >
+              {deleteSample.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
