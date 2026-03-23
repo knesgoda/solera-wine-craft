@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,15 +11,31 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+export interface LabSampleData {
+  id: string;
+  sampled_at: string;
+  brix: number | null;
+  ph: number | null;
+  ta: number | null;
+  va: number | null;
+  so2_free: number | null;
+  so2_total: number | null;
+  alcohol: number | null;
+  rs: number | null;
+  notes: string | null;
+}
+
 interface Props {
   vintageId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editingSample?: LabSampleData | null;
 }
 
-export function NewLabSampleDialog({ vintageId, open, onOpenChange }: Props) {
+export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSample }: Props) {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const isEditing = !!editingSample;
 
   const [sampledAt, setSampledAt] = useState(new Date().toISOString().slice(0, 16));
   const [brix, setBrix] = useState("");
@@ -32,7 +48,24 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange }: Props) {
   const [rs, setRs] = useState("");
   const [notes, setNotes] = useState("");
 
-  const create = useMutation({
+  useEffect(() => {
+    if (open && editingSample) {
+      setSampledAt(editingSample.sampled_at ? new Date(editingSample.sampled_at).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16));
+      setBrix(editingSample.brix != null ? String(editingSample.brix) : "");
+      setPh(editingSample.ph != null ? String(editingSample.ph) : "");
+      setTa(editingSample.ta != null ? String(editingSample.ta) : "");
+      setVa(editingSample.va != null ? String(editingSample.va) : "");
+      setSo2Free(editingSample.so2_free != null ? String(editingSample.so2_free) : "");
+      setSo2Total(editingSample.so2_total != null ? String(editingSample.so2_total) : "");
+      setAlcohol(editingSample.alcohol != null ? String(editingSample.alcohol) : "");
+      setRs(editingSample.rs != null ? String(editingSample.rs) : "");
+      setNotes(editingSample.notes || "");
+    } else if (open && !editingSample) {
+      resetForm();
+    }
+  }, [open, editingSample]);
+
+  const mutation = useMutation({
     mutationFn: async () => {
       const record = {
         vintage_id: vintageId,
@@ -47,22 +80,31 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange }: Props) {
         rs: rs ? parseFloat(rs) : null,
         notes: notes || null,
       };
-      const { error } = await supabase.from("lab_samples").insert(record as any);
-      if (error) throw error;
 
-      // Evaluate alert rules asynchronously
-      supabase.functions.invoke("evaluate-alerts", {
-        body: { type: "lab_sample", record },
-      }).catch((e) => console.error("Alert evaluation failed:", e));
+      if (isEditing) {
+        const { error } = await supabase
+          .from("lab_samples")
+          .update(record as any)
+          .eq("id", editingSample!.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("lab_samples").insert(record as any);
+        if (error) throw error;
 
-      // Detect anomalies asynchronously
-      supabase.functions.invoke("detect-anomalies", {
-        body: { type: "lab_sample", record },
-      }).catch((e) => console.error("Anomaly detection failed:", e));
+        // Evaluate alert rules asynchronously
+        supabase.functions.invoke("evaluate-alerts", {
+          body: { type: "lab_sample", record },
+        }).catch((e) => console.error("Alert evaluation failed:", e));
+
+        // Detect anomalies asynchronously
+        supabase.functions.invoke("detect-anomalies", {
+          body: { type: "lab_sample", record },
+        }).catch((e) => console.error("Anomaly detection failed:", e));
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["lab-samples", vintageId] });
-      toast.success("Lab sample recorded");
+      toast.success(isEditing ? "Lab sample updated" : "Lab sample recorded");
       resetForm();
       onOpenChange(false);
     },
@@ -74,6 +116,9 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange }: Props) {
     setBrix(""); setPh(""); setTa(""); setVa("");
     setSo2Free(""); setSo2Total(""); setAlcohol(""); setRs(""); setNotes("");
   };
+
+  const title = isEditing ? "Edit Lab Sample" : "New Lab Sample";
+  const buttonText = isEditing ? "Update Sample" : "Record Sample";
 
   const formContent = (
     <div className="space-y-4 mt-2">
@@ -95,9 +140,9 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange }: Props) {
         <Label>Notes</Label>
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
       </div>
-      <Button className="w-full min-h-[44px]" onClick={() => create.mutate()} disabled={!sampledAt || create.isPending}>
-        {create.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-        Record Sample
+      <Button className="w-full min-h-[44px]" onClick={() => mutation.mutate()} disabled={!sampledAt || mutation.isPending}>
+        {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+        {buttonText}
       </Button>
     </div>
   );
@@ -106,7 +151,7 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange }: Props) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="bottom" className="pb-safe max-h-[90vh] overflow-y-auto">
-          <SheetHeader><SheetTitle>New Lab Sample</SheetTitle></SheetHeader>
+          <SheetHeader><SheetTitle>{title}</SheetTitle></SheetHeader>
           {formContent}
         </SheetContent>
       </Sheet>
@@ -116,7 +161,7 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>New Lab Sample</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
         {formContent}
       </DialogContent>
     </Dialog>
