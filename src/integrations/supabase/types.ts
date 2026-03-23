@@ -2184,11 +2184,16 @@ export type Database = {
           id: string
           name: string
           needs_onboarding_call: boolean
+          next_billed_at: string | null
           onboarding_completed: boolean
+          paddle_customer_id: string | null
+          paddle_subscription_id: string | null
+          scheduled_change: Json | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subscription_status: string | null
           tier: Database["public"]["Enums"]["org_tier"] | null
+          trial_ends_at: string | null
           type: string | null
           updated_at: string
         }
@@ -2198,11 +2203,16 @@ export type Database = {
           id?: string
           name: string
           needs_onboarding_call?: boolean
+          next_billed_at?: string | null
           onboarding_completed?: boolean
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
+          scheduled_change?: Json | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?: string | null
           tier?: Database["public"]["Enums"]["org_tier"] | null
+          trial_ends_at?: string | null
           type?: string | null
           updated_at?: string
         }
@@ -2212,11 +2222,16 @@ export type Database = {
           id?: string
           name?: string
           needs_onboarding_call?: boolean
+          next_billed_at?: string | null
           onboarding_completed?: boolean
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
+          scheduled_change?: Json | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?: string | null
           tier?: Database["public"]["Enums"]["org_tier"] | null
+          trial_ends_at?: string | null
           type?: string | null
           updated_at?: string
         }
