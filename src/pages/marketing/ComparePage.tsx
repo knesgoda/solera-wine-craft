@@ -180,7 +180,7 @@ export default function ComparePage() {
               </thead>
               <tbody>
                 {[
-                  ["Starting price", "$69/mo", "$149/mo", "$199/mo", "$399/mo", "$399/mo"],
+                  ["Starting price", "$69/mo", "$149/mo", "$279/mo", "$149/mo + fees", "$299/mo + fees"],
                   ["Free tier", true, false, false, false, false],
                   ["Vineyard ops", true, false, false, false, false],
                   ["Lab tracking", true, true, "Partial", false, false],
