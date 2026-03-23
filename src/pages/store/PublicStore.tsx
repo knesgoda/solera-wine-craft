@@ -29,23 +29,7 @@ const ALLOCATION_LABELS: Record<string, string> = {
 };
 
 const PublicStore = () => {
-  const [ageVerified, setAgeVerified] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [cartOpen, setCartOpen] = useState(false);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [checkingOut, setCheckingOut] = useState(false);
-
-  // Checkout form
-  const [custName, setCustName] = useState("");
-  const [custEmail, setCustEmail] = useState("");
-  const [custAddress, setCustAddress] = useState({ line1: "", line2: "", city: "", state: "", zip: "" });
-
-  // Check localStorage for age verification
-  useEffect(() => {
-    if (localStorage.getItem("solera_age_verified") === "true") {
-      setAgeVerified(true);
-    }
-  }, []);
 
   // Get first enabled storefront config (public/anon access)
   const { data: storeConfig } = useQuery({
