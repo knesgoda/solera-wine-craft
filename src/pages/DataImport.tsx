@@ -276,7 +276,7 @@ function SourceImport({
           duplicateStrategy={duplicateStrategy}
           setDuplicateStrategy={setDuplicateStrategy}
           onConfirm={onRunImport}
-          onBack={() => {}}
+          onBack={() => setStep("mapping")}
         />
       )}
       {step === "importing" && <ImportProgress progress={importProgress} />}
