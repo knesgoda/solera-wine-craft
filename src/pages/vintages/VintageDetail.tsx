@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Loader2, FlaskConical, FileText, AlertTriangle } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ArrowLeft, Loader2, FlaskConical, FileText, AlertTriangle, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { useState } from "react";
-import { NewLabSampleDialog } from "@/components/vintages/NewLabSampleDialog";
+import { NewLabSampleDialog, type LabSampleData } from "@/components/vintages/NewLabSampleDialog";
 import { LabChart } from "@/components/vintages/LabChart";
 import { TtbAdditionsTab } from "@/components/vintages/TtbAdditionsTab";
 import { AnomaliesTab } from "@/components/vintages/AnomaliesTab";
@@ -27,7 +29,22 @@ export default function VintageDetail() {
   const queryClient = useQueryClient();
   const { organization, profile } = useAuth();
   const [labDialogOpen, setLabDialogOpen] = useState(false);
+  const [editingSample, setEditingSample] = useState<LabSampleData | null>(null);
+  const [deletingSampleId, setDeletingSampleId] = useState<string | null>(null);
   const orgId = profile?.org_id;
+
+  const deleteSample = useMutation({
+    mutationFn: async (sampleId: string) => {
+      const { error } = await supabase.from("lab_samples").delete().eq("id", sampleId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lab-samples", vintageId] });
+      toast.success("Lab sample deleted");
+      setDeletingSampleId(null);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
 
   const { data: vintage, isLoading } = useQuery({
     queryKey: ["vintage", vintageId],
@@ -215,10 +232,27 @@ export default function VintageDetail() {
               ) : (
                 <div className="space-y-3">
                   {labSamples.map((s: any) => (
-                    <div key={s.id} className="border border-border rounded-lg p-3">
-                      <p className="text-sm font-medium text-foreground mb-1">
-                        {format(parseISO(s.sampled_at), "MMM d, yyyy h:mm a")}
-                      </p>
+                    <div key={s.id} className="border border-border rounded-lg p-3 relative">
+                      <div className="flex items-start justify-between">
+                        <p className="text-sm font-medium text-foreground mb-1">
+                          {format(parseISO(s.sampled_at), "MMM d, yyyy h:mm a")}
+                        </p>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="min-w-[44px] min-h-[44px] flex items-center justify-center -mt-1 -mr-1 text-muted-foreground hover:text-foreground">
+                              <MoreVertical className="h-4 w-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => { setEditingSample(s); setLabDialogOpen(true); }}>
+                              <Pencil className="h-4 w-4 mr-2" /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => setDeletingSampleId(s.id)}>
+                              <Trash2 className="h-4 w-4 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
                         {s.brix != null && <div><span className="text-muted-foreground">Brix:</span> {s.brix}°</div>}
                         {s.ph != null && <div><span className="text-muted-foreground">pH:</span> {s.ph}</div>}
@@ -251,7 +285,32 @@ export default function VintageDetail() {
         </TabsContent>
       </Tabs>
 
-      <NewLabSampleDialog vintageId={vintageId!} open={labDialogOpen} onOpenChange={setLabDialogOpen} />
+      <NewLabSampleDialog
+        vintageId={vintageId!}
+        open={labDialogOpen}
+        onOpenChange={(open) => { setLabDialogOpen(open); if (!open) setEditingSample(null); }}
+        editingSample={editingSample}
+      />
+
+      <AlertDialog open={!!deletingSampleId} onOpenChange={(open) => { if (!open) setDeletingSampleId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete lab sample?</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone. The sample data will be permanently removed.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deletingSampleId && deleteSample.mutate(deletingSampleId)}
+              disabled={deleteSample.isPending}
+            >
+              {deleteSample.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
