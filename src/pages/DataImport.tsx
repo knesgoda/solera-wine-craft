@@ -191,6 +191,7 @@ export default function DataImport() {
             onConfirmMapping={handleConfirmMapping}
             onRunImport={handleRunImport}
             onReset={handleReset}
+            onBackToMapping={() => setStep("mapping")}
             acceptFormats=".csv,.json"
             description="Upload your Innovint export file (.json or .csv)"
           />
