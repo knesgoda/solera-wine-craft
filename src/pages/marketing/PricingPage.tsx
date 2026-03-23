@@ -81,9 +81,9 @@ const TIERS = [
 
 const COMPETITOR_DATA: Record<string, { cost: number; tier: string; tierCost: number }> = {
   innovint: { cost: 149, tier: "Pro", tierCost: 69 },
-  ekos: { cost: 199, tier: "Pro", tierCost: 69 },
-  winedirect: { cost: 399, tier: "Growth", tierCost: 129 },
-  commerce7: { cost: 399, tier: "Growth", tierCost: 129 },
+  ekos: { cost: 279, tier: "Pro", tierCost: 69 },
+  winedirect: { cost: 149, tier: "Growth", tierCost: 129 },
+  commerce7: { cost: 299, tier: "Growth", tierCost: 129 },
   spreadsheets: { cost: 0, tier: "Hobbyist", tierCost: 0 },
   multiple: { cost: 700, tier: "Growth", tierCost: 129 },
 };
