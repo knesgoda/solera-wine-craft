@@ -120,8 +120,8 @@ function SidebarNavGroup({ group, collapsed, currentPath }: { group: NavGroupCon
   const defaultOpen = group.defaultOpen !== false || hasActiveItem;
 
   // Tier gating
-  const tierCheck = group.requiredTier ? useTierGate(group.requiredTier) : { allowed: true, requiredTierDisplay: "" };
-  const locked = !tierCheck.allowed;
+  const tierCheck = useTierGate(group.requiredTier || "hobbyist");
+  const locked = group.requiredTier ? !tierCheck.allowed : false;
 
   if (collapsed) {
     // In collapsed mode, show just the group icon
