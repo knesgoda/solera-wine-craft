@@ -21,7 +21,7 @@ export default function BlogPost() {
         .select("*")
         .eq("slug", slug)
         .eq("published", true)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
