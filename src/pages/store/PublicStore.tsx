@@ -179,55 +179,7 @@ const PublicStore = () => {
     }
   };
 
-  const handleAgeConfirm = () => {
-    localStorage.setItem("solera_age_verified", "true");
-    setAgeVerified(true);
-  };
-
-  const handleAgeExit = () => {
-    window.location.href = "https://www.google.com";
-  };
-
   // Show success/canceled messages
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("success") === "true") {
-      toast.success("Order placed successfully! Check your email for confirmation.");
-      setCart([]);
-      window.history.replaceState({}, "", "/store");
-    } else if (params.get("canceled") === "true") {
-      toast.info("Checkout canceled");
-      window.history.replaceState({}, "", "/store");
-    } else if (params.get("club_success") === "true") {
-      toast.success("Welcome to the wine club! Check your email for details.");
-      window.history.replaceState({}, "", "/store");
-    } else if (params.get("club_canceled") === "true") {
-      toast.info("Club signup canceled");
-      window.history.replaceState({}, "", "/store");
-    }
-  }, []);
-
-  // Age gate
-  if (!ageVerified) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border-none shadow-xl">
-          <CardContent className="p-8 text-center space-y-6">
-            <Wine className="h-16 w-16 mx-auto text-primary" />
-            <h1 className="text-2xl font-display font-bold text-foreground">Age Verification</h1>
-            <p className="text-muted-foreground">You must be 21 years of age or older to enter this site.</p>
-            <p className="text-sm font-medium text-foreground">I confirm I am 21 years of age or older</p>
-            <div className="flex gap-3 justify-center">
-              <Button onClick={handleAgeConfirm} size="lg">Enter</Button>
-              <Button variant="outline" onClick={handleAgeExit} size="lg">Exit</Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const storeName = storeConfig?.store_name || "Wine Shop";
 
   return (
     <AgeVerificationGate>
