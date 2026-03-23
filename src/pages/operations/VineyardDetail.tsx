@@ -161,6 +161,9 @@ const VineyardDetail = () => {
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
+          <Button variant="ghost" size="icon" onClick={startEditVineyard}>
+            <Pencil className="h-4 w-4" />
+          </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button><Plus className="h-4 w-4 mr-2" />Add Block</Button>
