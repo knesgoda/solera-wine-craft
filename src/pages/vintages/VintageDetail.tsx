@@ -168,6 +168,16 @@ export default function VintageDetail() {
 
   const currentIdx = statusOrder.indexOf(vintage.status);
 
+  const handleStatusChange = (newStatus: string) => {
+    const newIdx = statusOrder.indexOf(newStatus);
+    if (newIdx < currentIdx) {
+      if (!confirm(`Move this vintage back to "${statusLabels[newStatus]}"? This will reverse its status timeline.`)) {
+        return;
+      }
+    }
+    updateStatus.mutate(newStatus);
+  };
+
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto pb-24 md:pb-6">
       <Button variant="ghost" size="sm" onClick={() => navigate("/vintages")} className="mb-4">
@@ -187,7 +197,7 @@ export default function VintageDetail() {
               <Button variant="ghost" size="icon" onClick={() => setShowDeleteVintage(true)} className="h-9 w-9 text-destructive hover:text-destructive">
                 <Trash2 className="h-4 w-4" />
               </Button>
-              <Select value={vintage.status} onValueChange={(v) => updateStatus.mutate(v)}>
+              <Select value={vintage.status} onValueChange={handleStatusChange}>
                 <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {statusOrder.map((s) => (
