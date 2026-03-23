@@ -125,7 +125,7 @@ export default function Homepage() {
       {/* SOCIAL PROOF BAR */}
       <section className="bg-primary py-6">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-primary-foreground/80 text-sm mb-3">Trusted by winemakers from Napa to Santa Ynez.</p>
+          <p className="text-primary-foreground/80 text-sm mb-3">Built for winemakers, by a winemaker.</p>
           <p className="text-primary-foreground font-semibold text-lg transition-all duration-500">
             {STATS[statIdx]}
           </p>
