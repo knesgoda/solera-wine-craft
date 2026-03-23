@@ -10,7 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, Plus, Thermometer, Droplets } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ArrowLeft, Loader2, Plus, Thermometer, Droplets, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -22,10 +24,12 @@ export default function VesselDetail() {
   const { organization } = useAuth();
 
   const [showLogForm, setShowLogForm] = useState(false);
+  const [editingLogId, setEditingLogId] = useState<string | null>(null);
   const [logTempF, setLogTempF] = useState("");
   const [logBrix, setLogBrix] = useState("");
   const [logNotes, setLogNotes] = useState("");
   const [loggedAt, setLoggedAt] = useState(new Date().toISOString().slice(0, 16));
+  const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
 
   const { data: vessel, isLoading } = useQuery({
     queryKey: ["vessel", vesselId],
@@ -69,7 +73,16 @@ export default function VesselDetail() {
     enabled: !!organization?.id,
   });
 
-  const addLog = useMutation({
+  const resetForm = () => {
+    setLogTempF("");
+    setLogBrix("");
+    setLogNotes("");
+    setLoggedAt(new Date().toISOString().slice(0, 16));
+    setEditingLogId(null);
+    setShowLogForm(false);
+  };
+
+  const saveLog = useMutation({
     mutationFn: async () => {
       const record = {
         vessel_id: vesselId!,
@@ -79,21 +92,42 @@ export default function VesselDetail() {
         brix: logBrix ? parseFloat(logBrix) : null,
         notes: logNotes || null,
       };
-      const { error } = await supabase.from("fermentation_logs").insert(record as any);
-      if (error) throw error;
 
-      // Evaluate alert rules asynchronously
-      supabase.functions.invoke("evaluate-alerts", {
-        body: { type: "fermentation_log", record },
-      }).catch((e) => console.error("Alert evaluation failed:", e));
+      if (editingLogId) {
+        const { error } = await supabase
+          .from("fermentation_logs")
+          .update(record as any)
+          .eq("id", editingLogId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("fermentation_logs").insert(record as any);
+        if (error) throw error;
+
+        // Evaluate alert rules asynchronously
+        supabase.functions.invoke("evaluate-alerts", {
+          body: { type: "fermentation_log", record },
+        }).catch((e) => console.error("Alert evaluation failed:", e));
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["fermentation-logs", vesselId] });
       queryClient.invalidateQueries({ queryKey: ["latest-logs"] });
-      toast.success("Log entry added");
-      setLogTempF(""); setLogBrix(""); setLogNotes("");
-      setLoggedAt(new Date().toISOString().slice(0, 16));
-      setShowLogForm(false);
+      toast.success(editingLogId ? "Log entry updated" : "Log entry added");
+      resetForm();
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const deleteLog = useMutation({
+    mutationFn: async (logId: string) => {
+      const { error } = await supabase.from("fermentation_logs").delete().eq("id", logId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["fermentation-logs", vesselId] });
+      queryClient.invalidateQueries({ queryKey: ["latest-logs"] });
+      toast.success("Log entry deleted");
+      setDeletingLogId(null);
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -113,6 +147,15 @@ export default function VesselDetail() {
     },
     onError: (err: any) => toast.error(err.message),
   });
+
+  const handleEditLog = (log: any) => {
+    setEditingLogId(log.id);
+    setLogTempF(log.temp_f != null ? String(log.temp_f) : "");
+    setLogBrix(log.brix != null ? String(log.brix) : "");
+    setLogNotes(log.notes || "");
+    setLoggedAt(parseISO(log.logged_at).toISOString().slice(0, 16));
+    setShowLogForm(true);
+  };
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
@@ -197,12 +240,12 @@ export default function VesselDetail() {
         </div>
       )}
 
-      {/* Add Log Entry */}
+      {/* Add/Edit Log Entry */}
       <Card className="mb-6">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Log Entries</CardTitle>
-            <Button size="sm" onClick={() => setShowLogForm(!showLogForm)}>
+            <Button size="sm" onClick={() => { resetForm(); setShowLogForm(true); }}>
               <Plus className="h-4 w-4 mr-1" /> Add Entry
             </Button>
           </div>
@@ -216,10 +259,13 @@ export default function VesselDetail() {
                 <div><Label>Brix (°)</Label><Input type="number" step="0.1" value={logBrix} onChange={(e) => setLogBrix(e.target.value)} /></div>
               </div>
               <div><Label>Notes</Label><Textarea value={logNotes} onChange={(e) => setLogNotes(e.target.value)} rows={2} /></div>
-              <Button className="w-full min-h-[44px]" onClick={() => addLog.mutate()} disabled={addLog.isPending}>
-                {addLog.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                Save Entry
-              </Button>
+              <div className="flex gap-2">
+                <Button className="flex-1 min-h-[44px]" onClick={() => saveLog.mutate()} disabled={saveLog.isPending}>
+                  {saveLog.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  {editingLogId ? "Update Entry" : "Save Entry"}
+                </Button>
+                <Button variant="outline" className="min-h-[44px]" onClick={resetForm}>Cancel</Button>
+              </div>
             </div>
           )}
 
@@ -228,10 +274,27 @@ export default function VesselDetail() {
           ) : (
             <div className="space-y-2">
               {logsDesc.map((log: any) => (
-                <div key={log.id} className="border border-border rounded-lg p-3">
-                  <p className="text-sm font-medium text-foreground mb-1">
-                    {format(parseISO(log.logged_at), "MMM d, yyyy h:mm a")}
-                  </p>
+                <div key={log.id} className="border border-border rounded-lg p-3 relative">
+                  <div className="flex items-start justify-between">
+                    <p className="text-sm font-medium text-foreground mb-1">
+                      {format(parseISO(log.logged_at), "MMM d, yyyy h:mm a")}
+                    </p>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 min-h-[44px] min-w-[44px] -mt-1 -mr-1">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEditLog(log)}>
+                          <Pencil className="h-4 w-4 mr-2" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => setDeletingLogId(log.id)}>
+                          <Trash2 className="h-4 w-4 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                   <div className="flex gap-4 text-sm">
                     {log.temp_f != null && (
                       <span className="flex items-center gap-1">
@@ -251,6 +314,19 @@ export default function VesselDetail() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!deletingLogId} onOpenChange={(open) => !open && setDeletingLogId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete log entry?</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deletingLogId && deleteLog.mutate(deletingLogId)}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
