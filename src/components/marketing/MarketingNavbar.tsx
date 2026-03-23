@@ -60,7 +60,7 @@ export function MarketingNavbar() {
           <Button variant="ghost" className={`${textClass} ${solid ? "hover:bg-primary-foreground/10" : "hover:bg-foreground/10"}`} asChild>
             <Link to="/login">Log In</Link>
           </Button>
-          <Button className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>
+          <Button className={solid ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"} asChild>
             <Link to="/signup">Start Free</Link>
           </Button>
         </div>
