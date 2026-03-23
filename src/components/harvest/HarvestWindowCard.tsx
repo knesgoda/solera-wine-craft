@@ -138,6 +138,20 @@ export const HarvestWindowCard = ({
           </div>
         </div>
 
+        {prediction.predictedDate == null && prediction.currentBrix != null && (
+          <div className="bg-muted rounded-lg p-3 text-sm text-muted-foreground">
+            {prediction.trajectory === "falling" && (
+              <p>📉 Brix is currently trending downward ({prediction.brixSlope?.toFixed(2)}°/day). Harvest prediction will resume when Brix begins rising.</p>
+            )}
+            {prediction.trajectory === "stable" && (
+              <p>➡️ Brix is stable. Prediction requires an upward trend to project a harvest date.</p>
+            )}
+            {prediction.currentBrix != null && prediction.currentBrix >= 24 && (
+              <p>🍇 Brix is at or above 24° — this block may be ready for harvest now.</p>
+            )}
+          </div>
+        )}
+
         {/* What-If slider */}
         <div className="border-t border-border pt-4">
           <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
