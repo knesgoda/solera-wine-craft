@@ -1,10 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowLeft, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { HarvestWindowCard } from "@/components/harvest/HarvestWindowCard";
@@ -37,10 +42,17 @@ const InfoRow = ({ label, value }: { label: string; value: string | number | nul
   );
 };
 
+const emptyEditForm = {
+  name: "", variety: "", clone: "", rootstock: "", acres: "",
+  lifecycle_stage: "" as string, soil_ph: "", soil_texture: "", soil_organic_matter: "", drainage: "",
+};
+
 const BlockDetail = () => {
   const { vineyardId, blockId } = useParams<{ vineyardId: string; blockId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState(emptyEditForm);
 
   const { data: block, isLoading } = useQuery({
     queryKey: ["block", blockId],
@@ -75,6 +87,48 @@ const BlockDetail = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const updateBlock = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("blocks").update({
+        name: editForm.name,
+        variety: editForm.variety || null,
+        clone: editForm.clone || null,
+        rootstock: editForm.rootstock || null,
+        acres: editForm.acres ? parseFloat(editForm.acres) : null,
+        lifecycle_stage: (editForm.lifecycle_stage as LifecycleStage) || null,
+        soil_ph: editForm.soil_ph ? parseFloat(editForm.soil_ph) : null,
+        soil_texture: editForm.soil_texture || null,
+        soil_organic_matter: editForm.soil_organic_matter ? parseFloat(editForm.soil_organic_matter) : null,
+        drainage: editForm.drainage || null,
+      }).eq("id", blockId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["block", blockId] });
+      queryClient.invalidateQueries({ queryKey: ["blocks", vineyardId] });
+      toast.success("Block updated");
+      setEditOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const startEdit = () => {
+    if (!block) return;
+    setEditForm({
+      name: block.name || "",
+      variety: block.variety || "",
+      clone: block.clone || "",
+      rootstock: block.rootstock || "",
+      acres: block.acres != null ? String(block.acres) : "",
+      lifecycle_stage: block.lifecycle_stage || "",
+      soil_ph: block.soil_ph != null ? String(block.soil_ph) : "",
+      soil_texture: block.soil_texture || "",
+      soil_organic_matter: block.soil_organic_matter != null ? String(block.soil_organic_matter) : "",
+      drainage: (block as any).drainage || "",
+    });
+    setEditOpen(true);
+  };
+
   if (isLoading) return <div className="animate-pulse text-muted-foreground py-8 text-center">Loading block...</div>;
   if (!block) return <div className="text-center py-8 text-muted-foreground">Block not found</div>;
 
@@ -98,9 +152,14 @@ const BlockDetail = () => {
             </div>
           </div>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this block?")) deleteBlock.mutate(); }}>
-          <Trash2 className="h-4 w-4 text-destructive" />
-        </Button>
+        <div className="flex gap-1 shrink-0">
+          <Button variant="ghost" size="icon" onClick={startEdit}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this block?")) deleteBlock.mutate(); }}>
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
       </div>
 
       {/* Viticulture Info */}
@@ -133,6 +192,75 @@ const BlockDetail = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Edit Block Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display">Edit Block</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); updateBlock.mutate(); }} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Name *</Label>
+              <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Variety</Label>
+                <Input value={editForm.variety} onChange={(e) => setEditForm({ ...editForm, variety: e.target.value })} placeholder="e.g. Cabernet Sauvignon" />
+              </div>
+              <div className="space-y-2">
+                <Label>Clone</Label>
+                <Input value={editForm.clone} onChange={(e) => setEditForm({ ...editForm, clone: e.target.value })} placeholder="e.g. 337" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Rootstock</Label>
+                <Input value={editForm.rootstock} onChange={(e) => setEditForm({ ...editForm, rootstock: e.target.value })} placeholder="e.g. 110R" />
+              </div>
+              <div className="space-y-2">
+                <Label>Acres</Label>
+                <Input type="number" step="0.01" value={editForm.acres} onChange={(e) => setEditForm({ ...editForm, acres: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Lifecycle Stage</Label>
+              <Select value={editForm.lifecycle_stage} onValueChange={(v) => setEditForm({ ...editForm, lifecycle_stage: v })}>
+                <SelectTrigger><SelectValue placeholder="Select stage" /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(LIFECYCLE_LABELS) as LifecycleStage[]).map((s) => (
+                    <SelectItem key={s} value={s}>{LIFECYCLE_LABELS[s]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Soil pH</Label>
+                <Input type="number" step="0.1" value={editForm.soil_ph} onChange={(e) => setEditForm({ ...editForm, soil_ph: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Soil Texture</Label>
+                <Input value={editForm.soil_texture} onChange={(e) => setEditForm({ ...editForm, soil_texture: e.target.value })} placeholder="e.g. Sandy loam" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Organic Matter %</Label>
+                <Input type="number" step="0.1" value={editForm.soil_organic_matter} onChange={(e) => setEditForm({ ...editForm, soil_organic_matter: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Drainage</Label>
+                <Input value={editForm.drainage} onChange={(e) => setEditForm({ ...editForm, drainage: e.target.value })} placeholder="e.g. Well-drained" />
+              </div>
+            </div>
+            <Button type="submit" className="w-full" disabled={!editForm.name || updateBlock.isPending}>
+              {updateBlock.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : "Save Changes"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
