@@ -33,7 +33,7 @@ export default function PrivacyPage() {
           <ul>
             <li><strong>Account information:</strong> Your name, email address, and organization name when you sign up.</li>
             <li><strong>Winery data:</strong> Vintage records, lab samples, cellar operations, vineyard data, inventory, orders, and any other data you enter into Solera. <strong>This is your data — you own it, always.</strong></li>
-            <li><strong>Payment information:</strong> Credit card details are collected and processed entirely by Stripe. We never see or store your full card number.</li>
+            <li><strong>Payment information:</strong> Credit card details are collected and processed entirely by our payment partner (Paddle). We never see or store your full card number.</li>
             <li><strong>Usage data:</strong> Basic analytics like pages visited and features used, to help us improve the product.</li>
             <li><strong>Weather data:</strong> If you enable weather tracking, we fetch publicly available weather data for your vineyard locations from Open-Meteo.</li>
             <li><strong>Device information:</strong> Browser type, operating system, and IP address for security and troubleshooting.</li>
