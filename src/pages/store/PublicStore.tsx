@@ -57,7 +57,6 @@ const PublicStore = () => {
       if (error) throw error;
       return data as any[];
     },
-    enabled: ageVerified,
   });
 
   const { data: wineClubs = [] } = useQuery({
