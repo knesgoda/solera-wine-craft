@@ -31,36 +31,48 @@ export function usePrimeWindowBlocks() {
   return useQuery<PrimeWindowBlock[]>({
     queryKey: ["prime-window-blocks", orgId],
     queryFn: async () => {
-      // Get all in-progress vintages with block_id
+      // 1. Fetch all in-progress vintages with block+vineyard joins
       const { data: vintages } = await supabase
         .from("vintages")
-        .select("id, block_id")
+        .select("id, block_id, blocks(name, variety, vineyard_id, vineyards(name))")
         .eq("org_id", orgId!)
         .eq("status", "in_progress")
         .not("block_id", "is", null);
 
       if (!vintages?.length) return [];
 
+      const vintageIds = vintages.map(v => v.id);
+
+      // 2. Fetch all lab samples for those vintages in one query
+      const { data: allSamples } = await supabase
+        .from("lab_samples")
+        .select("vintage_id, brix, sampled_at")
+        .in("vintage_id", vintageIds)
+        .not("brix", "is", null)
+        .order("sampled_at", { ascending: true });
+
+      // 3. Group samples by vintage_id
+      const samplesByVintage = new Map<string, { brix: number; sampled_at: string }[]>();
+      for (const s of allSamples || []) {
+        if (s.brix == null) continue;
+        const list = samplesByVintage.get(s.vintage_id) || [];
+        list.push({ brix: s.brix, sampled_at: s.sampled_at });
+        samplesByVintage.set(s.vintage_id, list);
+      }
+
+      // 4. Process slope calculations in memory
       const results: PrimeWindowBlock[] = [];
 
       for (const v of vintages) {
-        // Get lab samples with brix
-        const { data: samples } = await supabase
-          .from("lab_samples")
-          .select("brix, sampled_at")
-          .eq("vintage_id", v.id)
-          .not("brix", "is", null)
-          .order("sampled_at", { ascending: true });
+        const brixSamples = samplesByVintage.get(v.id);
+        if (!brixSamples || brixSamples.length < 2) continue;
 
-        const brixSamples = (samples || []).filter(s => s.brix != null);
-        if (brixSamples.length < 2) continue;
-
-        const currentBrix = brixSamples[brixSamples.length - 1].brix!;
+        const currentBrix = brixSamples[brixSamples.length - 1].brix;
         const last3 = brixSamples.slice(-3);
         const baseDate = parseISO(last3[0].sampled_at);
         const points = last3.map(s => ({
           x: differenceInDays(parseISO(s.sampled_at), baseDate),
-          y: s.brix!,
+          y: s.brix,
         }));
         const slope = linearSlope(points);
 
@@ -74,25 +86,13 @@ export function usePrimeWindowBlocks() {
 
         if (!predictedDate) continue;
 
-        // Get block and vineyard info
-        const { data: block } = await supabase
-          .from("blocks")
-          .select("name, vineyard_id")
-          .eq("id", v.block_id!)
-          .single();
-
+        const block = v.blocks as any;
         if (!block) continue;
-
-        const { data: vineyard } = await supabase
-          .from("vineyards")
-          .select("name")
-          .eq("id", block.vineyard_id)
-          .single();
 
         results.push({
           blockId: v.block_id!,
           blockName: block.name,
-          vineyardName: vineyard?.name || "",
+          vineyardName: block.vineyards?.name || "",
           vineyardId: block.vineyard_id,
           predictedDate,
           currentBrix,
