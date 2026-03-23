@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { SEOHead } from "@/components/SEOHead";
 import { ArrowLeft, Plus, Pencil, Eye, EyeOff, Trash2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { useRoleAccess } from "@/hooks/useRoleAccess";
+import { useNavigate } from "react-router-dom";
 
 const CATEGORIES = [
   "Winery Management",
@@ -43,12 +45,26 @@ type BlogPost = {
 };
 
 export default function BlogAdmin() {
+  const { isAtLeast } = useRoleAccess();
+  const navigate = useNavigate();
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [editing, setEditing] = useState<BlogPost | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  if (!isAtLeast("owner")) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-display font-bold text-foreground">Not Authorized</h1>
+          <p className="text-muted-foreground">You don't have permission to access this page.</p>
+          <Button variant="outline" onClick={() => navigate("/dashboard")}>Back to Dashboard</Button>
+        </div>
+      </div>
+    );
+  }
 
   const verifyPassword = async () => {
     try {
