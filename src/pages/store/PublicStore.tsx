@@ -455,7 +455,7 @@ const PublicStore = () => {
             <Button onClick={handleCheckout} disabled={checkingOut || cart.length === 0} className="w-full" size="lg">
               {checkingOut ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing...</> : `Pay $${subtotal.toFixed(2)}`}
             </Button>
-            <p className="text-xs text-muted-foreground text-center">You'll be redirected to Stripe for secure payment</p>
+            <p className="text-xs text-muted-foreground text-center">You'll be redirected for secure payment</p>
           </div>
         </DialogContent>
       </Dialog>
