@@ -251,7 +251,7 @@ Deno.serve(async (req) => {
     if (action === "customer-list") {
       const { data: orgs } = await supabase
         .from("organizations")
-        .select("id, name, tier, type, created_at, stripe_customer_id")
+        .select("id, name, tier, type, created_at, paddle_customer_id")
         .order("created_at", { ascending: false });
 
       const orgIds = (orgs || []).map((o: any) => o.id);
