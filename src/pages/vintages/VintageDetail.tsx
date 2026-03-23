@@ -119,6 +119,31 @@ export default function VintageDetail() {
     },
   });
 
+  const updateVintageDetails = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("vintages").update({
+        harvest_date: editHarvestDate ? format(editHarvestDate, "yyyy-MM-dd") : null,
+        tons_harvested: editTons ? parseFloat(editTons) : null,
+        notes: editNotes || null,
+      } as any).eq("id", vintageId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vintage", vintageId] });
+      queryClient.invalidateQueries({ queryKey: ["vintages"] });
+      toast.success("Vintage updated");
+      setIsEditingVintage(false);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const startEditingVintage = () => {
+    setEditHarvestDate(vintage?.harvest_date ? parseISO(vintage.harvest_date) : undefined);
+    setEditTons(vintage?.tons_harvested != null ? String(vintage.tons_harvested) : "");
+    setEditNotes(vintage?.notes || "");
+    setIsEditingVintage(true);
+  };
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
