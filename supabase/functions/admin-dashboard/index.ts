@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
+    const paddleKey = Deno.env.get("PADDLE_API_KEY") || "";
 
     // ─── Dashboard Full Stats ───
     if (action === "dashboard-stats") {
