@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, ChevronRight, MapPin, Trash2, CloudSun, Grid3x3 } from "lucide-react";
+import { ArrowLeft, Plus, ChevronRight, MapPin, Trash2, CloudSun, Grid3x3, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { WeatherTab } from "@/components/weather/WeatherTab";
@@ -44,6 +44,8 @@ const VineyardDetail = () => {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyBlock);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ name: "", region: "", coordinates: "", acres: "" });
 
   const { data: vineyard, isLoading: loadingVineyard } = useQuery({
     queryKey: ["vineyard", vineyardId],
@@ -103,6 +105,36 @@ const VineyardDetail = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const updateVineyard = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("vineyards").update({
+        name: editForm.name,
+        region: editForm.region || null,
+        coordinates: editForm.coordinates || null,
+        acres: editForm.acres ? parseFloat(editForm.acres) : null,
+      } as any).eq("id", vineyardId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vineyard", vineyardId] });
+      queryClient.invalidateQueries({ queryKey: ["vineyards"] });
+      toast.success("Vineyard updated");
+      setEditOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const startEditVineyard = () => {
+    if (!vineyard) return;
+    setEditForm({
+      name: vineyard.name || "",
+      region: vineyard.region || "",
+      coordinates: vineyard.coordinates || "",
+      acres: vineyard.acres != null ? String(vineyard.acres) : "",
+    });
+    setEditOpen(true);
+  };
+
   if (loadingVineyard) {
     return <div className="animate-pulse text-muted-foreground py-8 text-center">Loading vineyard...</div>;
   }
@@ -129,6 +161,9 @@ const VineyardDetail = () => {
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
+          <Button variant="ghost" size="icon" onClick={startEditVineyard}>
+            <Pencil className="h-4 w-4" />
+          </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button><Plus className="h-4 w-4 mr-2" />Add Block</Button>
@@ -260,6 +295,38 @@ const VineyardDetail = () => {
           <WeatherTab vineyardId={vineyardId!} />
         </TabsContent>
       </Tabs>
+
+      {/* Edit Vineyard Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-display">Edit Vineyard</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); updateVineyard.mutate(); }} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Name *</Label>
+              <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Region</Label>
+              <Input value={editForm.region} onChange={(e) => setEditForm({ ...editForm, region: e.target.value })} placeholder="e.g. Napa Valley" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Coordinates</Label>
+                <Input value={editForm.coordinates} onChange={(e) => setEditForm({ ...editForm, coordinates: e.target.value })} placeholder="e.g. 38.5025,-122.2654" />
+              </div>
+              <div className="space-y-2">
+                <Label>Acres</Label>
+                <Input type="number" step="0.01" value={editForm.acres} onChange={(e) => setEditForm({ ...editForm, acres: e.target.value })} />
+              </div>
+            </div>
+            <Button type="submit" className="w-full" disabled={!editForm.name || updateVineyard.isPending}>
+              {updateVineyard.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : "Save Changes"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
