@@ -166,86 +166,42 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ─── Stripe Revenue Detail ───
+    // ─── Revenue Detail ───
     if (action === "stripe-revenue") {
-      if (!stripeKey) return json({ error: "Stripe not configured" }, 400);
+      // Build revenue data from DB (organizations table)
+      const { data: allOrgs } = await supabase.from("organizations")
+        .select("id, name, tier, subscription_status, paddle_customer_id, paddle_subscription_id, next_billed_at, created_at");
 
-      const thirtyDaysAgoTs = Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000);
-
-      const [subsAll, failedEvents, deletedEvents, updatedEvents] = await Promise.all([
-        stripeGetAll("/subscriptions?status=active&expand[]=data.customer&expand[]=data.items", stripeKey),
-        stripeGet(`/events?type=payment_intent.payment_failed&created[gte]=${thirtyDaysAgoTs}&limit=100`, stripeKey),
-        stripeGet(`/events?type=customer.subscription.deleted&created[gte]=${Math.floor((Date.now() - 90 * 24 * 60 * 60 * 1000) / 1000)}&limit=100`, stripeKey),
-        stripeGet(`/events?type=customer.subscription.updated&created[gte]=${Math.floor((Date.now() - 90 * 24 * 60 * 60 * 1000) / 1000)}&limit=100`, stripeKey),
-      ]);
-
-      // Map subscriptions to orgs
-      const { data: allOrgs } = await supabase.from("organizations").select("id, name, stripe_customer_id, stripe_subscription_id, tier");
-      const orgByStripeCustomer: Record<string, any> = {};
-      const orgByStripeSub: Record<string, any> = {};
-      for (const org of (allOrgs || [])) {
-        if (org.stripe_customer_id) orgByStripeCustomer[org.stripe_customer_id] = org;
-        if (org.stripe_subscription_id) orgByStripeSub[org.stripe_subscription_id] = org;
-      }
-
+      const paidOrgs = (allOrgs || []).filter((o: any) => o.tier && o.tier !== "hobbyist" && o.subscription_status !== "canceled");
       let mrr = 0;
-      const subscriptions = subsAll.map((sub: any) => {
-        const monthlyAmount = getSubMonthlyAmount(sub);
-        mrr += monthlyAmount;
-        const org = orgByStripeCustomer[sub.customer?.id || sub.customer] || orgByStripeSub[sub.id];
+      const subscriptions = paidOrgs.map((org: any) => {
+        const tierMrr = TIER_MRR[org.tier] || 0;
+        mrr += tierMrr;
         return {
-          id: sub.id,
-          orgName: org?.name || sub.customer?.name || sub.customer?.email || "Unknown",
-          orgId: org?.id,
-          plan: sub.items?.data?.[0]?.price?.nickname || sub.plan?.nickname || org?.tier || "Unknown",
-          mrr: Math.round(monthlyAmount),
-          billingCycle: sub.items?.data?.[0]?.price?.recurring?.interval || sub.plan?.interval || "month",
-          nextBilling: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
-          cardLast4: sub.default_payment_method?.card?.last4 || null,
-          cardExpiry: sub.default_payment_method?.card?.exp_month 
-            ? `${sub.default_payment_method.card.exp_month}/${sub.default_payment_method.card.exp_year}` : null,
-          cardStatus: "healthy",
-          startedAt: new Date(sub.created * 1000).toISOString(),
+          id: org.paddle_subscription_id || org.id,
+          orgName: org.name,
+          orgId: org.id,
+          plan: org.tier,
+          mrr: tierMrr,
+          billingCycle: "month",
+          nextBilling: org.next_billed_at,
+          cardLast4: null,
+          cardExpiry: null,
+          cardStatus: org.subscription_status === "past_due" ? "past_due" : "healthy",
+          startedAt: org.created_at,
         };
       });
 
-      // Failed payments
-      const failedPayments = (failedEvents.data || []).map((evt: any) => {
-        const pi = evt.data?.object;
-        const org = orgByStripeCustomer[pi?.customer];
-        return {
-          orgName: org?.name || pi?.customer || "Unknown",
-          amount: (pi?.amount || 0) / 100,
-          failedDate: new Date(evt.created * 1000).toISOString(),
-          failureReason: pi?.last_payment_error?.message || "Unknown",
-          retryCount: pi?.metadata?.retry_count || 0,
-        };
-      });
+      const pastDueOrgs = (allOrgs || []).filter((o: any) => o.subscription_status === "past_due");
+      const failedPayments = pastDueOrgs.map((org: any) => ({
+        orgName: org.name,
+        amount: TIER_MRR[org.tier] || 0,
+        failedDate: new Date().toISOString(),
+        failureReason: "Payment past due",
+        retryCount: 0,
+      }));
 
-      // Upgrade/downgrade log
-      const upgrades = (updatedEvents.data || []).filter((evt: any) => {
-        const prev = evt.data?.previous_attributes;
-        return prev?.plan || prev?.items;
-      }).map((evt: any) => {
-        const sub = evt.data?.object;
-        const prev = evt.data?.previous_attributes;
-        const org = orgByStripeCustomer[sub?.customer] || orgByStripeSub[sub?.id];
-        const prevAmount = getSubMonthlyAmount({ ...sub, items: prev?.items || sub?.items, plan: prev?.plan || sub?.plan });
-        const newAmount = getSubMonthlyAmount(sub);
-        return {
-          orgName: org?.name || "Unknown",
-          fromPlan: prev?.plan?.nickname || prev?.items?.data?.[0]?.price?.nickname || "Previous",
-          toPlan: sub?.plan?.nickname || sub?.items?.data?.[0]?.price?.nickname || "Current",
-          date: new Date(evt.created * 1000).toISOString(),
-          mrrImpact: Math.round(newAmount - prevAmount),
-        };
-      });
-
-      // Churn rate (last 30d)
-      const churnedCount = (deletedEvents.data || []).filter((e: any) => e.created >= Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000)).length;
-      const totalActive = subscriptions.length;
-      const churnRate = totalActive > 0 ? Math.round((churnedCount / (totalActive + churnedCount)) * 100) : 0;
-
+      const churnRate = 0; // Would need historical data to compute
       return json({
         mrr: Math.round(mrr),
         arr: Math.round(mrr * 12),
@@ -254,7 +210,7 @@ Deno.serve(async (req) => {
         churnRate,
         subscriptions,
         failedPayments,
-        upgrades,
+        upgrades: [],
       });
     }
 
