@@ -44,7 +44,7 @@ export function SEOHead({
   const finalDesc = description || DEFAULTS.description;
   const finalOgImage = ogImage || DEFAULTS.ogImage;
   const finalOgType = ogType || DEFAULTS.ogType;
-  const finalCanonical = canonicalUrl || (typeof window !== "undefined" ? window.location.href : "");
+  const finalCanonical = canonicalUrl || (typeof window !== "undefined" ? window.location.origin + window.location.pathname : "");
 
   useEffect(() => {
     // Title
