@@ -98,22 +98,36 @@ export default function DataImport() {
         .single();
       if (jobErr) throw jobErr;
 
-      setImportProgress(30);
+      setImportProgress(20);
 
-      const { data, error } = await supabase.functions.invoke("run-import", {
-        body: {
-          jobId: job.id,
-          rows: allRows,
-          mappings,
-          orgId: organization!.id,
-          duplicateStrategy,
-        },
-      });
+      const BATCH_SIZE = 500;
+      const batches: Record<string, any>[][] = [];
+      for (let i = 0; i < allRows.length; i += BATCH_SIZE) {
+        batches.push(allRows.slice(i, i + BATCH_SIZE));
+      }
+
+      let totalImported = 0, totalSkipped = 0, totalErrors = 0;
+
+      for (let i = 0; i < batches.length; i++) {
+        const { data, error } = await supabase.functions.invoke("run-import", {
+          body: {
+            jobId: job.id,
+            rows: batches[i],
+            mappings,
+            orgId: organization!.id,
+            duplicateStrategy,
+          },
+        });
+
+        if (error) throw error;
+        totalImported += data.imported;
+        totalSkipped += data.skipped;
+        totalErrors += data.errors;
+        setImportProgress(20 + Math.round(((i + 1) / batches.length) * 75));
+      }
 
       setImportProgress(100);
-
-      if (error) throw error;
-      setImportResult(data as ImportResult);
+      setImportResult({ imported: totalImported, skipped: totalSkipped, errors: totalErrors, total: allRows.length });
       setStep("complete");
       toast.success("Import complete!");
     } catch (err: any) {

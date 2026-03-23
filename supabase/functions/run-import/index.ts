@@ -113,12 +113,17 @@ serve(async (req) => {
       }
     }
 
+    // Fetch current totals to accumulate across batches
+    const { data: currentJob } = await supabase.from("import_jobs").select("imported_rows, skipped_rows, error_rows").eq("id", jobId).single();
+    const prevImported = currentJob?.imported_rows || 0;
+    const prevSkipped = currentJob?.skipped_rows || 0;
+    const prevErrors = currentJob?.error_rows || 0;
+
     await supabase.from("import_jobs").update({
       status: "completed",
-      imported_rows: imported,
-      skipped_rows: skipped,
-      error_rows: errors,
-      total_rows: rows.length,
+      imported_rows: prevImported + imported,
+      skipped_rows: prevSkipped + skipped,
+      error_rows: prevErrors + errors,
       completed_at: new Date().toISOString(),
     }).eq("id", jobId);
 
