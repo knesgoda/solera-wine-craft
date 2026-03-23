@@ -43,7 +43,11 @@ const Onboarding = () => {
   };
 
   const handleFinish = async () => {
-    if (!profile?.org_id || !selectedType) return;
+    if (!profile?.org_id) {
+      toast.error("Organization not found. Please try signing out and back in.");
+      return;
+    }
+    if (!selectedType) return;
     setLoading(true);
     const { error } = await supabase
       .from("organizations")

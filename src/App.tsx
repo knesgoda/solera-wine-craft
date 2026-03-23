@@ -154,7 +154,7 @@ const App = () => (
             <Route path="/store" element={<PublicStore />} />
             <Route path="/developers" element={<Developers />} />
             <Route path="/sso/login" element={<SsoLogin />} />
-            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/operations" element={<VineyardList />} />
