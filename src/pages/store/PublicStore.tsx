@@ -405,7 +405,7 @@ const PublicStore = () => {
             <Button className="w-full" onClick={() => { const club = wineClubs.find((c: any) => c.id === joiningClub); if (club) handleJoinClub(club); }}>
               Subscribe — ${Number(wineClubs.find((c: any) => c.id === joiningClub)?.price_per_shipment || 0).toFixed(2)}/shipment
             </Button>
-            <p className="text-xs text-muted-foreground text-center">You'll be redirected to Stripe for secure payment</p>
+            <p className="text-xs text-muted-foreground text-center">You'll be redirected for secure payment</p>
           </div>
         </DialogContent>
       </Dialog>
