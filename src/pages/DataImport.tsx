@@ -214,6 +214,7 @@ export default function DataImport() {
             onConfirmMapping={handleConfirmMapping}
             onRunImport={handleRunImport}
             onReset={handleReset}
+            onBackToMapping={() => setStep("mapping")}
             acceptFormats=".csv"
             description="Upload your VinNow export CSV"
           />
