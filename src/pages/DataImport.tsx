@@ -167,6 +167,7 @@ export default function DataImport() {
             onConfirmMapping={handleConfirmMapping}
             onRunImport={handleRunImport}
             onReset={handleReset}
+            onBackToMapping={() => setStep("mapping")}
             acceptFormats=".csv,.xlsx,.xls,.tsv"
             description="Upload a CSV, Excel, or TSV file with your winery data"
           />
@@ -190,6 +191,7 @@ export default function DataImport() {
             onConfirmMapping={handleConfirmMapping}
             onRunImport={handleRunImport}
             onReset={handleReset}
+            onBackToMapping={() => setStep("mapping")}
             acceptFormats=".csv,.json"
             description="Upload your Innovint export file (.json or .csv)"
           />
@@ -213,6 +215,7 @@ export default function DataImport() {
             onConfirmMapping={handleConfirmMapping}
             onRunImport={handleRunImport}
             onReset={handleReset}
+            onBackToMapping={() => setStep("mapping")}
             acceptFormats=".csv"
             description="Upload your VinNow export CSV"
           />
@@ -239,6 +242,7 @@ interface SourceImportProps {
   onConfirmMapping: () => void;
   onRunImport: () => void;
   onReset: () => void;
+  onBackToMapping: () => void;
   acceptFormats: string;
   description: string;
 }
@@ -247,7 +251,7 @@ function SourceImport({
   sourceType, step, headers, sampleRows, allRows, mappings, setMappings,
   isLoadingMapping, importProgress, importResult, duplicateStrategy,
   setDuplicateStrategy, onFileData, onConfirmMapping, onRunImport, onReset,
-  acceptFormats, description,
+  onBackToMapping, acceptFormats, description,
 }: SourceImportProps) {
   return (
     <>
@@ -276,7 +280,7 @@ function SourceImport({
           duplicateStrategy={duplicateStrategy}
           setDuplicateStrategy={setDuplicateStrategy}
           onConfirm={onRunImport}
-          onBack={() => {}}
+          onBack={onBackToMapping}
         />
       )}
       {step === "importing" && <ImportProgress progress={importProgress} />}
