@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useRoleAccess } from "@/hooks/useRoleAccess";
 import {
   LayoutDashboard, CalendarDays, Users, DollarSign, BarChart3,
   Wrench, Search, FileText, RefreshCw, LogOut, Monitor,

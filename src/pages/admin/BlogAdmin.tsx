@@ -49,6 +49,10 @@ export default function BlogAdmin() {
   const navigate = useNavigate();
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [editing, setEditing] = useState<BlogPost | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   if (!isAtLeast("owner")) {
     return (
@@ -61,10 +65,6 @@ export default function BlogAdmin() {
       </div>
     );
   }
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [editing, setEditing] = useState<BlogPost | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const verifyPassword = async () => {
     try {
