@@ -11,20 +11,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { org_id } = await req.json();
+    const paddleKey = Deno.env.get("PADDLE_API_KEY");
+    if (!paddleKey) throw new Error("Paddle API key not configured");
 
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("Stripe not configured");
+    const { org_id } = await req.json();
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Look up the org's stripe_customer_id
     const { data: org, error: orgErr } = await supabase
       .from("organizations")
-      .select("stripe_customer_id")
+      .select("paddle_customer_id, paddle_subscription_id")
       .eq("id", org_id)
       .single();
 
@@ -35,33 +34,39 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!org.stripe_customer_id) {
+    if (!org.paddle_customer_id || !org.paddle_subscription_id) {
       return new Response(
-        JSON.stringify({ error: "No Stripe customer found. Please upgrade to a paid plan first." }),
+        JSON.stringify({ error: "No Paddle subscription found. Please upgrade to a paid plan first." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Create Stripe billing portal session
-    const params = new URLSearchParams();
-    params.append("customer", org.stripe_customer_id);
-    params.append("return_url", req.headers.get("origin") || "https://solera-wine-craft.lovable.app/settings/billing");
+    // Create a portal session via Paddle API
+    const paddleResp = await fetch(
+      `https://api.paddle.com/customers/${org.paddle_customer_id}/portal-sessions`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${paddleKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subscription_ids: [org.paddle_subscription_id],
+        }),
+      }
+    );
 
-    const stripeResp = await fetch("https://api.stripe.com/v1/billing_portal/sessions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${stripeKey}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: params.toString(),
-    });
-
-    const session = await stripeResp.json();
-    if (!stripeResp.ok) {
-      throw new Error(session.error?.message || "Failed to create billing portal session");
+    const session = await paddleResp.json();
+    if (!paddleResp.ok) {
+      throw new Error(session.error?.detail || "Failed to create billing portal session");
     }
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    const portalUrl = session.data?.urls?.general?.overview;
+    if (!portalUrl) {
+      throw new Error("Portal URL not returned by Paddle");
+    }
+
+    return new Response(JSON.stringify({ url: portalUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {

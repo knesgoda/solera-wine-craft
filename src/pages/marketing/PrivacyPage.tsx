@@ -33,7 +33,7 @@ export default function PrivacyPage() {
           <ul>
             <li><strong>Account information:</strong> Your name, email address, and organization name when you sign up.</li>
             <li><strong>Winery data:</strong> Vintage records, lab samples, cellar operations, vineyard data, inventory, orders, and any other data you enter into Solera. <strong>This is your data — you own it, always.</strong></li>
-            <li><strong>Payment information:</strong> Credit card details are collected and processed entirely by Stripe. We never see or store your full card number.</li>
+            <li><strong>Payment information:</strong> Credit card details are collected and processed entirely by our payment partner (Paddle). We never see or store your full card number.</li>
             <li><strong>Usage data:</strong> Basic analytics like pages visited and features used, to help us improve the product.</li>
             <li><strong>Weather data:</strong> If you enable weather tracking, we fetch publicly available weather data for your vineyard locations from Open-Meteo.</li>
             <li><strong>Device information:</strong> Browser type, operating system, and IP address for security and troubleshooting.</li>
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
           <p>We use the following services to operate Solera. Each processes data only as necessary to provide their service:</p>
           <ul>
             <li><strong>Supabase</strong> — Database hosting, authentication, and file storage. Your winery data is stored in Supabase's infrastructure.</li>
-            <li><strong>Stripe</strong> — Payment processing. Stripe handles all credit card data under their own PCI-compliant privacy policy.</li>
+            <li><strong>Paddle</strong> — Payment processing and merchant of record. Paddle handles all credit card data and tax compliance.</li>
             <li><strong>Resend</strong> — Transactional email delivery (password resets, notifications).</li>
             <li><strong>Anthropic</strong> — AI processing for Ask Solera and other AI features. Your data is sent to Anthropic's API for processing but is not retained by Anthropic for training.</li>
             <li><strong>Open-Meteo</strong> — Weather data retrieval. Only your vineyard's geographic coordinates are sent; no personal data.</li>

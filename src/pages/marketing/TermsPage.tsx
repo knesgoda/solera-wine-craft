@@ -42,7 +42,7 @@ export default function TermsPage() {
             <li><strong>Free tier (Hobbyist):</strong> Free forever. No credit card required. Limited to 3 vintages, 1 vineyard, and core features.</li>
             <li><strong>Paid plans:</strong> Billed monthly or annually. Annual plans receive a 15% discount and lock your rate for 24 months.</li>
             <li><strong>No onboarding fees:</strong> We never charge setup, onboarding, or implementation fees.</li>
-            <li><strong>No transaction markups:</strong> DTC sales processed through Stripe are charged at Stripe's standard rate (2.9% + $0.30). Solera adds zero markup.</li>
+            <li><strong>No transaction markups:</strong> DTC sales are processed through our payment partner at standard rates. Solera adds zero markup.</li>
             <li><strong>Plan changes:</strong> You can upgrade or downgrade your plan at any time. Changes take effect at your next billing cycle.</li>
             <li><strong>Cancellation:</strong> You can cancel your subscription at any time. Your account remains active until the end of your current billing period.</li>
           </ul>

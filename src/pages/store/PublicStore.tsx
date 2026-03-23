@@ -165,7 +165,7 @@ const PublicStore = () => {
       const orgId = storeConfig?.org_id;
       if (!orgId) throw new Error("Store not configured");
 
-      const { data, error } = await supabase.functions.invoke("stripe-checkout", {
+      const { data, error } = await supabase.functions.invoke("paddle-checkout", {
         body: {
           org_id: orgId,
           customer_name: custName,
@@ -405,7 +405,7 @@ const PublicStore = () => {
             <Button className="w-full" onClick={() => { const club = wineClubs.find((c: any) => c.id === joiningClub); if (club) handleJoinClub(club); }}>
               Subscribe — ${Number(wineClubs.find((c: any) => c.id === joiningClub)?.price_per_shipment || 0).toFixed(2)}/shipment
             </Button>
-            <p className="text-xs text-muted-foreground text-center">You'll be redirected to Stripe for secure payment</p>
+            <p className="text-xs text-muted-foreground text-center">You'll be redirected for secure payment</p>
           </div>
         </DialogContent>
       </Dialog>
@@ -455,7 +455,7 @@ const PublicStore = () => {
             <Button onClick={handleCheckout} disabled={checkingOut || cart.length === 0} className="w-full" size="lg">
               {checkingOut ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing...</> : `Pay $${subtotal.toFixed(2)}`}
             </Button>
-            <p className="text-xs text-muted-foreground text-center">You'll be redirected to Stripe for secure payment</p>
+            <p className="text-xs text-muted-foreground text-center">You'll be redirected for secure payment</p>
           </div>
         </DialogContent>
       </Dialog>

@@ -13,53 +13,21 @@ function json(data: any, status = 200) {
   });
 }
 
-async function stripeGet(endpoint: string, stripeKey: string) {
-  const res = await fetch(`https://api.stripe.com/v1${endpoint}`, {
-    headers: { Authorization: `Bearer ${stripeKey}` },
+// Paddle API helper
+async function paddleGet(endpoint: string, paddleKey: string) {
+  const res = await fetch(`https://api.paddle.com${endpoint}`, {
+    headers: { "Authorization": `Bearer ${paddleKey}`, "Content-Type": "application/json" },
   });
   return res.json();
 }
 
-// Paginate through all Stripe list results
-async function stripeGetAll(endpoint: string, stripeKey: string): Promise<any[]> {
-  const allItems: any[] = [];
-  let url = endpoint.includes("?")
-    ? `${endpoint}&limit=100`
-    : `${endpoint}?limit=100`;
-  while (true) {
-    const res = await stripeGet(url, stripeKey);
-    const items = res.data || [];
-    allItems.push(...items);
-    if (!res.has_more || items.length === 0) break;
-    const lastId = items[items.length - 1].id;
-    url = endpoint.includes("?")
-      ? `${endpoint}&limit=100&starting_after=${lastId}`
-      : `${endpoint}?limit=100&starting_after=${lastId}`;
-  }
-  return allItems;
-}
-
-// Extract monthly amount from a subscription using items/prices (not legacy plan)
-function getSubMonthlyAmount(sub: any): number {
-  // Prefer items array (Prices API)
-  if (sub.items?.data?.length) {
-    let total = 0;
-    for (const item of sub.items.data) {
-      const price = item.price || item.plan;
-      if (!price) continue;
-      const amount = (price.unit_amount || price.amount || 0) / 100;
-      const qty = item.quantity || 1;
-      const interval = price.recurring?.interval || price.interval || "month";
-      if (interval === "year") total += (amount * qty) / 12;
-      else total += amount * qty;
-    }
-    return total;
-  }
-  // Fallback to legacy plan field
-  const interval = sub.plan?.interval || "month";
-  const amount = (sub.plan?.amount || 0) / 100;
-  return interval === "year" ? amount / 12 : amount;
-}
+// Tier price mapping for MRR calculation
+const TIER_MRR: Record<string, number> = {
+  hobbyist: 0,
+  small_boutique: 69,
+  mid_size: 129,
+  enterprise: 399,
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -78,7 +46,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
+    const paddleKey = Deno.env.get("PADDLE_API_KEY") || "";
 
     // ─── Dashboard Full Stats ───
     if (action === "dashboard-stats") {
@@ -157,47 +125,23 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Stripe summary
-      let stripeSummary = { mrr: 0, activeSubscriptions: 0, failedPayments7d: 0, mrrAdded7d: 0, mrrChurned7d: 0 };
-      if (stripeKey) {
-        try {
-          // Active subscriptions — paginated
-          const allSubs = await stripeGetAll("/subscriptions?status=active&expand[]=data.items", stripeKey);
-          let mrr = 0;
-          let mrrAdded7d = 0;
-          const sevenDaysAgoTs = Math.floor(new Date(sevenDaysAgo).getTime() / 1000);
-          for (const sub of allSubs) {
-            const monthlyAmount = getSubMonthlyAmount(sub);
-            mrr += monthlyAmount;
-            if (sub.created >= sevenDaysAgoTs) mrrAdded7d += monthlyAmount;
-          }
-
-          // Failed payments last 7d
-          const failedEvents = await stripeGet(`/events?type=payment_intent.payment_failed&created[gte]=${sevenDaysAgoTs}&limit=100`, stripeKey);
-          
-          // Churned last 7d
-          const churnedEvents = await stripeGet(`/events?type=customer.subscription.deleted&created[gte]=${sevenDaysAgoTs}&limit=100`, stripeKey);
-          let mrrChurned = 0;
-          for (const evt of (churnedEvents.data || [])) {
-            const sub = evt.data?.object;
-            mrrChurned += getSubMonthlyAmount(sub);
-          }
-
-          if ((failedEvents.data || []).length > 0) {
-            alerts.push({ severity: "red", icon: "🔴", label: `${failedEvents.data.length} failed Stripe payment(s) last 7 days`, link: "revenue" });
-          }
-
-          stripeSummary = {
-            mrr: Math.round(mrr),
-            activeSubscriptions: allSubs.length,
-            failedPayments7d: (failedEvents.data || []).length,
-            mrrAdded7d: Math.round(mrrAdded7d),
-            mrrChurned7d: Math.round(mrrChurned),
-          };
-        } catch (e) {
-          console.error("Stripe error:", e);
-        }
+      // Revenue summary from DB (tier-based MRR calculation)
+      let revenueSummary = { mrr: 0, activeSubscriptions: 0, failedPayments7d: 0, mrrAdded7d: 0, mrrChurned7d: 0 };
+      const paidOrgs = orgs.filter(o => o.tier && o.tier !== "hobbyist");
+      let mrr = 0;
+      let mrrAdded7d = 0;
+      for (const org of paidOrgs) {
+        const tierMrr = TIER_MRR[org.tier || "hobbyist"] || 0;
+        mrr += tierMrr;
+        if (org.created_at >= sevenDaysAgo) mrrAdded7d += tierMrr;
       }
+      revenueSummary = {
+        mrr: Math.round(mrr),
+        activeSubscriptions: paidOrgs.length,
+        failedPayments7d: 0,
+        mrrAdded7d: Math.round(mrrAdded7d),
+        mrrChurned7d: 0,
+      };
 
       if (alerts.length === 0) {
         alerts.push({ severity: "green", icon: "✅", label: "All systems healthy", link: null });
@@ -217,91 +161,47 @@ Deno.serve(async (req) => {
         totalImportsCompleted: allImports.filter((i: any) => i.status === "completed").length,
         totalVintages: vintagesRes.count || 0,
         aiQueries7d,
-        stripe: stripeSummary,
+        stripe: revenueSummary,
         alerts,
       });
     }
 
-    // ─── Stripe Revenue Detail ───
+    // ─── Revenue Detail ───
     if (action === "stripe-revenue") {
-      if (!stripeKey) return json({ error: "Stripe not configured" }, 400);
+      // Build revenue data from DB (organizations table)
+      const { data: allOrgs } = await supabase.from("organizations")
+        .select("id, name, tier, subscription_status, paddle_customer_id, paddle_subscription_id, next_billed_at, created_at");
 
-      const thirtyDaysAgoTs = Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000);
-
-      const [subsAll, failedEvents, deletedEvents, updatedEvents] = await Promise.all([
-        stripeGetAll("/subscriptions?status=active&expand[]=data.customer&expand[]=data.items", stripeKey),
-        stripeGet(`/events?type=payment_intent.payment_failed&created[gte]=${thirtyDaysAgoTs}&limit=100`, stripeKey),
-        stripeGet(`/events?type=customer.subscription.deleted&created[gte]=${Math.floor((Date.now() - 90 * 24 * 60 * 60 * 1000) / 1000)}&limit=100`, stripeKey),
-        stripeGet(`/events?type=customer.subscription.updated&created[gte]=${Math.floor((Date.now() - 90 * 24 * 60 * 60 * 1000) / 1000)}&limit=100`, stripeKey),
-      ]);
-
-      // Map subscriptions to orgs
-      const { data: allOrgs } = await supabase.from("organizations").select("id, name, stripe_customer_id, stripe_subscription_id, tier");
-      const orgByStripeCustomer: Record<string, any> = {};
-      const orgByStripeSub: Record<string, any> = {};
-      for (const org of (allOrgs || [])) {
-        if (org.stripe_customer_id) orgByStripeCustomer[org.stripe_customer_id] = org;
-        if (org.stripe_subscription_id) orgByStripeSub[org.stripe_subscription_id] = org;
-      }
-
+      const paidOrgs = (allOrgs || []).filter((o: any) => o.tier && o.tier !== "hobbyist" && o.subscription_status !== "canceled");
       let mrr = 0;
-      const subscriptions = subsAll.map((sub: any) => {
-        const monthlyAmount = getSubMonthlyAmount(sub);
-        mrr += monthlyAmount;
-        const org = orgByStripeCustomer[sub.customer?.id || sub.customer] || orgByStripeSub[sub.id];
+      const subscriptions = paidOrgs.map((org: any) => {
+        const tierMrr = TIER_MRR[org.tier] || 0;
+        mrr += tierMrr;
         return {
-          id: sub.id,
-          orgName: org?.name || sub.customer?.name || sub.customer?.email || "Unknown",
-          orgId: org?.id,
-          plan: sub.items?.data?.[0]?.price?.nickname || sub.plan?.nickname || org?.tier || "Unknown",
-          mrr: Math.round(monthlyAmount),
-          billingCycle: sub.items?.data?.[0]?.price?.recurring?.interval || sub.plan?.interval || "month",
-          nextBilling: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
-          cardLast4: sub.default_payment_method?.card?.last4 || null,
-          cardExpiry: sub.default_payment_method?.card?.exp_month 
-            ? `${sub.default_payment_method.card.exp_month}/${sub.default_payment_method.card.exp_year}` : null,
-          cardStatus: "healthy",
-          startedAt: new Date(sub.created * 1000).toISOString(),
+          id: org.paddle_subscription_id || org.id,
+          orgName: org.name,
+          orgId: org.id,
+          plan: org.tier,
+          mrr: tierMrr,
+          billingCycle: "month",
+          nextBilling: org.next_billed_at,
+          cardLast4: null,
+          cardExpiry: null,
+          cardStatus: org.subscription_status === "past_due" ? "past_due" : "healthy",
+          startedAt: org.created_at,
         };
       });
 
-      // Failed payments
-      const failedPayments = (failedEvents.data || []).map((evt: any) => {
-        const pi = evt.data?.object;
-        const org = orgByStripeCustomer[pi?.customer];
-        return {
-          orgName: org?.name || pi?.customer || "Unknown",
-          amount: (pi?.amount || 0) / 100,
-          failedDate: new Date(evt.created * 1000).toISOString(),
-          failureReason: pi?.last_payment_error?.message || "Unknown",
-          retryCount: pi?.metadata?.retry_count || 0,
-        };
-      });
+      const pastDueOrgs = (allOrgs || []).filter((o: any) => o.subscription_status === "past_due");
+      const failedPayments = pastDueOrgs.map((org: any) => ({
+        orgName: org.name,
+        amount: TIER_MRR[org.tier] || 0,
+        failedDate: new Date().toISOString(),
+        failureReason: "Payment past due",
+        retryCount: 0,
+      }));
 
-      // Upgrade/downgrade log
-      const upgrades = (updatedEvents.data || []).filter((evt: any) => {
-        const prev = evt.data?.previous_attributes;
-        return prev?.plan || prev?.items;
-      }).map((evt: any) => {
-        const sub = evt.data?.object;
-        const prev = evt.data?.previous_attributes;
-        const org = orgByStripeCustomer[sub?.customer] || orgByStripeSub[sub?.id];
-        const prevAmount = getSubMonthlyAmount({ ...sub, items: prev?.items || sub?.items, plan: prev?.plan || sub?.plan });
-        const newAmount = getSubMonthlyAmount(sub);
-        return {
-          orgName: org?.name || "Unknown",
-          fromPlan: prev?.plan?.nickname || prev?.items?.data?.[0]?.price?.nickname || "Previous",
-          toPlan: sub?.plan?.nickname || sub?.items?.data?.[0]?.price?.nickname || "Current",
-          date: new Date(evt.created * 1000).toISOString(),
-          mrrImpact: Math.round(newAmount - prevAmount),
-        };
-      });
-
-      // Churn rate (last 30d)
-      const churnedCount = (deletedEvents.data || []).filter((e: any) => e.created >= Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000)).length;
-      const totalActive = subscriptions.length;
-      const churnRate = totalActive > 0 ? Math.round((churnedCount / (totalActive + churnedCount)) * 100) : 0;
-
+      const churnRate = 0; // Would need historical data to compute
       return json({
         mrr: Math.round(mrr),
         arr: Math.round(mrr * 12),
@@ -310,44 +210,37 @@ Deno.serve(async (req) => {
         churnRate,
         subscriptions,
         failedPayments,
-        upgrades,
+        upgrades: [],
       });
     }
 
     // ─── Weekly MRR Trend ───
     if (action === "stripe-weekly-mrr") {
-      if (!stripeKey) return json({ weeks: [] });
-      
-      // Get all subscriptions including canceled ones for historical view
-      const [activeSubsAll, canceledSubsAll] = await Promise.all([
-        stripeGetAll("/subscriptions?status=active&expand[]=data.items", stripeKey),
-        stripeGetAll("/subscriptions?status=canceled&expand[]=data.items", stripeKey),
-      ]);
+      // Build from DB - approximate using current tier assignments
+      const { data: allOrgs } = await supabase.from("organizations")
+        .select("id, tier, created_at, subscription_status");
 
-      const allSubs = [...activeSubsAll, ...canceledSubsAll];
       const weeks: any[] = [];
       const now = new Date();
 
       for (let i = 11; i >= 0; i--) {
         const weekEnd = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
-        const weekEndTs = Math.floor(weekEnd.getTime() / 1000);
-        
         let weekMrr = 0;
-        const tierMrr: Record<string, number> = { hobbyist: 0, small_boutique: 0, mid_size: 0, enterprise: 0 };
-        
-        for (const sub of allSubs) {
-          if (sub.created <= weekEndTs && (!sub.canceled_at || sub.canceled_at > weekEndTs)) {
-            const monthly = getSubMonthlyAmount(sub);
+        const tierMrrMap: Record<string, number> = { hobbyist: 0, small_boutique: 0, mid_size: 0, enterprise: 0 };
+
+        for (const org of (allOrgs || [])) {
+          if (new Date(org.created_at) <= weekEnd && org.subscription_status !== "canceled") {
+            const t = org.tier || "hobbyist";
+            const monthly = TIER_MRR[t] || 0;
             weekMrr += monthly;
-            const tier = sub.metadata?.target_tier || "small_boutique";
-            tierMrr[tier] = (tierMrr[tier] || 0) + monthly;
+            tierMrrMap[t] = (tierMrrMap[t] || 0) + monthly;
           }
         }
 
         weeks.push({
           weekOf: weekEnd.toISOString().slice(0, 10),
           mrr: Math.round(weekMrr),
-          ...Object.fromEntries(Object.entries(tierMrr).map(([k, v]) => [`mrr_${k}`, Math.round(v)])),
+          ...Object.fromEntries(Object.entries(tierMrrMap).map(([k, v]) => [`mrr_${k}`, Math.round(v)])),
         });
       }
 
@@ -358,7 +251,7 @@ Deno.serve(async (req) => {
     if (action === "customer-list") {
       const { data: orgs } = await supabase
         .from("organizations")
-        .select("id, name, tier, type, created_at, stripe_customer_id")
+        .select("id, name, tier, type, created_at, paddle_customer_id")
         .order("created_at", { ascending: false });
 
       const orgIds = (orgs || []).map((o: any) => o.id);
@@ -474,47 +367,25 @@ Deno.serve(async (req) => {
       }
       timeline.sort((a, b) => b.at.localeCompare(a.at));
 
-      // Subscription detail from Stripe
+      // Subscription detail from DB
       let subscriptionDetail = null;
       const org = orgRes.data;
-      if (stripeKey && org?.stripe_customer_id) {
-        try {
-          const custSubs = await stripeGet(`/subscriptions?customer=${org.stripe_customer_id}&limit=1&expand[]=data.default_payment_method&expand[]=data.items`, stripeKey);
-          const sub = (custSubs.data || [])[0];
-          if (sub) {
-            const pm = sub.default_payment_method;
-            subscriptionDetail = {
-              plan: sub.items?.data?.[0]?.price?.nickname || sub.plan?.nickname || org.tier || "Unknown",
-              billingCycle: sub.items?.data?.[0]?.price?.recurring?.interval || sub.plan?.interval || "month",
-              mrr: Math.round(getSubMonthlyAmount(sub)),
-              nextBilling: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
-              startedAt: new Date(sub.created * 1000).toISOString(),
-              cardLast4: pm?.card?.last4 || null,
-              cardExpiry: pm?.card?.exp_month ? `${pm.card.exp_month}/${pm.card.exp_year}` : null,
-              cardBrand: pm?.card?.brand || null,
-              cardStatus: pm ? "healthy" : "missing",
-              status: sub.status,
-            };
-          }
-        } catch (e) {
-          console.error("Stripe sub detail error:", e);
-        }
+      if (org?.paddle_subscription_id || org?.tier !== "hobbyist") {
+        subscriptionDetail = {
+          plan: org.tier || "Unknown",
+          billingCycle: "month",
+          mrr: TIER_MRR[org.tier || "hobbyist"] || 0,
+          nextBilling: org.next_billed_at || null,
+          startedAt: org.created_at,
+          cardLast4: null,
+          cardExpiry: null,
+          cardBrand: null,
+          cardStatus: org.subscription_status === "past_due" ? "past_due" : "healthy",
+          status: org.subscription_status || "active",
+        };
       }
 
-      // Stripe events for upgrade/downgrade history
-      let upgradeHistory: any[] = [];
-      if (stripeKey && org?.stripe_customer_id) {
-        try {
-          const events = await stripeGet(`/events?type=customer.subscription.updated&limit=20`, stripeKey);
-          upgradeHistory = (events.data || [])
-            .filter((evt: any) => evt.data?.object?.customer === org.stripe_customer_id && evt.data?.previous_attributes?.plan)
-            .map((evt: any) => ({
-              fromPlan: evt.data.previous_attributes.plan?.nickname || "Previous",
-              toPlan: evt.data.object.plan?.nickname || "Current",
-              date: new Date(evt.created * 1000).toISOString(),
-            }));
-        } catch {}
-      }
+      const upgradeHistory: any[] = [];
 
       return json({
         org: orgRes.data,

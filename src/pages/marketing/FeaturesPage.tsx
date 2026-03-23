@@ -163,12 +163,12 @@ const FEATURES = [
     icon: ShoppingCart,
     desc: "Sell direct. No middleman. No markup.",
     bullets: [
-      "Public wine store with Stripe checkout",
+      "Public wine store with secure checkout",
       "Inventory management with facility-level tracking",
       "Order management with fulfillment workflow",
       "Customer database with lifetime value metrics",
       "Wine club management with automated shipments",
-      "Zero transaction fee markup — Stripe rates only",
+      "Zero transaction fee markup",
     ],
     mockup: (
       <div className="bg-card rounded-lg border p-4 space-y-3">

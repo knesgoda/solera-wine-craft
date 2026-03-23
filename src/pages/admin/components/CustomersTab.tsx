@@ -375,7 +375,7 @@ export function CustomersTab({ api, password }: Props) {
                 <TabsContent value="overview" className="space-y-4 mt-4">
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div><span className="text-muted-foreground">Created:</span> {new Date(orgDetail.org.created_at).toLocaleDateString()}</div>
-                    <div><span className="text-muted-foreground">Stripe ID:</span> {orgDetail.org.stripe_customer_id || "—"}</div>
+                    <div><span className="text-muted-foreground">Paddle ID:</span> {orgDetail.org.paddle_customer_id || orgDetail.org.stripe_customer_id || "—"}</div>
                     <div><span className="text-muted-foreground">Modules:</span> {(orgDetail.org.enabled_modules || []).join(", ") || "—"}</div>
                     <div><span className="text-muted-foreground">Vintages:</span> {orgDetail.vintages?.length}</div>
                   </div>
