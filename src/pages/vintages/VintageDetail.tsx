@@ -232,10 +232,27 @@ export default function VintageDetail() {
               ) : (
                 <div className="space-y-3">
                   {labSamples.map((s: any) => (
-                    <div key={s.id} className="border border-border rounded-lg p-3">
-                      <p className="text-sm font-medium text-foreground mb-1">
-                        {format(parseISO(s.sampled_at), "MMM d, yyyy h:mm a")}
-                      </p>
+                    <div key={s.id} className="border border-border rounded-lg p-3 relative">
+                      <div className="flex items-start justify-between">
+                        <p className="text-sm font-medium text-foreground mb-1">
+                          {format(parseISO(s.sampled_at), "MMM d, yyyy h:mm a")}
+                        </p>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="min-w-[44px] min-h-[44px] flex items-center justify-center -mt-1 -mr-1 text-muted-foreground hover:text-foreground">
+                              <MoreVertical className="h-4 w-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => { setEditingSample(s); setLabDialogOpen(true); }}>
+                              <Pencil className="h-4 w-4 mr-2" /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => setDeletingSampleId(s.id)}>
+                              <Trash2 className="h-4 w-4 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
                         {s.brix != null && <div><span className="text-muted-foreground">Brix:</span> {s.brix}°</div>}
                         {s.ph != null && <div><span className="text-muted-foreground">pH:</span> {s.ph}</div>}
