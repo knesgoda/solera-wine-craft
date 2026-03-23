@@ -23,17 +23,17 @@ const PLANS = [
   {
     tier: "small_boutique",
     price: "$69/mo",
-    features: ["Unlimited vineyards & blocks", "5 users", "Cellar management", "Reports & analytics", "Inventory management"],
+    features: ["Unlimited vineyards & blocks", "5 users", "Cellar management", "Sales & DTC", "Innovint/VinNow import"],
   },
   {
     tier: "mid_size",
     price: "$129/mo",
-    features: ["Everything in Pro", "15 users", "DTC storefront & orders", "Wine club", "Client portal", "All integrations"],
+    features: ["Everything in Pro", "15 users", "Ask Solera AI", "Custom reports", "DTC storefront & wine club", "All integrations"],
   },
   {
     tier: "enterprise",
     price: "$399/mo",
-    features: ["Everything in Growth", "Unlimited users", "SSO / SAML", "Multi-facility", "API & webhooks", "QuickBooks", "Dedicated support"],
+    features: ["Everything in Growth", "Unlimited users", "Custom crush client portal", "SSO / SAML", "Multi-facility", "API & webhooks", "Dedicated support"],
   },
 ];
 
