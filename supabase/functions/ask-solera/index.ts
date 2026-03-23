@@ -101,13 +101,22 @@ async function buildWineryContext(supabase: any, orgId: string): Promise<string>
     parts.push(`Weather (last 30 days): Avg high ${avgHigh}°F, Avg low ${avgLow}°F, Total precip ${totalPrecip}" , GDD accumulated ${gddAccum}`);
   }
 
-  // Last 10 lab samples
-  const { data: recentLabs } = await supabase
-    .from("lab_samples")
-    .select("sampled_at, brix, ph, ta, va, so2_free, so2_total, alcohol, rs, vintage_id, vintages(year, blocks(name, variety))")
-    .eq("vintages.org_id", orgId)
-    .order("sampled_at", { ascending: false })
-    .limit(10);
+  // Last 10 lab samples — scoped to org via vintage IDs
+  const { data: orgVintages } = await supabase
+    .from("vintages")
+    .select("id")
+    .eq("org_id", orgId);
+  const vintageIds = (orgVintages || []).map((v: any) => v.id);
+  let recentLabs: any[] = [];
+  if (vintageIds.length > 0) {
+    const { data } = await supabase
+      .from("lab_samples")
+      .select("sampled_at, brix, ph, ta, va, so2_free, so2_total, alcohol, rs, vintage_id, vintages(year, blocks(name, variety))")
+      .in("vintage_id", vintageIds)
+      .order("sampled_at", { ascending: false })
+      .limit(10);
+    recentLabs = data || [];
+  }
 
   if (recentLabs?.length) {
     const labLines = recentLabs.map((l: any) =>
