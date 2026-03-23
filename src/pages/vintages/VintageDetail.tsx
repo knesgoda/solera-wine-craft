@@ -168,6 +168,16 @@ export default function VintageDetail() {
 
   const currentIdx = statusOrder.indexOf(vintage.status);
 
+  const handleStatusChange = (newStatus: string) => {
+    const newIdx = statusOrder.indexOf(newStatus);
+    if (newIdx < currentIdx) {
+      if (!confirm(`Move this vintage back to "${statusLabels[newStatus]}"? This will reverse its status timeline.`)) {
+        return;
+      }
+    }
+    updateStatus.mutate(newStatus);
+  };
+
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto pb-24 md:pb-6">
       <Button variant="ghost" size="sm" onClick={() => navigate("/vintages")} className="mb-4">
