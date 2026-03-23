@@ -117,16 +117,20 @@ export default function AdminDashboard() {
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [refreshKey, setRefreshKey] = useState(0);
   const isMobile = useIsMobile();
+  const { isAtLeast } = useRoleAccess();
   const api = useAdminApi(auth.password);
 
-  useEffect(() => {
-    if (user && !ADMIN_EMAILS.includes(user.email || "")) {
-      toast.error("Access denied");
-      navigate("/dashboard", { replace: true });
-    }
-  }, [user, navigate]);
-
-  if (!user || !ADMIN_EMAILS.includes(user.email || "")) return null;
+  if (!isAtLeast("owner")) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-display font-bold text-foreground">Not Authorized</h1>
+          <p className="text-muted-foreground">You don't have permission to access the admin dashboard.</p>
+          <Button variant="outline" onClick={() => navigate("/dashboard")}>Back to Dashboard</Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isMobile) return <MobileBlock />;
 

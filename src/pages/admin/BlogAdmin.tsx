@@ -45,8 +45,22 @@ type BlogPost = {
 };
 
 export default function BlogAdmin() {
+  const { isAtLeast } = useRoleAccess();
+  const navigate = useNavigate();
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
+
+  if (!isAtLeast("owner")) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-display font-bold text-foreground">Not Authorized</h1>
+          <p className="text-muted-foreground">You don't have permission to access this page.</p>
+          <Button variant="outline" onClick={() => navigate("/dashboard")}>Back to Dashboard</Button>
+        </div>
+      </div>
+    );
+  }
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [editing, setEditing] = useState<BlogPost | null>(null);
   const [showPreview, setShowPreview] = useState(false);
