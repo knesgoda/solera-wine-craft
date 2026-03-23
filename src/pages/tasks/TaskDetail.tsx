@@ -5,7 +5,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CheckCircle2, Clock, MapPin, ImagePlus, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ArrowLeft, CheckCircle2, Clock, MapPin, ImagePlus, Loader2, Pencil, Trash2, CalendarIcon, RotateCcw } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -13,10 +20,18 @@ import { toast } from "sonner";
 export default function TaskDetail() {
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
-  const { organization } = useAuth();
+  const { organization, profile } = useAuth();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDueDate, setEditDueDate] = useState<Date | undefined>(undefined);
+  const [editInstructions, setEditInstructions] = useState("");
+  const [editBlockId, setEditBlockId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const orgId = profile?.org_id;
 
   const { data: task, isLoading } = useQuery({
     queryKey: ["task", taskId],
@@ -46,6 +61,20 @@ export default function TaskDetail() {
     enabled: !!task?.block_id,
   });
 
+  const { data: allBlocks = [] } = useQuery({
+    queryKey: ["blocks-list", orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blocks")
+        .select("id, name, vineyards(name)")
+        .eq("vineyards.org_id", orgId!)
+        .order("name");
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!orgId && isEditing,
+  });
+
   const markComplete = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
@@ -60,6 +89,65 @@ export default function TaskDetail() {
       toast.success("Task marked as complete");
     },
   });
+
+  const reopenTask = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ status: "pending" as any })
+        .eq("id", taskId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["task", taskId] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Task reopened");
+    },
+  });
+
+  const updateTask = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("tasks")
+        .update({
+          title: editTitle,
+          due_date: editDueDate ? format(editDueDate, "yyyy-MM-dd") : null,
+          instructions: editInstructions || null,
+          block_id: editBlockId || null,
+        } as any)
+        .eq("id", taskId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["task", taskId] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Task updated");
+      setIsEditing(false);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const deleteTask = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("tasks").delete().eq("id", taskId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Task deleted");
+      navigate("/tasks");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const startEditing = () => {
+    if (!task) return;
+    setEditTitle(task.title);
+    setEditDueDate(task.due_date ? parseISO(task.due_date) : undefined);
+    setEditInstructions(task.instructions || "");
+    setEditBlockId(task.block_id || null);
+    setIsEditing(true);
+  };
 
   const uploadPhoto = async (file: File) => {
     setUploading(true);
@@ -119,40 +207,105 @@ export default function TaskDetail() {
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
-            <CardTitle className="text-xl">{task.title}</CardTitle>
-            <Badge variant="secondary">{statusLabel}</Badge>
+            {isEditing ? (
+              <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="text-xl font-semibold" />
+            ) : (
+              <CardTitle className="text-xl">{task.title}</CardTitle>
+            )}
+            <div className="flex items-center gap-1 shrink-0">
+              {!isEditing && (
+                <>
+                  <Button variant="ghost" size="icon" className="h-9 w-9" onClick={startEditing}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:text-destructive" onClick={() => setShowDeleteConfirm(true)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+              <Badge variant="secondary">{statusLabel}</Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {task.due_date && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span>Due {format(parseISO(task.due_date), "MMMM d, yyyy")}</span>
-            </div>
-          )}
+          {isEditing ? (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <span className="text-sm text-muted-foreground">Due Date</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !editDueDate && "text-muted-foreground")}>
+                      <CalendarIcon className="h-4 w-4 mr-2" />
+                      {editDueDate ? format(editDueDate, "MMMM d, yyyy") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={editDueDate} onSelect={setEditDueDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-          {block && (
-            <div className="text-sm">
-              <span className="text-muted-foreground">Block:</span>{" "}
-              <span className="font-medium text-foreground">{block.name}</span>
-              {block.vineyards?.name && (
-                <span className="text-muted-foreground"> · {block.vineyards.name}</span>
+              <div className="space-y-1">
+                <span className="text-sm text-muted-foreground">Block</span>
+                <Select value={editBlockId || "none"} onValueChange={(v) => setEditBlockId(v === "none" ? null : v)}>
+                  <SelectTrigger><SelectValue placeholder="Select block" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No block</SelectItem>
+                    {allBlocks.map((b: any) => (
+                      <SelectItem key={b.id} value={b.id}>
+                        {b.name}{b.vineyards?.name ? ` · ${b.vineyards.name}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-sm text-muted-foreground">Instructions</span>
+                <Textarea value={editInstructions} onChange={(e) => setEditInstructions(e.target.value)} rows={3} />
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <Button size="sm" onClick={() => updateTask.mutate()} disabled={!editTitle || updateTask.isPending}>
+                  {updateTask.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Save
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {task.due_date && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>Due {format(parseISO(task.due_date), "MMMM d, yyyy")}</span>
+                </div>
               )}
-            </div>
-          )}
 
-          {(task.gps_lat || task.gps_lng) && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              <span>{task.gps_lat}, {task.gps_lng}</span>
-            </div>
-          )}
+              {block && (
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Block:</span>{" "}
+                  <span className="font-medium text-foreground">{block.name}</span>
+                  {block.vineyards?.name && (
+                    <span className="text-muted-foreground"> · {block.vineyards.name}</span>
+                  )}
+                </div>
+              )}
 
-          {task.instructions && (
-            <div>
-              <p className="text-sm font-medium text-foreground mb-1">Instructions</p>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{task.instructions}</p>
-            </div>
+              {(task.gps_lat || task.gps_lng) && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span>{task.gps_lat}, {task.gps_lng}</span>
+                </div>
+              )}
+
+              {task.instructions && (
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-1">Instructions</p>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{task.instructions}</p>
+                </div>
+              )}
+            </>
           )}
 
           {/* Photos */}
@@ -198,9 +351,23 @@ export default function TaskDetail() {
         </CardContent>
       </Card>
 
-      {/* Mobile-friendly complete button */}
-      {task.status !== "complete" && (
-        <div className="fixed bottom-20 md:bottom-6 left-0 right-0 p-4 md:static md:p-0 md:mt-4">
+      {/* Mobile-friendly complete / reopen button */}
+      <div className="fixed bottom-20 md:bottom-6 left-0 right-0 p-4 md:static md:p-0 md:mt-4">
+        {task.status === "complete" ? (
+          <Button
+            variant="outline"
+            className="w-full h-14 md:h-10 text-lg md:text-sm"
+            onClick={() => reopenTask.mutate()}
+            disabled={reopenTask.isPending}
+          >
+            {reopenTask.isPending ? (
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+            ) : (
+              <RotateCcw className="h-5 w-5 mr-2" />
+            )}
+            Reopen Task
+          </Button>
+        ) : (
           <Button
             className="w-full h-14 md:h-10 text-lg md:text-sm"
             onClick={() => markComplete.mutate()}
@@ -213,8 +380,29 @@ export default function TaskDetail() {
             )}
             Mark Complete
           </Button>
-        </div>
-      )}
+        )}
+      </div>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this task?</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone. The task and its photos will be permanently removed.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteTask.mutate()}
+              disabled={deleteTask.isPending}
+            >
+              {deleteTask.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
