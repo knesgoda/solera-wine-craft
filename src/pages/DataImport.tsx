@@ -239,6 +239,7 @@ interface SourceImportProps {
   onConfirmMapping: () => void;
   onRunImport: () => void;
   onReset: () => void;
+  onBackToMapping: () => void;
   acceptFormats: string;
   description: string;
 }
