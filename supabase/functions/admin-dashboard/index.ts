@@ -125,47 +125,23 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Stripe summary
-      let stripeSummary = { mrr: 0, activeSubscriptions: 0, failedPayments7d: 0, mrrAdded7d: 0, mrrChurned7d: 0 };
-      if (stripeKey) {
-        try {
-          // Active subscriptions — paginated
-          const allSubs = await stripeGetAll("/subscriptions?status=active&expand[]=data.items", stripeKey);
-          let mrr = 0;
-          let mrrAdded7d = 0;
-          const sevenDaysAgoTs = Math.floor(new Date(sevenDaysAgo).getTime() / 1000);
-          for (const sub of allSubs) {
-            const monthlyAmount = getSubMonthlyAmount(sub);
-            mrr += monthlyAmount;
-            if (sub.created >= sevenDaysAgoTs) mrrAdded7d += monthlyAmount;
-          }
-
-          // Failed payments last 7d
-          const failedEvents = await stripeGet(`/events?type=payment_intent.payment_failed&created[gte]=${sevenDaysAgoTs}&limit=100`, stripeKey);
-          
-          // Churned last 7d
-          const churnedEvents = await stripeGet(`/events?type=customer.subscription.deleted&created[gte]=${sevenDaysAgoTs}&limit=100`, stripeKey);
-          let mrrChurned = 0;
-          for (const evt of (churnedEvents.data || [])) {
-            const sub = evt.data?.object;
-            mrrChurned += getSubMonthlyAmount(sub);
-          }
-
-          if ((failedEvents.data || []).length > 0) {
-            alerts.push({ severity: "red", icon: "🔴", label: `${failedEvents.data.length} failed Stripe payment(s) last 7 days`, link: "revenue" });
-          }
-
-          stripeSummary = {
-            mrr: Math.round(mrr),
-            activeSubscriptions: allSubs.length,
-            failedPayments7d: (failedEvents.data || []).length,
-            mrrAdded7d: Math.round(mrrAdded7d),
-            mrrChurned7d: Math.round(mrrChurned),
-          };
-        } catch (e) {
-          console.error("Stripe error:", e);
-        }
+      // Revenue summary from DB (tier-based MRR calculation)
+      let revenueSummary = { mrr: 0, activeSubscriptions: 0, failedPayments7d: 0, mrrAdded7d: 0, mrrChurned7d: 0 };
+      const paidOrgs = orgs.filter(o => o.tier && o.tier !== "hobbyist");
+      let mrr = 0;
+      let mrrAdded7d = 0;
+      for (const org of paidOrgs) {
+        const tierMrr = TIER_MRR[org.tier || "hobbyist"] || 0;
+        mrr += tierMrr;
+        if (org.created_at >= sevenDaysAgo) mrrAdded7d += tierMrr;
       }
+      revenueSummary = {
+        mrr: Math.round(mrr),
+        activeSubscriptions: paidOrgs.length,
+        failedPayments7d: 0,
+        mrrAdded7d: Math.round(mrrAdded7d),
+        mrrChurned7d: 0,
+      };
 
       if (alerts.length === 0) {
         alerts.push({ severity: "green", icon: "✅", label: "All systems healthy", link: null });
