@@ -31,11 +31,7 @@ export function ImpersonationGuard({ children }: Props) {
         <ShieldAlert className="h-3 w-3" />
         🚫 Read-only mode — no changes can be saved while viewing as another org
       </div>
-      {/* Overlay blocks all interactions */}
-      <div className="relative flex-1 flex flex-col min-w-0">
-        {children}
-        <div className="absolute inset-0 z-40 pointer-events-auto cursor-not-allowed" style={{ background: "transparent" }} title="Disabled in admin view" />
-      </div>
+      {children}
     </>
   );
 }
