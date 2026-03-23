@@ -141,7 +141,7 @@ export default function Homepage() {
               <ul className="space-y-4">
                 {[
                   "Innovint for cellar ($149/mo)",
-                  "Commerce7 for DTC ($399/mo)",
+                  "Commerce7 for DTC ($299/mo + 1% fees)",
                   "Spreadsheets for vineyard tracking",
                   "Paper lab logs and manual compliance",
                   "$700/mo and still missing features",
