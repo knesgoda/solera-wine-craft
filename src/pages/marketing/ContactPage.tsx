@@ -15,6 +15,7 @@ export default function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [honeypot, setHoneypot] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +27,9 @@ export default function ContactPage() {
       toast.error("One or more fields exceed the maximum length");
       return;
     }
+
+    // Honeypot bot trap — silently succeed
+    if (honeypot) { setSent(true); return; }
 
     setLoading(true);
     try {
@@ -104,6 +108,7 @@ export default function ContactPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5 bg-card p-6 md:p-8 rounded-xl border border-border">
+                  <input type="text" name="website" className="hidden" autoComplete="off" tabIndex={-1} value={honeypot} onChange={(e) => setHoneypot(e.target.value)} aria-hidden="true" />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="name">Name</Label>
