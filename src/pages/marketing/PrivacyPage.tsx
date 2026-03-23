@@ -54,7 +54,7 @@ export default function PrivacyPage() {
           <p>We use the following services to operate Solera. Each processes data only as necessary to provide their service:</p>
           <ul>
             <li><strong>Supabase</strong> — Database hosting, authentication, and file storage. Your winery data is stored in Supabase's infrastructure.</li>
-            <li><strong>Stripe</strong> — Payment processing. Stripe handles all credit card data under their own PCI-compliant privacy policy.</li>
+            <li><strong>Paddle</strong> — Payment processing and merchant of record. Paddle handles all credit card data and tax compliance.</li>
             <li><strong>Resend</strong> — Transactional email delivery (password resets, notifications).</li>
             <li><strong>Anthropic</strong> — AI processing for Ask Solera and other AI features. Your data is sent to Anthropic's API for processing but is not retained by Anthropic for training.</li>
             <li><strong>Open-Meteo</strong> — Weather data retrieval. Only your vineyard's geographic coordinates are sent; no personal data.</li>
