@@ -28,6 +28,9 @@ export default function ContactPage() {
       return;
     }
 
+    // Honeypot bot trap — silently succeed
+    if (honeypot) { setSent(true); return; }
+
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-contact", {
