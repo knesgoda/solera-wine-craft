@@ -18,12 +18,13 @@ const VineyardList = () => {
   const [form, setForm] = useState({ name: "", region: "", coordinates: "", acres: "" });
 
   const { data: vineyards, isLoading } = useQuery({
-    queryKey: ["vineyards"],
+    queryKey: ["vineyards", profile?.org_id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("vineyards").select("*, blocks(id)").order("name");
+      const { data, error } = await supabase.from("vineyards").select("*, blocks(id)").eq("org_id", profile!.org_id).order("name");
       if (error) throw error;
       return data;
     },
+    enabled: !!profile?.org_id,
   });
 
   const createMutation = useMutation({
