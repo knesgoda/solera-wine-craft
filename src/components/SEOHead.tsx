@@ -154,7 +154,7 @@ export const HOMEPAGE_SCHEMA = {
     { "@type": "Offer", name: "Growth", price: "129", priceCurrency: "USD", billingPeriod: "P1M" },
     { "@type": "Offer", name: "Enterprise", price: "399", priceCurrency: "USD", billingPeriod: "P1M" },
   ],
-  aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", reviewCount: "1" },
+  
 };
 
 export function buildFaqSchema(faqs: { question: string; answer: string }[]) {
