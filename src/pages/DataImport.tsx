@@ -167,6 +167,7 @@ export default function DataImport() {
             onConfirmMapping={handleConfirmMapping}
             onRunImport={handleRunImport}
             onReset={handleReset}
+            onBackToMapping={() => setStep("mapping")}
             acceptFormats=".csv,.xlsx,.xls,.tsv"
             description="Upload a CSV, Excel, or TSV file with your winery data"
           />
