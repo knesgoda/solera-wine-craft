@@ -69,7 +69,6 @@ const PublicStore = () => {
       if (error) throw error;
       return data as any[];
     },
-    enabled: ageVerified,
   });
 
   const [joiningClub, setJoiningClub] = useState<string | null>(null);
