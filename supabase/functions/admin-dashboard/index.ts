@@ -216,38 +216,31 @@ Deno.serve(async (req) => {
 
     // ─── Weekly MRR Trend ───
     if (action === "stripe-weekly-mrr") {
-      if (!stripeKey) return json({ weeks: [] });
-      
-      // Get all subscriptions including canceled ones for historical view
-      const [activeSubsAll, canceledSubsAll] = await Promise.all([
-        stripeGetAll("/subscriptions?status=active&expand[]=data.items", stripeKey),
-        stripeGetAll("/subscriptions?status=canceled&expand[]=data.items", stripeKey),
-      ]);
+      // Build from DB - approximate using current tier assignments
+      const { data: allOrgs } = await supabase.from("organizations")
+        .select("id, tier, created_at, subscription_status");
 
-      const allSubs = [...activeSubsAll, ...canceledSubsAll];
       const weeks: any[] = [];
       const now = new Date();
 
       for (let i = 11; i >= 0; i--) {
         const weekEnd = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
-        const weekEndTs = Math.floor(weekEnd.getTime() / 1000);
-        
         let weekMrr = 0;
-        const tierMrr: Record<string, number> = { hobbyist: 0, small_boutique: 0, mid_size: 0, enterprise: 0 };
-        
-        for (const sub of allSubs) {
-          if (sub.created <= weekEndTs && (!sub.canceled_at || sub.canceled_at > weekEndTs)) {
-            const monthly = getSubMonthlyAmount(sub);
+        const tierMrrMap: Record<string, number> = { hobbyist: 0, small_boutique: 0, mid_size: 0, enterprise: 0 };
+
+        for (const org of (allOrgs || [])) {
+          if (new Date(org.created_at) <= weekEnd && org.subscription_status !== "canceled") {
+            const t = org.tier || "hobbyist";
+            const monthly = TIER_MRR[t] || 0;
             weekMrr += monthly;
-            const tier = sub.metadata?.target_tier || "small_boutique";
-            tierMrr[tier] = (tierMrr[tier] || 0) + monthly;
+            tierMrrMap[t] = (tierMrrMap[t] || 0) + monthly;
           }
         }
 
         weeks.push({
           weekOf: weekEnd.toISOString().slice(0, 10),
           mrr: Math.round(weekMrr),
-          ...Object.fromEntries(Object.entries(tierMrr).map(([k, v]) => [`mrr_${k}`, Math.round(v)])),
+          ...Object.fromEntries(Object.entries(tierMrrMap).map(([k, v]) => [`mrr_${k}`, Math.round(v)])),
         });
       }
 
