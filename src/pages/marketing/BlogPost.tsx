@@ -80,7 +80,10 @@ export default function BlogPost() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-24 text-center">
         <h1 className="font-display text-3xl font-bold text-foreground mb-4">Post Not Found</h1>
-        <Link to="/blog" className="text-primary hover:underline">← Back to Blog</Link>
+        <p className="text-muted-foreground mb-6">The article you're looking for may have been moved or doesn't exist.</p>
+        <Link to="/blog">
+          <Button variant="outline">Browse All Posts</Button>
+        </Link>
       </div>
     );
   }
