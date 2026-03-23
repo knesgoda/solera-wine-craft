@@ -37,6 +37,7 @@ export default function VintageDetail() {
   const [editingSample, setEditingSample] = useState<LabSampleData | null>(null);
   const [deletingSampleId, setDeletingSampleId] = useState<string | null>(null);
   const [isEditingVintage, setIsEditingVintage] = useState(false);
+  const [showDeleteVintage, setShowDeleteVintage] = useState(false);
   const [editHarvestDate, setEditHarvestDate] = useState<Date | undefined>(undefined);
   const [editTons, setEditTons] = useState("");
   const [editNotes, setEditNotes] = useState("");
@@ -137,6 +138,19 @@ export default function VintageDetail() {
     onError: (err: any) => toast.error(err.message),
   });
 
+  const deleteVintage = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("vintages").delete().eq("id", vintageId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vintages"] });
+      toast.success("Vintage deleted");
+      navigate("/vintages");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   const startEditingVintage = () => {
     setEditHarvestDate(vintage?.harvest_date ? parseISO(vintage.harvest_date) : undefined);
     setEditTons(vintage?.tons_harvested != null ? String(vintage.tons_harvested) : "");
@@ -170,6 +184,9 @@ export default function VintageDetail() {
                   <Pencil className="h-4 w-4" />
                 </Button>
               )}
+              <Button variant="ghost" size="icon" onClick={() => setShowDeleteVintage(true)} className="h-9 w-9 text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4" />
+              </Button>
               <Select value={vintage.status} onValueChange={(v) => updateStatus.mutate(v)}>
                 <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -385,6 +402,28 @@ export default function VintageDetail() {
               disabled={deleteSample.isPending}
             >
               {deleteSample.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showDeleteVintage} onOpenChange={setShowDeleteVintage}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this vintage?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will also delete all associated lab samples, TTB additions, and anomaly flags. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteVintage.mutate()}
+              disabled={deleteVintage.isPending}
+            >
+              {deleteVintage.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
