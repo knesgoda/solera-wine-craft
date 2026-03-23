@@ -15,6 +15,7 @@ export default function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [honeypot, setHoneypot] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
