@@ -197,7 +197,7 @@ export default function VintageDetail() {
               <Button variant="ghost" size="icon" onClick={() => setShowDeleteVintage(true)} className="h-9 w-9 text-destructive hover:text-destructive">
                 <Trash2 className="h-4 w-4" />
               </Button>
-              <Select value={vintage.status} onValueChange={(v) => updateStatus.mutate(v)}>
+              <Select value={vintage.status} onValueChange={handleStatusChange}>
                 <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {statusOrder.map((s) => (
