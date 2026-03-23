@@ -105,6 +105,36 @@ const VineyardDetail = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const updateVineyard = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("vineyards").update({
+        name: editForm.name,
+        region: editForm.region || null,
+        coordinates: editForm.coordinates || null,
+        acres: editForm.acres ? parseFloat(editForm.acres) : null,
+      } as any).eq("id", vineyardId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vineyard", vineyardId] });
+      queryClient.invalidateQueries({ queryKey: ["vineyards"] });
+      toast.success("Vineyard updated");
+      setEditOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const startEditVineyard = () => {
+    if (!vineyard) return;
+    setEditForm({
+      name: vineyard.name || "",
+      region: vineyard.region || "",
+      coordinates: vineyard.coordinates || "",
+      acres: vineyard.acres != null ? String(vineyard.acres) : "",
+    });
+    setEditOpen(true);
+  };
+
   if (loadingVineyard) {
     return <div className="animate-pulse text-muted-foreground py-8 text-center">Loading vineyard...</div>;
   }
