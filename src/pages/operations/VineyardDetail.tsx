@@ -295,6 +295,38 @@ const VineyardDetail = () => {
           <WeatherTab vineyardId={vineyardId!} />
         </TabsContent>
       </Tabs>
+
+      {/* Edit Vineyard Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-display">Edit Vineyard</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); updateVineyard.mutate(); }} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Name *</Label>
+              <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Region</Label>
+              <Input value={editForm.region} onChange={(e) => setEditForm({ ...editForm, region: e.target.value })} placeholder="e.g. Napa Valley" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Coordinates</Label>
+                <Input value={editForm.coordinates} onChange={(e) => setEditForm({ ...editForm, coordinates: e.target.value })} placeholder="e.g. 38.5025,-122.2654" />
+              </div>
+              <div className="space-y-2">
+                <Label>Acres</Label>
+                <Input type="number" step="0.01" value={editForm.acres} onChange={(e) => setEditForm({ ...editForm, acres: e.target.value })} />
+              </div>
+            </div>
+            <Button type="submit" className="w-full" disabled={!editForm.name || updateVineyard.isPending}>
+              {updateVineyard.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : "Save Changes"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
