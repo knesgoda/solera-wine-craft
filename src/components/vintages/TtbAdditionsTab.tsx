@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Download } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Plus, Download, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { NewAdditionDialog } from "@/components/vintages/NewAdditionDialog";
 import { toast } from "sonner";
@@ -26,6 +28,8 @@ export function TtbAdditionsTab({ vintageId, vintageYear, wineryName }: Props) {
   const { organization } = useAuth();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingAddition, setEditingAddition] = useState<any>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { data: additions = [], isLoading } = useQuery({
     queryKey: ["ttb-additions", vintageId],
@@ -41,6 +45,29 @@ export function TtbAdditionsTab({ vintageId, vintageYear, wineryName }: Props) {
     enabled: !!vintageId,
   });
 
+  const deleteAddition = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("ttb_additions").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ttb-additions", vintageId] });
+      toast.success("Addition deleted");
+      setDeletingId(null);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const handleEdit = (addition: any) => {
+    setEditingAddition(addition);
+    setDialogOpen(true);
+  };
+
+  const handleDialogChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) setEditingAddition(null);
+  };
+
   const exportPdf = () => {
     if (additions.length === 0) {
       toast.error("No additions to export");
@@ -50,7 +77,6 @@ export function TtbAdditionsTab({ vintageId, vintageYear, wineryName }: Props) {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    // Header
     doc.setFontSize(16);
     doc.text("TTB Cellar Treatment / Additions Log", pageWidth / 2, 20, { align: "center" });
     doc.setFontSize(11);
@@ -91,7 +117,7 @@ export function TtbAdditionsTab({ vintageId, vintageYear, wineryName }: Props) {
           <Button variant="outline" size="sm" onClick={exportPdf} disabled={additions.length === 0}>
             <Download className="h-4 w-4 mr-2" /> Export PDF
           </Button>
-          <Button size="sm" onClick={() => setDialogOpen(true)}>
+          <Button size="sm" onClick={() => { setEditingAddition(null); setDialogOpen(true); }}>
             <Plus className="h-4 w-4 mr-2" /> Add
           </Button>
         </div>
@@ -112,6 +138,7 @@ export function TtbAdditionsTab({ vintageId, vintageYear, wineryName }: Props) {
                 <TableHead>Amount</TableHead>
                 <TableHead>Batch Size</TableHead>
                 <TableHead>Added By</TableHead>
+                <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -123,6 +150,23 @@ export function TtbAdditionsTab({ vintageId, vintageYear, wineryName }: Props) {
                   <TableCell>{a.amount} {a.unit}</TableCell>
                   <TableCell>{a.batch_size ? `${a.batch_size} gal` : "—"}</TableCell>
                   <TableCell>{a.added_by || "—"}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 min-h-[44px] min-w-[44px]">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEdit(a)}>
+                          <Pencil className="h-4 w-4 mr-2" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => setDeletingId(a.id)}>
+                          <Trash2 className="h-4 w-4 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -130,7 +174,25 @@ export function TtbAdditionsTab({ vintageId, vintageYear, wineryName }: Props) {
         </div>
       )}
 
-      <NewAdditionDialog vintageId={vintageId} open={dialogOpen} onOpenChange={setDialogOpen} />
+      <NewAdditionDialog
+        vintageId={vintageId}
+        open={dialogOpen}
+        onOpenChange={handleDialogChange}
+        editingAddition={editingAddition}
+      />
+
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete addition?</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently remove this TTB addition record.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deletingId && deleteAddition.mutate(deletingId)}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

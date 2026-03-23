@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,12 +27,14 @@ interface Props {
   vintageId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editingAddition?: any;
 }
 
-export function NewAdditionDialog({ vintageId, open, onOpenChange }: Props) {
+export function NewAdditionDialog({ vintageId, open, onOpenChange, editingAddition }: Props) {
   const { organization, profile } = useAuth();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const isEditing = !!editingAddition;
 
   const [additionType, setAdditionType] = useState("");
   const [ttbCode, setTtbCode] = useState("");
@@ -43,9 +45,27 @@ export function NewAdditionDialog({ vintageId, open, onOpenChange }: Props) {
     [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || ""
   );
 
-  const create = useMutation({
+  useEffect(() => {
+    if (editingAddition) {
+      setAdditionType(editingAddition.addition_type || "");
+      setTtbCode(editingAddition.ttb_code || "");
+      setAmount(editingAddition.amount != null ? String(editingAddition.amount) : "");
+      setUnit(editingAddition.unit || "");
+      setBatchSize(editingAddition.batch_size != null ? String(editingAddition.batch_size) : "");
+      setAddedBy(editingAddition.added_by || "");
+    } else {
+      setAdditionType("");
+      setTtbCode("");
+      setAmount("");
+      setUnit("");
+      setBatchSize("");
+      setAddedBy([profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || "");
+    }
+  }, [editingAddition, open]);
+
+  const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("ttb_additions").insert({
+      const record = {
         vintage_id: vintageId,
         org_id: organization!.id,
         addition_type: additionType as any,
@@ -54,19 +74,31 @@ export function NewAdditionDialog({ vintageId, open, onOpenChange }: Props) {
         unit: unit as any,
         batch_size: batchSize ? parseFloat(batchSize) : null,
         added_by: addedBy || null,
-      } as any);
-      if (error) throw error;
+      };
+
+      if (isEditing) {
+        const { error } = await supabase
+          .from("ttb_additions")
+          .update(record as any)
+          .eq("id", editingAddition.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("ttb_additions").insert(record as any);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ttb-additions", vintageId] });
-      toast.success("Addition recorded");
-      setAdditionType(""); setTtbCode(""); setAmount(""); setUnit(""); setBatchSize("");
+      toast.success(isEditing ? "Addition updated" : "Addition recorded");
       onOpenChange(false);
     },
     onError: (err: any) => toast.error(err.message),
   });
 
   const canSubmit = additionType && amount && unit;
+
+  const title = isEditing ? "Edit Treatment" : "Add Treatment";
+  const buttonText = isEditing ? "Update Addition" : "Record Addition";
 
   const formContent = (
     <div className="space-y-4 mt-2">
@@ -110,9 +142,9 @@ export function NewAdditionDialog({ vintageId, open, onOpenChange }: Props) {
         <Label>Added By</Label>
         <Input value={addedBy} onChange={(e) => setAddedBy(e.target.value)} />
       </div>
-      <Button className="w-full min-h-[44px]" onClick={() => create.mutate()} disabled={!canSubmit || create.isPending}>
-        {create.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-        Record Addition
+      <Button className="w-full min-h-[44px]" onClick={() => save.mutate()} disabled={!canSubmit || save.isPending}>
+        {save.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+        {buttonText}
       </Button>
     </div>
   );
@@ -121,7 +153,7 @@ export function NewAdditionDialog({ vintageId, open, onOpenChange }: Props) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="bottom" className="pb-safe max-h-[90vh] overflow-y-auto">
-          <SheetHeader><SheetTitle>Add Treatment</SheetTitle></SheetHeader>
+          <SheetHeader><SheetTitle>{title}</SheetTitle></SheetHeader>
           {formContent}
         </SheetContent>
       </Sheet>
@@ -131,7 +163,7 @@ export function NewAdditionDialog({ vintageId, open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader><DialogTitle>Add Treatment</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
         {formContent}
       </DialogContent>
     </Dialog>
