@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Check, Grape, Wine, Warehouse, Brain, ShoppingCart } from "lucide-react";
+import { Check, Grape, Wine, Warehouse, Brain, ShoppingCart, RefreshCw, LogOut } from "lucide-react";
 import soleraLogo from "@/assets/solera-logo.png";
 
 const OPERATION_TYPES = [
@@ -26,13 +26,55 @@ const MODULES = [
   { key: "sales_dtc", label: "Sales & DTC", icon: ShoppingCart, desc: "Direct-to-consumer and orders" },
 ];
 
+const MAX_RETRIES = 5;
+
 const Onboarding = () => {
   const navigate = useNavigate();
-  const { profile, refreshProfile } = useAuth();
+  const { profile, refreshProfile, signOut } = useAuth();
   const [step, setStep] = useState(1);
   const [selection, setSelection] = useState<string | null>(null);
   const [enabledModules, setEnabledModules] = useState<string[]>(["vineyard_ops", "vintage_management", "cellar_management"]);
   const [loading, setLoading] = useState(false);
+  const [setupFailed, setSetupFailed] = useState(false);
+  const retryCount = useRef(0);
+
+  // Retry mechanism for race condition between signup and DB trigger
+  useEffect(() => {
+    if (profile && !profile.org_id && retryCount.current < MAX_RETRIES) {
+      const timer = setTimeout(() => {
+        retryCount.current += 1;
+        refreshProfile();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+    if (profile && !profile.org_id && retryCount.current >= MAX_RETRIES) {
+      setSetupFailed(true);
+    }
+  }, [profile, refreshProfile]);
+
+  if (setupFailed) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <img src={soleraLogo} alt="Solera" className="h-10 mx-auto mb-2" />
+            <CardTitle className="font-display">Account Setup In Progress</CardTitle>
+            <CardDescription>
+              Your account is being set up. Please refresh the page or sign out and sign back in.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex gap-3 justify-center">
+            <Button variant="outline" onClick={() => { retryCount.current = 0; setSetupFailed(false); refreshProfile(); }}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+            </Button>
+            <Button variant="destructive" onClick={signOut}>
+              <LogOut className="h-4 w-4 mr-2" /> Sign Out
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const selectedType = OPERATION_TYPES.find((t) => t.value === selection);
 
