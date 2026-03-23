@@ -33,7 +33,7 @@ const COMPETITORS = [
     name: "Ekos",
     summary: "Ekos is built for breweries and adapted for wineries as an afterthought. Solera is purpose-built for wine from day one — including TTB compliance, vineyard tracking, and AI.",
     features: {
-      "Starting price": ["$69/mo", "$199/mo"],
+      "Starting price": ["$69/mo", "$279/mo"],
       "Free tier": [true, false],
       "Vineyard ops": [true, false],
       "Lab tracking": [true, "Partial"],
@@ -51,7 +51,7 @@ const COMPETITORS = [
     name: "WineDirect",
     summary: "WineDirect is DTC-only. It handles ecommerce but doesn't touch your cellar, vineyard, or compliance. Solera gives you DTC plus everything else — at a lower price.",
     features: {
-      "Starting price": ["$69/mo", "$399/mo"],
+      "Starting price": ["$69/mo", "$149/mo + fees"],
       "Free tier": [true, false],
       "Vineyard ops": [true, false],
       "Lab tracking": [true, false],
@@ -59,7 +59,7 @@ const COMPETITORS = [
       "AI assistant": [true, false],
       "DTC storefront": [true, true],
       "Wine club": [true, true],
-      "Transaction fees": ["None", "2-3% markup"],
+      "Transaction fees": ["None", "4.5% markup"],
       "Onboarding fees": ["None", "$1,000+"],
     },
   },
@@ -68,7 +68,7 @@ const COMPETITORS = [
     name: "Commerce7",
     summary: "Commerce7 focuses on POS and ecommerce. For cellar, vineyard, and compliance you need additional tools. Solera covers it all without the hefty price tag or transaction markups.",
     features: {
-      "Starting price": ["$69/mo", "$399/mo"],
+      "Starting price": ["$69/mo", "$299/mo + fees"],
       "Free tier": [true, false],
       "Vineyard ops": [true, false],
       "Lab tracking": [true, false],
@@ -180,7 +180,7 @@ export default function ComparePage() {
               </thead>
               <tbody>
                 {[
-                  ["Starting price", "$69/mo", "$149/mo", "$199/mo", "$399/mo", "$399/mo"],
+                  ["Starting price", "$69/mo", "$149/mo", "$279/mo", "$149/mo + fees", "$299/mo + fees"],
                   ["Free tier", true, false, false, false, false],
                   ["Vineyard ops", true, false, false, false, false],
                   ["Lab tracking", true, true, "Partial", false, false],
