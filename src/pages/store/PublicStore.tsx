@@ -165,7 +165,7 @@ const PublicStore = () => {
       const orgId = storeConfig?.org_id;
       if (!orgId) throw new Error("Store not configured");
 
-      const { data, error } = await supabase.functions.invoke("stripe-checkout", {
+      const { data, error } = await supabase.functions.invoke("paddle-checkout", {
         body: {
           org_id: orgId,
           customer_name: custName,
