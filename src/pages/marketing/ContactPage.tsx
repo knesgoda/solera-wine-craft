@@ -108,6 +108,7 @@ export default function ContactPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5 bg-card p-6 md:p-8 rounded-xl border border-border">
+                  <input type="text" name="website" className="hidden" autoComplete="off" tabIndex={-1} value={honeypot} onChange={(e) => setHoneypot(e.target.value)} aria-hidden="true" />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="name">Name</Label>
