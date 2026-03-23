@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,12 +7,14 @@ import { SEOHead, buildFaqSchema } from "@/components/SEOHead";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Check } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { getPaddle } from "@/lib/paddle-client";
+import { PADDLE_PRICES, ALL_PAID_PRICE_IDS } from "@/constants/paddle-prices";
 
 const TIERS = [
   {
+    key: "hobbyist",
     name: "Hobbyist",
-    monthly: 0,
-    annual: 0,
     badge: "Most Popular for Hobbyists",
     badgeColor: "secondary",
     highlight: false,
@@ -27,9 +29,8 @@ const TIERS = [
     ],
   },
   {
+    key: "pro",
     name: "Pro",
-    monthly: 69,
-    annual: 59,
     badge: null,
     highlight: false,
     users: "Up to 5 users",
@@ -43,9 +44,8 @@ const TIERS = [
     ],
   },
   {
+    key: "growth",
     name: "Growth",
-    monthly: 129,
-    annual: 109,
     badge: "Most Popular",
     badgeColor: "default",
     highlight: true,
@@ -61,9 +61,8 @@ const TIERS = [
     ],
   },
   {
+    key: "enterprise",
     name: "Enterprise",
-    monthly: 399,
-    annual: 339,
     badge: null,
     highlight: false,
     users: "Unlimited users",
@@ -92,7 +91,6 @@ const COMPETITOR_DATA: Record<string, { cost: number; tier: string; tierCost: nu
 const FAQS = [
   { question: "Is there really a free plan forever?", answer: "Yes — the Hobbyist plan is free forever with no credit card required. Perfect for home winemakers and hobbyists with a single vineyard." },
   { question: "Do you charge onboarding fees?", answer: "Never. Every Solera plan includes free onboarding. Enterprise plans include a dedicated concierge." },
-  { question: "What happens to my DTC transaction fees?", answer: "You pay Stripe's standard rate (2.9% + $0.30). Solera adds zero markup. Many competitors add 1-3% on top of payment processing." },
   { question: "Can I import my data from Innovint or VinNow?", answer: "Yes — every plan includes AI-assisted import. Upload your CSV/XLSX export and Solera maps your columns automatically." },
   { question: "Is there a free trial on paid plans?", answer: "Yes — 30 days free on any paid plan, no credit card required." },
   { question: "Can I change plans at any time?", answer: "Yes — upgrade or downgrade any time. Changes take effect immediately." },
@@ -102,9 +100,119 @@ const FAQS = [
   { question: "How does the AI assistant work?", answer: "Ask Solera uses your actual winery data — lab readings, weather, GDD, vintage history — to answer questions in plain English. No generic advice." },
 ];
 
+// Fallback prices if PricePreview fails
+const FALLBACK_PRICES: Record<string, Record<string, string>> = {
+  'pri_01kmdx9xd7y43185qppke728d9': { formatted: "$69/mo" },
+  'pri_01kmdxb9xev9x8823v4ssbvj1m': { formatted: "$59/mo" },
+  'pri_01kmdxcs28byfa4q5ye3kh1xj3': { formatted: "$129/mo" },
+  'pri_01kmdxeyq34dvq3mxex2xdyfwm': { formatted: "$109/mo" },
+  'pri_01kmdxkejxc2bssknbrm9phj48': { formatted: "$399/mo" },
+  'pri_01kmdxmnh6v670ng8dtz5skec8': { formatted: "$339/mo" },
+};
+
 export default function PricingPage() {
   const [annual, setAnnual] = useState(false);
   const [competitor, setCompetitor] = useState<string>("");
+  const [prices, setPrices] = useState<Record<string, string>>({}); // priceId → formatted price
+  const { user, profile, organization } = useAuth();
+  const navigate = useNavigate();
+
+  // Fetch localized prices from Paddle on mount
+  useEffect(() => {
+    async function fetchPrices() {
+      try {
+        const paddle = await getPaddle();
+        if (!paddle) {
+          // Fallback to hardcoded prices
+          const fallback: Record<string, string> = {};
+          for (const [id, data] of Object.entries(FALLBACK_PRICES)) {
+            fallback[id] = data.formatted;
+          }
+          setPrices(fallback);
+          return;
+        }
+
+        const preview = await paddle.PricePreview({
+          items: ALL_PAID_PRICE_IDS.map(id => ({ priceId: id, quantity: 1 })),
+        });
+
+        const priceMap: Record<string, string> = {};
+        for (const item of preview.data?.details?.lineItems || []) {
+          priceMap[item.price.id] = item.formattedTotals?.subtotal || item.formattedTotals?.total || "";
+        }
+        if (Object.keys(priceMap).length > 0) {
+          setPrices(priceMap);
+        } else {
+          // Fallback
+          const fallback: Record<string, string> = {};
+          for (const [id, data] of Object.entries(FALLBACK_PRICES)) {
+            fallback[id] = data.formatted;
+          }
+          setPrices(fallback);
+        }
+      } catch (e) {
+        console.warn("Paddle PricePreview failed, using fallback prices:", e);
+        const fallback: Record<string, string> = {};
+        for (const [id, data] of Object.entries(FALLBACK_PRICES)) {
+          fallback[id] = data.formatted;
+        }
+        setPrices(fallback);
+      }
+    }
+    fetchPrices();
+  }, []);
+
+  const handleCheckout = async (tierKey: string) => {
+    if (tierKey === "hobbyist") {
+      if (user) {
+        navigate("/dashboard");
+      } else {
+        navigate("/signup");
+      }
+      return;
+    }
+
+    const priceConfig = PADDLE_PRICES[tierKey as keyof typeof PADDLE_PRICES];
+    if (!priceConfig) return;
+
+    const priceId = annual && "annual" in priceConfig
+      ? (priceConfig as any).annual
+      : priceConfig.monthly;
+
+    const paddle = await getPaddle();
+    if (!paddle) {
+      console.error("Paddle not initialized");
+      return;
+    }
+
+    const checkoutConfig: any = {
+      items: [{ priceId, quantity: 1 }],
+      settings: {
+        successUrl: `${window.location.origin}/dashboard?upgraded=true`,
+        theme: 'light',
+        locale: 'en',
+      },
+    };
+
+    if (organization?.id) {
+      checkoutConfig.customData = { org_id: organization.id };
+    }
+    if (user?.email) {
+      checkoutConfig.customer = { email: user.email };
+    }
+
+    paddle.Checkout.open(checkoutConfig);
+  };
+
+  const getPrice = (tierKey: string): string => {
+    if (tierKey === "hobbyist") return "Free";
+    const priceConfig = PADDLE_PRICES[tierKey as keyof typeof PADDLE_PRICES];
+    if (!priceConfig) return "";
+    const priceId = annual && "annual" in priceConfig
+      ? (priceConfig as any).annual
+      : priceConfig.monthly;
+    return prices[priceId] || FALLBACK_PRICES[priceId]?.formatted || "";
+  };
 
   const comp = competitor ? COMPETITOR_DATA[competitor] : null;
 
@@ -112,7 +220,7 @@ export default function PricingPage() {
     <>
       <SEOHead
         title="Pricing — Solera Winery Management"
-        description="Honest pricing for every winemaker. Free for hobbyists. From $69/mo for professional wineries. No onboarding fees. No transaction markups."
+        description="Honest pricing for every winemaker. Free for hobbyists. From $69/mo for professional wineries. No onboarding fees."
         jsonLd={buildFaqSchema(FAQS)}
         breadcrumbs={[
           { name: "Home", url: "https://solera.vin" },
@@ -150,7 +258,7 @@ export default function PricingPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {TIERS.map((t) => {
-              const price = annual ? t.annual : t.monthly;
+              const priceStr = getPrice(t.key);
               return (
                 <Card
                   key={t.name}
@@ -165,11 +273,15 @@ export default function PricingPage() {
                     <CardTitle className="font-display text-xl">{t.name}</CardTitle>
                     <div className="mt-2">
                       <span className="text-4xl font-bold text-foreground">
-                        {price === 0 ? "Free" : `$${price}`}
+                        {priceStr || "Free"}
                       </span>
-                      {price > 0 && <span className="text-muted-foreground text-sm">/mo</span>}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{t.users}</p>
+                    {t.key !== "hobbyist" && (
+                      <Badge variant="outline" className="mt-2 text-xs">
+                        30-day free trial
+                      </Badge>
+                    )}
                   </CardHeader>
                   <CardContent className="pt-4">
                     <ul className="space-y-2.5 mb-6">
@@ -183,9 +295,9 @@ export default function PricingPage() {
                     <Button
                       className={`w-full ${t.highlight ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : ""}`}
                       variant={t.highlight ? "default" : "outline"}
-                      asChild
+                      onClick={() => handleCheckout(t.key)}
                     >
-                      <Link to="/signup">{price === 0 ? "Start Free" : "Start Free Trial"}</Link>
+                      {t.key === "hobbyist" ? "Start Free" : "Start Free Trial"}
                     </Button>
                   </CardContent>
                 </Card>
@@ -194,7 +306,7 @@ export default function PricingPage() {
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-8">
-            No onboarding fees ever. No transaction fee markup on DTC sales. Annual plans lock your rate for 24 months.
+            No onboarding fees ever. Annual plans lock your rate for 24 months.
           </p>
         </div>
       </section>

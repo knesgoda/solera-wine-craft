@@ -7,6 +7,8 @@ import { Check, CreditCard, ArrowRight, Info, Loader2 } from "lucide-react";
 import { getTierDisplay } from "@/hooks/useTierGate";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { getPaddle } from "@/lib/paddle-client";
+import { PADDLE_PRICES } from "@/constants/paddle-prices";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -35,17 +37,26 @@ const PLANS = [
   },
 ];
 
+// Map internal tier names to Paddle price keys
+const TIER_TO_PADDLE_KEY: Record<string, string> = {
+  small_boutique: "pro",
+  mid_size: "growth",
+  enterprise: "enterprise",
+};
+
 const BillingSettings = () => {
-  const { organization } = useAuth();
+  const { user, organization } = useAuth();
   const currentTier = organization?.tier || "hobbyist";
-  const hasStripeCustomer = !!(organization as any)?.stripe_customer_id;
+  const hasPaddleCustomer = !!(organization as any)?.paddle_customer_id;
+  const hasPaddleSub = !!(organization as any)?.paddle_subscription_id;
   const [downgradeTarget, setDowngradeTarget] = useState<string | null>(null);
   const [downgradeLoading, setDowngradeLoading] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null);
 
   const handleManageBilling = async () => {
-    if (!hasStripeCustomer) return;
+    if (!hasPaddleCustomer) return;
     try {
-      const { data, error } = await supabase.functions.invoke("stripe-portal", {
+      const { data, error } = await supabase.functions.invoke("paddle-portal", {
         body: { org_id: organization?.id },
       });
       if (error) throw error;
@@ -56,7 +67,7 @@ const BillingSettings = () => {
   };
 
   const handleDowngrade = (tier: string) => {
-    if (!hasStripeCustomer) {
+    if (!hasPaddleSub) {
       toast({ title: "No active subscription", description: "No active subscription to downgrade.", variant: "destructive" });
       return;
     }
@@ -64,13 +75,32 @@ const BillingSettings = () => {
   };
 
   const confirmDowngrade = async () => {
+    if (!downgradeTarget) return;
     setDowngradeLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("stripe-portal", {
-        body: { org_id: organization?.id },
-      });
-      if (error) throw error;
-      if (data?.url) window.open(data.url, "_blank");
+      const paddleKey = TIER_TO_PADDLE_KEY[downgradeTarget];
+      if (downgradeTarget === "hobbyist") {
+        // Cancel subscription
+        const { error } = await supabase.functions.invoke("paddle-subscription", {
+          body: { action: "cancel", org_id: organization?.id },
+        });
+        if (error) throw error;
+        toast({ title: "Subscription canceled", description: "Your subscription will end at the current billing period." });
+      } else if (paddleKey) {
+        const priceId = (PADDLE_PRICES as any)[paddleKey]?.monthly;
+        if (priceId) {
+          const { error } = await supabase.functions.invoke("paddle-subscription", {
+            body: {
+              action: "change_plan",
+              org_id: organization?.id,
+              new_price_id: priceId,
+              billing_mode: "prorated_next_billing_period",
+            },
+          });
+          if (error) throw error;
+          toast({ title: "Plan changed", description: "Your plan will change at the next billing period." });
+        }
+      }
     } catch (e: any) {
       toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" });
     } finally {
@@ -80,14 +110,59 @@ const BillingSettings = () => {
   };
 
   const handleUpgrade = async (tier: string) => {
+    setUpgradeLoading(tier);
     try {
-      const { data, error } = await supabase.functions.invoke("stripe-checkout", {
-        body: { action: "upgrade", org_id: organization?.id, target_tier: tier },
-      });
-      if (error) throw error;
-      if (data?.url) window.open(data.url, "_blank");
+      const paddleKey = TIER_TO_PADDLE_KEY[tier];
+      if (!paddleKey) return;
+
+      if (hasPaddleSub) {
+        // Existing subscriber — change plan via API
+        const priceId = (PADDLE_PRICES as any)[paddleKey]?.monthly;
+        if (priceId) {
+          const { error } = await supabase.functions.invoke("paddle-subscription", {
+            body: {
+              action: "change_plan",
+              org_id: organization?.id,
+              new_price_id: priceId,
+              billing_mode: "prorated_immediately",
+            },
+          });
+          if (error) throw error;
+          toast({ title: "Plan upgraded!", description: `You're now on the ${getTierDisplay(tier)} plan.` });
+        }
+      } else {
+        // No subscription — open Paddle checkout
+        const priceId = (PADDLE_PRICES as any)[paddleKey]?.monthly;
+        if (!priceId) return;
+
+        const paddle = await getPaddle();
+        if (!paddle) {
+          toast({ title: "Error", description: "Payment system not initialized. Please try again.", variant: "destructive" });
+          return;
+        }
+
+        const checkoutConfig: any = {
+          items: [{ priceId, quantity: 1 }],
+          settings: {
+            successUrl: `${window.location.origin}/settings/billing?checkout=success`,
+            theme: 'light',
+            locale: 'en',
+          },
+        };
+
+        if (organization?.id) {
+          checkoutConfig.customData = { org_id: organization.id };
+        }
+        if (user?.email) {
+          checkoutConfig.customer = { email: user.email };
+        }
+
+        paddle.Checkout.open(checkoutConfig);
+      }
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setUpgradeLoading(null);
     }
   };
 
@@ -113,7 +188,7 @@ const BillingSettings = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {hasStripeCustomer ? (
+          {hasPaddleCustomer ? (
             <Button variant="outline" onClick={handleManageBilling}>
               <CreditCard className="h-4 w-4 mr-2" />
               Manage Billing & Payment Method
@@ -152,7 +227,8 @@ const BillingSettings = () => {
                 {isCurrent ? (
                   <Button variant="outline" disabled className="w-full">Current Plan</Button>
                 ) : isUpgrade ? (
-                  <Button className="w-full" onClick={() => handleUpgrade(plan.tier)}>
+                  <Button className="w-full" onClick={() => handleUpgrade(plan.tier)} disabled={upgradeLoading === plan.tier}>
+                    {upgradeLoading === plan.tier ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                     Upgrade <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 ) : (
@@ -169,15 +245,21 @@ const BillingSettings = () => {
       <AlertDialog open={!!downgradeTarget} onOpenChange={(open) => !open && setDowngradeTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Downgrade to {downgradeTarget ? getTierDisplay(downgradeTarget) : ""}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {downgradeTarget === "hobbyist"
+                ? "Cancel subscription?"
+                : `Downgrade to ${downgradeTarget ? getTierDisplay(downgradeTarget) : ""}?`}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Your plan will change at the end of your current billing period. You may lose access to some features.
+              {downgradeTarget === "hobbyist"
+                ? "Your subscription will end at the current billing period. You'll revert to the free Hobbyist plan."
+                : "Your plan will change at the end of your current billing period. You may lose access to some features."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={downgradeLoading}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDowngrade} disabled={downgradeLoading}>
-              {downgradeLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading…</> : "Confirm Downgrade"}
+              {downgradeLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading…</> : "Confirm"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
