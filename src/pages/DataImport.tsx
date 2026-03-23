@@ -251,7 +251,7 @@ function SourceImport({
   sourceType, step, headers, sampleRows, allRows, mappings, setMappings,
   isLoadingMapping, importProgress, importResult, duplicateStrategy,
   setDuplicateStrategy, onFileData, onConfirmMapping, onRunImport, onReset,
-  acceptFormats, description,
+  onBackToMapping, acceptFormats, description,
 }: SourceImportProps) {
   return (
     <>
