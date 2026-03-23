@@ -29,7 +29,6 @@ const ALLOCATION_LABELS: Record<string, string> = {
 };
 
 const PublicStore = () => {
-  const [ageVerified, setAgeVerified] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -39,13 +38,6 @@ const PublicStore = () => {
   const [custName, setCustName] = useState("");
   const [custEmail, setCustEmail] = useState("");
   const [custAddress, setCustAddress] = useState({ line1: "", line2: "", city: "", state: "", zip: "" });
-
-  // Check localStorage for age verification
-  useEffect(() => {
-    if (localStorage.getItem("solera_age_verified") === "true") {
-      setAgeVerified(true);
-    }
-  }, []);
 
   // Get first enabled storefront config (public/anon access)
   const { data: storeConfig } = useQuery({
@@ -73,7 +65,6 @@ const PublicStore = () => {
       if (error) throw error;
       return data as any[];
     },
-    enabled: ageVerified,
   });
 
   const { data: wineClubs = [] } = useQuery({
@@ -86,7 +77,6 @@ const PublicStore = () => {
       if (error) throw error;
       return data as any[];
     },
-    enabled: ageVerified,
   });
 
   const [joiningClub, setJoiningClub] = useState<string | null>(null);
@@ -197,15 +187,6 @@ const PublicStore = () => {
     }
   };
 
-  const handleAgeConfirm = () => {
-    localStorage.setItem("solera_age_verified", "true");
-    setAgeVerified(true);
-  };
-
-  const handleAgeExit = () => {
-    window.location.href = "https://www.google.com";
-  };
-
   // Show success/canceled messages
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -224,26 +205,6 @@ const PublicStore = () => {
       window.history.replaceState({}, "", "/store");
     }
   }, []);
-
-  // Age gate
-  if (!ageVerified) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border-none shadow-xl">
-          <CardContent className="p-8 text-center space-y-6">
-            <Wine className="h-16 w-16 mx-auto text-primary" />
-            <h1 className="text-2xl font-display font-bold text-foreground">Age Verification</h1>
-            <p className="text-muted-foreground">You must be 21 years of age or older to enter this site.</p>
-            <p className="text-sm font-medium text-foreground">I confirm I am 21 years of age or older</p>
-            <div className="flex gap-3 justify-center">
-              <Button onClick={handleAgeConfirm} size="lg">Enter</Button>
-              <Button variant="outline" onClick={handleAgeExit} size="lg">Exit</Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   const storeName = storeConfig?.store_name || "Wine Shop";
 
