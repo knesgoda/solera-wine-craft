@@ -29,7 +29,22 @@ export default function VintageDetail() {
   const queryClient = useQueryClient();
   const { organization, profile } = useAuth();
   const [labDialogOpen, setLabDialogOpen] = useState(false);
+  const [editingSample, setEditingSample] = useState<LabSampleData | null>(null);
+  const [deletingSampleId, setDeletingSampleId] = useState<string | null>(null);
   const orgId = profile?.org_id;
+
+  const deleteSample = useMutation({
+    mutationFn: async (sampleId: string) => {
+      const { error } = await supabase.from("lab_samples").delete().eq("id", sampleId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lab-samples", vintageId] });
+      toast.success("Lab sample deleted");
+      setDeletingSampleId(null);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
 
   const { data: vintage, isLoading } = useQuery({
     queryKey: ["vintage", vintageId],
