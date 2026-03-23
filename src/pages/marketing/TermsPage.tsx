@@ -49,14 +49,9 @@ export default function TermsPage() {
 
           <h2>Refund Policy</h2>
           <p>
-            We want you to be happy with Solera. If you're not:
+            All purchases are processed by Paddle.com as our Merchant of Record. Refund requests are handled in accordance with Paddle's refund policy, available at{" "}
+            <a href="https://www.paddle.com/legal/refund-policy" target="_blank" rel="noopener noreferrer">paddle.com/legal/refund-policy</a>.
           </p>
-          <ul>
-            <li><strong>Within 14 days of any payment:</strong> Request a pro-rated refund for the unused portion of your billing period. No questions asked.</li>
-            <li><strong>Annual plans:</strong> Pro-rated refund within 14 days of your annual payment. After 14 days, you may cancel but no refund is issued for the remaining term.</li>
-            <li><strong>Free trial periods:</strong> You are never charged during a free trial. Cancel before the trial ends and you pay nothing.</li>
-          </ul>
-          <p>To request a refund, email <a href="mailto:kevin@solera.vin">kevin@solera.vin</a>.</p>
 
           <h2>Data Ownership</h2>
           <p>
