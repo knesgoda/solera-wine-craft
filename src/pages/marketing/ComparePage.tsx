@@ -33,7 +33,7 @@ const COMPETITORS = [
     name: "Ekos",
     summary: "Ekos is built for breweries and adapted for wineries as an afterthought. Solera is purpose-built for wine from day one — including TTB compliance, vineyard tracking, and AI.",
     features: {
-      "Starting price": ["$69/mo", "$199/mo"],
+      "Starting price": ["$69/mo", "$279/mo"],
       "Free tier": [true, false],
       "Vineyard ops": [true, false],
       "Lab tracking": [true, "Partial"],
