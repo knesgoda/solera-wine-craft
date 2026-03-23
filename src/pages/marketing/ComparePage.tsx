@@ -68,7 +68,7 @@ const COMPETITORS = [
     name: "Commerce7",
     summary: "Commerce7 focuses on POS and ecommerce. For cellar, vineyard, and compliance you need additional tools. Solera covers it all without the hefty price tag or transaction markups.",
     features: {
-      "Starting price": ["$69/mo", "$399/mo"],
+      "Starting price": ["$69/mo", "$299/mo + fees"],
       "Free tier": [true, false],
       "Vineyard ops": [true, false],
       "Lab tracking": [true, false],
