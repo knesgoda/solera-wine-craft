@@ -44,6 +44,8 @@ const VineyardDetail = () => {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyBlock);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ name: "", region: "", coordinates: "", acres: "" });
 
   const { data: vineyard, isLoading: loadingVineyard } = useQuery({
     queryKey: ["vineyard", vineyardId],
