@@ -188,6 +188,25 @@ const PublicStore = () => {
   };
 
   // Show success/canceled messages
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("success") === "true") {
+      toast.success("Order placed successfully! Check your email for confirmation.");
+      setCart([]);
+      window.history.replaceState({}, "", "/store");
+    } else if (params.get("canceled") === "true") {
+      toast.info("Checkout canceled");
+      window.history.replaceState({}, "", "/store");
+    } else if (params.get("club_success") === "true") {
+      toast.success("Welcome to the wine club! Check your email for details.");
+      window.history.replaceState({}, "", "/store");
+    } else if (params.get("club_canceled") === "true") {
+      toast.info("Club signup canceled");
+      window.history.replaceState({}, "", "/store");
+    }
+  }, []);
+
+  const storeName = storeConfig?.store_name || "Wine Shop";
 
   return (
     <AgeVerificationGate>
