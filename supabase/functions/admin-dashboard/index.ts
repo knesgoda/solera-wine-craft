@@ -367,47 +367,25 @@ Deno.serve(async (req) => {
       }
       timeline.sort((a, b) => b.at.localeCompare(a.at));
 
-      // Subscription detail from Stripe
+      // Subscription detail from DB
       let subscriptionDetail = null;
       const org = orgRes.data;
-      if (stripeKey && org?.stripe_customer_id) {
-        try {
-          const custSubs = await stripeGet(`/subscriptions?customer=${org.stripe_customer_id}&limit=1&expand[]=data.default_payment_method&expand[]=data.items`, stripeKey);
-          const sub = (custSubs.data || [])[0];
-          if (sub) {
-            const pm = sub.default_payment_method;
-            subscriptionDetail = {
-              plan: sub.items?.data?.[0]?.price?.nickname || sub.plan?.nickname || org.tier || "Unknown",
-              billingCycle: sub.items?.data?.[0]?.price?.recurring?.interval || sub.plan?.interval || "month",
-              mrr: Math.round(getSubMonthlyAmount(sub)),
-              nextBilling: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
-              startedAt: new Date(sub.created * 1000).toISOString(),
-              cardLast4: pm?.card?.last4 || null,
-              cardExpiry: pm?.card?.exp_month ? `${pm.card.exp_month}/${pm.card.exp_year}` : null,
-              cardBrand: pm?.card?.brand || null,
-              cardStatus: pm ? "healthy" : "missing",
-              status: sub.status,
-            };
-          }
-        } catch (e) {
-          console.error("Stripe sub detail error:", e);
-        }
+      if (org?.paddle_subscription_id || org?.tier !== "hobbyist") {
+        subscriptionDetail = {
+          plan: org.tier || "Unknown",
+          billingCycle: "month",
+          mrr: TIER_MRR[org.tier || "hobbyist"] || 0,
+          nextBilling: org.next_billed_at || null,
+          startedAt: org.created_at,
+          cardLast4: null,
+          cardExpiry: null,
+          cardBrand: null,
+          cardStatus: org.subscription_status === "past_due" ? "past_due" : "healthy",
+          status: org.subscription_status || "active",
+        };
       }
 
-      // Stripe events for upgrade/downgrade history
-      let upgradeHistory: any[] = [];
-      if (stripeKey && org?.stripe_customer_id) {
-        try {
-          const events = await stripeGet(`/events?type=customer.subscription.updated&limit=20`, stripeKey);
-          upgradeHistory = (events.data || [])
-            .filter((evt: any) => evt.data?.object?.customer === org.stripe_customer_id && evt.data?.previous_attributes?.plan)
-            .map((evt: any) => ({
-              fromPlan: evt.data.previous_attributes.plan?.nickname || "Previous",
-              toPlan: evt.data.object.plan?.nickname || "Current",
-              date: new Date(evt.created * 1000).toISOString(),
-            }));
-        } catch {}
-      }
+      const upgradeHistory: any[] = [];
 
       return json({
         org: orgRes.data,
