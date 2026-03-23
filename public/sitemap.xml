@@ -1,2 +1,14 @@
-<!-- This file is intentionally minimal. The live sitemap is served by
-     the Supabase Edge Function at /functions/v1/sitemap -->
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://solera.vin/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://solera.vin/features</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://solera.vin/pricing</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://solera.vin/compare</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://solera.vin/about</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://solera.vin/blog</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://solera.vin/faq</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://solera.vin/contact</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://solera.vin/changelog</loc><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://solera.vin/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://solera.vin/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+</urlset>
