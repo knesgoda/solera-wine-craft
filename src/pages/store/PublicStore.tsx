@@ -30,6 +30,14 @@ const ALLOCATION_LABELS: Record<string, string> = {
 
 const PublicStore = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
+
+  // Checkout form
+  const [custName, setCustName] = useState("");
+  const [custEmail, setCustEmail] = useState("");
+  const [custAddress, setCustAddress] = useState({ line1: "", line2: "", city: "", state: "", zip: "" });
 
   // Get first enabled storefront config (public/anon access)
   const { data: storeConfig } = useQuery({
