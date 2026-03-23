@@ -59,7 +59,7 @@ const COMPETITORS = [
       "AI assistant": [true, false],
       "DTC storefront": [true, true],
       "Wine club": [true, true],
-      "Transaction fees": ["None", "2-3% markup"],
+      "Transaction fees": ["None", "4.5% markup"],
       "Onboarding fees": ["None", "$1,000+"],
     },
   },
