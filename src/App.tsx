@@ -186,6 +186,10 @@ const App = () => (
               <Route path="/reports/builder" element={<ReportsBuilder />} />
               <Route path="/data-import" element={<DataImport />} />
               <Route path="/analytics/analog" element={<AnalogExplorer />} />
+              <Route path="/costs" element={<GrowthTierGate><CostOverview /></GrowthTierGate>} />
+              <Route path="/costs/dashboard" element={<GrowthTierGate><CostOverview /></GrowthTierGate>} />
+              <Route path="/costs/materials" element={<GrowthTierGate><MaterialPrices /></GrowthTierGate>} />
+              <Route path="/costs/settings" element={<GrowthTierGate><CostCategorySettings /></GrowthTierGate>} />
               <Route path="/inventory" element={<InventoryList />} />
               <Route path="/inventory/:skuId" element={<SkuDetail />} />
               <Route path="/orders" element={<OrderList />} />
