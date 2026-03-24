@@ -155,8 +155,16 @@ export function VintageCostsTab({ vintageId }: VintageCostsTabProps) {
                           {e.cost_categories?.name}
                         </span>
                       </TableCell>
-                      <TableCell className={cn("text-sm max-w-[180px] truncate", e.status === "voided" && "line-through")}>
-                        {e.description}
+                      <TableCell className={cn("text-sm max-w-[180px]", e.status === "voided" && "line-through")}>
+                        <span className="truncate block">{e.description}</span>
+                        {e.blend_trial_id && (
+                          <button
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"
+                            onClick={() => navigate(`/cellar/blending/${e.blend_trial_id}`)}
+                          >
+                            <GitMerge className="h-3 w-3" /> From Blend{e.blending_trials?.name ? `: ${e.blending_trials.name}` : ""}
+                          </button>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm">{METHOD_LABELS[e.method]}</TableCell>
                       <TableCell className={cn("text-right font-mono text-sm", e.status === "voided" && "line-through")}>
