@@ -189,7 +189,8 @@ const App = () => (
               <Route path="/data-import" element={<DataImport />} />
               <Route path="/analytics/analog" element={<AnalogExplorer />} />
               <Route path="/costs" element={<GrowthTierGate><CostOverview /></GrowthTierGate>} />
-              <Route path="/costs/dashboard" element={<GrowthTierGate><CostOverview /></GrowthTierGate>} />
+              <Route path="/costs/dashboard" element={<GrowthTierGate><CogsDashboard /></GrowthTierGate>} />
+              <Route path="/costs/lot/:vintageId" element={<GrowthTierGate><LotCostDetail /></GrowthTierGate>} />
               <Route path="/costs/materials" element={<GrowthTierGate><MaterialPrices /></GrowthTierGate>} />
               <Route path="/costs/settings" element={<GrowthTierGate><CostCategorySettings /></GrowthTierGate>} />
               <Route path="/inventory" element={<InventoryList />} />

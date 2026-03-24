@@ -133,6 +133,11 @@ const Dashboard = () => {
         </Card>
       </Link>
 
+      {/* Production Costs Dashboard — Growth+ only */}
+      {hasAccess(organization?.tier || "hobbyist", "mid_size") && (
+        <CogsDashboardWidgets />
+      )}
+
       {/* Grower Contracts Dashboard — Enterprise only */}
       {hasAccess(organization?.tier || "hobbyist", "enterprise") && (
         <GrowerDashboardWidgets />
