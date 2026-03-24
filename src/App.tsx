@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
+import { TierGate } from "@/components/TierGate";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -53,6 +54,10 @@ import TaskList from "./pages/tasks/TaskList";
 import TaskDetail from "./pages/tasks/TaskDetail";
 import VintageList from "./pages/vintages/VintageList";
 import VintageDetail from "./pages/vintages/VintageDetail";
+import GrowerList from "./pages/growers/GrowerList";
+import GrowerDetail from "./pages/growers/GrowerDetail";
+import GrowerContractList from "./pages/growers/GrowerContractList";
+import GrowerIntake from "./pages/growers/GrowerIntake";
 import ClientList from "./pages/clients/ClientList";
 import ClientDetail from "./pages/clients/ClientDetail";
 import ClientLayout from "./components/ClientLayout";
@@ -153,6 +158,10 @@ const App = () => (
               <Route path="/vineyard-ops" element={<Navigate to="/operations" replace />} />
               <Route path="/vintages" element={<VintageList />} />
               <Route path="/vintages/:vintageId" element={<VintageDetail />} />
+              <Route path="/growers" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerList /></TierGate>} />
+              <Route path="/growers/contracts" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerContractList /></TierGate>} />
+              <Route path="/growers/intake" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerIntake /></TierGate>} />
+              <Route path="/growers/:id" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerDetail /></TierGate>} />
               <Route path="/cellar" element={<CellarDashboard />} />
               <Route path="/cellar/vessels/:vesselId" element={<VesselDetail />} />
               <Route path="/cellar/barrels" element={<BarrelInventory />} />
