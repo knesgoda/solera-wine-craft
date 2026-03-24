@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Loader2, Plus, Trash2 } from "lucide-react";
+import { CalendarIcon, Loader2, Plus, Trash2, Lock } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { GradingScaleBuilder, type GradingScaleForm, type MetricForm } from "@/components/growers/GradingScaleBuilder";
@@ -115,6 +116,23 @@ export default function ContractForm() {
     },
     enabled: !!organization?.id,
   });
+
+  // Check if grading scale is locked (graded weigh tags exist)
+  const { data: hasGradedTags = false } = useQuery({
+    queryKey: ["contract-has-graded-tags", id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("weigh_tags")
+        .select("*", { count: "exact", head: true })
+        .eq("contract_id", id!)
+        .in("status", ["graded", "approved", "paid"] as any);
+      if (error) throw error;
+      return (count || 0) > 0;
+    },
+    enabled: isEdit,
+  });
+
+  const scaleIsLocked = isEdit && hasGradedTags;
 
   // Load existing contract for edit
   const { data: existingContract, isLoading: loadingContract } = useQuery({
@@ -574,7 +592,16 @@ export default function ContractForm() {
       </Card>
 
       {/* SECTION C: Grading Scale */}
-      <GradingScaleBuilder scale={gradingScale} onChange={setGradingScale} templates={templates} />
+      {scaleIsLocked ? (
+        <Alert className="border-amber-300 bg-amber-50">
+          <Lock className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-700">
+            This grading scale is locked because deliveries have been graded against it. To change grading criteria, create a new contract.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <GradingScaleBuilder scale={gradingScale} onChange={setGradingScale} templates={templates} />
+      )}
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-3 pb-8">
