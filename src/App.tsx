@@ -162,6 +162,9 @@ const App = () => (
               <Route path="/vintages/:vintageId" element={<VintageDetail />} />
               <Route path="/growers" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerList /></TierGate>} />
               <Route path="/growers/contracts" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerContractList /></TierGate>} />
+              <Route path="/growers/contracts/new" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><ContractForm /></TierGate>} />
+              <Route path="/growers/contracts/:id" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><ContractDetail /></TierGate>} />
+              <Route path="/growers/contracts/:id/edit" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><ContractForm /></TierGate>} />
               <Route path="/growers/intake" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerIntake /></TierGate>} />
               <Route path="/growers/:id" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerDetail /></TierGate>} />
               <Route path="/cellar" element={<CellarDashboard />} />
