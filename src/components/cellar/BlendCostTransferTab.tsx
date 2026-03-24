@@ -100,7 +100,7 @@ export function BlendCostTransferTab({ trialId, targetVintageId }: BlendCostTran
       </div>
 
       {/* Grouped by source */}
-      {Object.entries(grouped).map(([vintageId, groupEntries]) => {
+      {Object.entries(grouped).map(([vintageId, groupEntries]: [string, any[]]) => {
         const sourceName = groupEntries[0]?.vintages?.year
           ? `${groupEntries[0].vintages.year} ${groupEntries[0].vintages.blocks?.name || ""}`.trim()
           : "Unknown Source";
