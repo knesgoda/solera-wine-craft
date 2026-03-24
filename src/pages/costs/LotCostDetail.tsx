@@ -196,14 +196,30 @@ export default function LotCostDetail() {
       </div>
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-display font-bold text-foreground">{lotName}</h1>
-        <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-          {vintage?.variety && <span>{vintage.variety}</span>}
-          {vintage?.year && <span>• {vintage.year}</span>}
-          {vintage?.status && <Badge variant="outline" className="capitalize">{vintage.status}</Badge>}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-foreground">{lotName}</h1>
+          <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+            {vintage?.variety && <span>{vintage.variety}</span>}
+            {vintage?.year && <span>• {vintage.year}</span>}
+            {vintage?.status && <Badge variant="outline" className="capitalize">{vintage.status}</Badge>}
+          </div>
         </div>
+        {isAtLeast("owner") && (
+          <Button variant="outline" size="sm" onClick={handleRecalcLot} disabled={recalculating}>
+            {recalculating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            Recalculate
+          </Button>
+        )}
       </div>
+
+      {/* Zero volume warning */}
+      {activeEntries.length > 0 && totalGallons === 0 && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 flex items-start gap-2 text-sm text-amber-800 dark:text-amber-200">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>Volume unknown — assign this lot to a vessel or barrel to calculate per-gallon costs.</span>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
