@@ -1236,6 +1236,55 @@ export type Database = {
           },
         ]
       }
+      contract_block_assignments: {
+        Row: {
+          block_id: string
+          contract_id: string
+          estimated_tons: number | null
+          id: string
+          notes: string | null
+          org_id: string
+        }
+        Insert: {
+          block_id: string
+          contract_id: string
+          estimated_tons?: number | null
+          id?: string
+          notes?: string | null
+          org_id: string
+        }
+        Update: {
+          block_id?: string
+          contract_id?: string
+          estimated_tons?: number | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_block_assignments_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_block_assignments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "grower_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_block_assignments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address_json: Json | null
@@ -1600,6 +1649,408 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grading_scale_metrics: {
+        Row: {
+          data_type: Database["public"]["Enums"]["metric_data_type"]
+          direction: Database["public"]["Enums"]["grading_direction"]
+          grading_scale_id: string
+          id: string
+          metric_key: string
+          metric_name: string
+          org_id: string
+          sort_order: number
+          unit: string | null
+          weight: number | null
+        }
+        Insert: {
+          data_type?: Database["public"]["Enums"]["metric_data_type"]
+          direction: Database["public"]["Enums"]["grading_direction"]
+          grading_scale_id: string
+          id?: string
+          metric_key: string
+          metric_name: string
+          org_id: string
+          sort_order?: number
+          unit?: string | null
+          weight?: number | null
+        }
+        Update: {
+          data_type?: Database["public"]["Enums"]["metric_data_type"]
+          direction?: Database["public"]["Enums"]["grading_direction"]
+          grading_scale_id?: string
+          id?: string
+          metric_key?: string
+          metric_name?: string
+          org_id?: string
+          sort_order?: number
+          unit?: string | null
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grading_scale_metrics_grading_scale_id_fkey"
+            columns: ["grading_scale_id"]
+            isOneToOne: false
+            referencedRelation: "grading_scales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grading_scale_metrics_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grading_scale_tiers: {
+        Row: {
+          id: string
+          is_reject: boolean | null
+          max_value: number | null
+          metric_id: string
+          min_value: number | null
+          org_id: string
+          price_adjustment: number
+          sort_order: number
+          tier_label: string
+        }
+        Insert: {
+          id?: string
+          is_reject?: boolean | null
+          max_value?: number | null
+          metric_id: string
+          min_value?: number | null
+          org_id: string
+          price_adjustment?: number
+          sort_order?: number
+          tier_label: string
+        }
+        Update: {
+          id?: string
+          is_reject?: boolean | null
+          max_value?: number | null
+          metric_id?: string
+          min_value?: number | null
+          org_id?: string
+          price_adjustment?: number
+          sort_order?: number
+          tier_label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grading_scale_tiers_metric_id_fkey"
+            columns: ["metric_id"]
+            isOneToOne: false
+            referencedRelation: "grading_scale_metrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grading_scale_tiers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grading_scales: {
+        Row: {
+          contract_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_template: boolean | null
+          name: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_template?: boolean | null
+          name: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_template?: boolean | null
+          name?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grading_scales_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: true
+            referencedRelation: "grower_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grading_scales_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grower_contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          grower_id: string
+          id: string
+          is_primary: boolean | null
+          name: string
+          org_id: string
+          phone: string | null
+          role: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          grower_id: string
+          id?: string
+          is_primary?: boolean | null
+          name: string
+          org_id: string
+          phone?: string | null
+          role?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          grower_id?: string
+          id?: string
+          is_primary?: boolean | null
+          name?: string
+          org_id?: string
+          phone?: string | null
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grower_contacts_grower_id_fkey"
+            columns: ["grower_id"]
+            isOneToOne: false
+            referencedRelation: "growers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grower_contacts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grower_contracts: {
+        Row: {
+          base_price_per_unit: number
+          contract_number: string | null
+          created_at: string
+          created_by: string | null
+          delivery_end_date: string | null
+          delivery_start_date: string | null
+          estimated_acres: number | null
+          estimated_tons: number | null
+          grower_id: string
+          id: string
+          max_tons: number | null
+          min_tons: number | null
+          notes: string | null
+          org_id: string
+          payment_term: Database["public"]["Enums"]["payment_term"]
+          payment_term_custom_days: number | null
+          pricing_unit: Database["public"]["Enums"]["contract_pricing_unit"]
+          special_terms: string | null
+          status: Database["public"]["Enums"]["contract_status"]
+          total_contract_value: number | null
+          total_delivered_tons: number | null
+          updated_at: string
+          updated_by: string | null
+          vintage_year: number
+        }
+        Insert: {
+          base_price_per_unit: number
+          contract_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivery_end_date?: string | null
+          delivery_start_date?: string | null
+          estimated_acres?: number | null
+          estimated_tons?: number | null
+          grower_id: string
+          id?: string
+          max_tons?: number | null
+          min_tons?: number | null
+          notes?: string | null
+          org_id: string
+          payment_term?: Database["public"]["Enums"]["payment_term"]
+          payment_term_custom_days?: number | null
+          pricing_unit?: Database["public"]["Enums"]["contract_pricing_unit"]
+          special_terms?: string | null
+          status?: Database["public"]["Enums"]["contract_status"]
+          total_contract_value?: number | null
+          total_delivered_tons?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          vintage_year: number
+        }
+        Update: {
+          base_price_per_unit?: number
+          contract_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivery_end_date?: string | null
+          delivery_start_date?: string | null
+          estimated_acres?: number | null
+          estimated_tons?: number | null
+          grower_id?: string
+          id?: string
+          max_tons?: number | null
+          min_tons?: number | null
+          notes?: string | null
+          org_id?: string
+          payment_term?: Database["public"]["Enums"]["payment_term"]
+          payment_term_custom_days?: number | null
+          pricing_unit?: Database["public"]["Enums"]["contract_pricing_unit"]
+          special_terms?: string | null
+          status?: Database["public"]["Enums"]["contract_status"]
+          total_contract_value?: number | null
+          total_delivered_tons?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          vintage_year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grower_contracts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grower_contracts_grower_id_fkey"
+            columns: ["grower_id"]
+            isOneToOne: false
+            referencedRelation: "growers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grower_contracts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grower_contracts_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      growers: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          city: string | null
+          contact_name: string | null
+          country: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          org_id: string
+          phone: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["grower_status"]
+          tax_id: string | null
+          updated_at: string
+          updated_by: string | null
+          zip: string | null
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          contact_name?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          org_id: string
+          phone?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["grower_status"]
+          tax_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          zip?: string | null
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          contact_name?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          org_id?: string
+          phone?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["grower_status"]
+          tax_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "growers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "growers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "growers_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3425,6 +3876,224 @@ export type Database = {
           },
         ]
       }
+      weigh_tag_metrics: {
+        Row: {
+          id: string
+          is_reject: boolean | null
+          matched_tier_id: string | null
+          measured_value: number
+          metric_id: string
+          notes: string | null
+          org_id: string
+          price_adjustment: number | null
+          weigh_tag_id: string
+        }
+        Insert: {
+          id?: string
+          is_reject?: boolean | null
+          matched_tier_id?: string | null
+          measured_value: number
+          metric_id: string
+          notes?: string | null
+          org_id: string
+          price_adjustment?: number | null
+          weigh_tag_id: string
+        }
+        Update: {
+          id?: string
+          is_reject?: boolean | null
+          matched_tier_id?: string | null
+          measured_value?: number
+          metric_id?: string
+          notes?: string | null
+          org_id?: string
+          price_adjustment?: number | null
+          weigh_tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weigh_tag_metrics_matched_tier_id_fkey"
+            columns: ["matched_tier_id"]
+            isOneToOne: false
+            referencedRelation: "grading_scale_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weigh_tag_metrics_metric_id_fkey"
+            columns: ["metric_id"]
+            isOneToOne: false
+            referencedRelation: "grading_scale_metrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weigh_tag_metrics_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weigh_tag_metrics_weigh_tag_id_fkey"
+            columns: ["weigh_tag_id"]
+            isOneToOne: false
+            referencedRelation: "weigh_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weigh_tags: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          block_id: string | null
+          contract_id: string
+          created_at: string
+          created_by: string | null
+          delivery_date: string
+          driver_name: string | null
+          final_price_per_unit: number | null
+          graded_at: string | null
+          graded_by: string | null
+          gross_weight_lbs: number | null
+          grower_id: string
+          id: string
+          is_rejected: boolean | null
+          net_tons: number | null
+          net_weight_lbs: number | null
+          notes: string | null
+          org_id: string
+          photo_urls: string[] | null
+          rejection_reason: string | null
+          status: Database["public"]["Enums"]["weigh_tag_status"]
+          tag_number: string
+          tare_weight_lbs: number | null
+          total_price_adjustment: number | null
+          total_value: number | null
+          truck_id: string | null
+          updated_at: string
+          vintage_id: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          block_id?: string | null
+          contract_id: string
+          created_at?: string
+          created_by?: string | null
+          delivery_date?: string
+          driver_name?: string | null
+          final_price_per_unit?: number | null
+          graded_at?: string | null
+          graded_by?: string | null
+          gross_weight_lbs?: number | null
+          grower_id: string
+          id?: string
+          is_rejected?: boolean | null
+          net_tons?: number | null
+          net_weight_lbs?: number | null
+          notes?: string | null
+          org_id: string
+          photo_urls?: string[] | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["weigh_tag_status"]
+          tag_number: string
+          tare_weight_lbs?: number | null
+          total_price_adjustment?: number | null
+          total_value?: number | null
+          truck_id?: string | null
+          updated_at?: string
+          vintage_id?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          block_id?: string | null
+          contract_id?: string
+          created_at?: string
+          created_by?: string | null
+          delivery_date?: string
+          driver_name?: string | null
+          final_price_per_unit?: number | null
+          graded_at?: string | null
+          graded_by?: string | null
+          gross_weight_lbs?: number | null
+          grower_id?: string
+          id?: string
+          is_rejected?: boolean | null
+          net_tons?: number | null
+          net_weight_lbs?: number | null
+          notes?: string | null
+          org_id?: string
+          photo_urls?: string[] | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["weigh_tag_status"]
+          tag_number?: string
+          tare_weight_lbs?: number | null
+          total_price_adjustment?: number | null
+          total_value?: number | null
+          truck_id?: string | null
+          updated_at?: string
+          vintage_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weigh_tags_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weigh_tags_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weigh_tags_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "grower_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weigh_tags_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weigh_tags_graded_by_fkey"
+            columns: ["graded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weigh_tags_grower_id_fkey"
+            columns: ["grower_id"]
+            isOneToOne: false
+            referencedRelation: "growers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weigh_tags_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weigh_tags_vintage_id_fkey"
+            columns: ["vintage_id"]
+            isOneToOne: false
+            referencedRelation: "vintages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wine_clubs: {
         Row: {
           active: boolean
@@ -3619,12 +4288,21 @@ export type Database = {
         | "shipping"
         | "completed"
       conflict_resolution: "solera_wins" | "sheet_wins" | "flag_for_review"
+      contract_pricing_unit: "per_ton" | "per_acre"
+      contract_status:
+        | "draft"
+        | "active"
+        | "fulfilled"
+        | "cancelled"
+        | "expired"
       facility_type:
         | "winery"
         | "vineyard"
         | "custom_crush"
         | "storage"
         | "tasting_room"
+      grading_direction: "higher_is_better" | "lower_is_better"
+      grower_status: "active" | "inactive" | "prospect"
       import_source_type: "csv" | "innovint" | "vinnow"
       import_status:
         | "pending"
@@ -3633,6 +4311,7 @@ export type Database = {
         | "importing"
         | "completed"
         | "failed"
+      metric_data_type: "numeric" | "percentage" | "boolean"
       notification_type: "alert" | "harvest" | "system" | "task"
       order_status:
         | "pending"
@@ -3643,6 +4322,13 @@ export type Database = {
         | "delivered"
         | "refunded"
       org_tier: "hobbyist" | "small_boutique" | "mid_size" | "enterprise"
+      payment_term:
+        | "net_30"
+        | "net_45"
+        | "net_60"
+        | "net_90"
+        | "on_delivery"
+        | "custom"
       sheet_module: "vintage_lab" | "tasks" | "inventory"
       sso_provider: "okta" | "azure_ad" | "google_workspace" | "generic_saml"
       sync_schedule: "manual" | "hourly" | "daily"
@@ -3672,6 +4358,7 @@ export type Database = {
         | "order.shipped"
         | "anomaly.detected"
         | "weekly_summary.generated"
+      weigh_tag_status: "pending" | "graded" | "approved" | "disputed" | "paid"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3879,6 +4566,8 @@ export const Constants = {
         "completed",
       ],
       conflict_resolution: ["solera_wins", "sheet_wins", "flag_for_review"],
+      contract_pricing_unit: ["per_ton", "per_acre"],
+      contract_status: ["draft", "active", "fulfilled", "cancelled", "expired"],
       facility_type: [
         "winery",
         "vineyard",
@@ -3886,6 +4575,8 @@ export const Constants = {
         "storage",
         "tasting_room",
       ],
+      grading_direction: ["higher_is_better", "lower_is_better"],
+      grower_status: ["active", "inactive", "prospect"],
       import_source_type: ["csv", "innovint", "vinnow"],
       import_status: [
         "pending",
@@ -3895,6 +4586,7 @@ export const Constants = {
         "completed",
         "failed",
       ],
+      metric_data_type: ["numeric", "percentage", "boolean"],
       notification_type: ["alert", "harvest", "system", "task"],
       order_status: [
         "pending",
@@ -3906,6 +4598,14 @@ export const Constants = {
         "refunded",
       ],
       org_tier: ["hobbyist", "small_boutique", "mid_size", "enterprise"],
+      payment_term: [
+        "net_30",
+        "net_45",
+        "net_60",
+        "net_90",
+        "on_delivery",
+        "custom",
+      ],
       sheet_module: ["vintage_lab", "tasks", "inventory"],
       sso_provider: ["okta", "azure_ad", "google_workspace", "generic_saml"],
       sync_schedule: ["manual", "hourly", "daily"],
@@ -3938,6 +4638,7 @@ export const Constants = {
         "anomaly.detected",
         "weekly_summary.generated",
       ],
+      weigh_tag_status: ["pending", "graded", "approved", "disputed", "paid"],
     },
   },
 } as const
