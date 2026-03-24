@@ -41,7 +41,7 @@ export default function GrowerList() {
         .order("name");
 
       if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
+        query = query.eq("status", statusFilter as any);
       }
       if (search.trim()) {
         query = query.or(`name.ilike.%${search.trim()}%,contact_name.ilike.%${search.trim()}%,email.ilike.%${search.trim()}%`);
