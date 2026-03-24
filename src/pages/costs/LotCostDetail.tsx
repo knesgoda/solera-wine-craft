@@ -381,18 +381,11 @@ export default function LotCostDetail() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
-                      </TableCell>
-                      <TableCell className="text-sm">{METHOD_LABELS[e.method]}</TableCell>
-                      <TableCell className={cn("text-right font-mono text-sm", e.status === "voided" && "line-through")}>
-                        {fmt(Number(e.total_amount))}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={cn("text-xs capitalize", STATUS_BADGE[e.status])}>{e.status}</Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+
                 </TableBody>
+              </Table>
+            </div>
+          )}
               </Table>
             </div>
           )}
