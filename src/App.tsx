@@ -116,9 +116,11 @@ const App = () => (
           <ImpersonationProvider>
           <AppInner />
           <Routes>
+            {/* Coming soon / waitlist - public */}
+            <Route path="/coming-soon" element={<ComingSoonPage />} />
             {/* Marketing routes */}
             <Route element={<MarketingLayout />}>
-              <Route path="/" element={<Homepage />} />
+              <Route path="/" element={<ComingSoonPage />} />
               <Route path="/features" element={<FeaturesPage />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/compare" element={<ComparePage />} />
