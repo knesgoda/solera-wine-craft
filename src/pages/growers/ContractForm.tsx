@@ -117,6 +117,23 @@ export default function ContractForm() {
     enabled: !!organization?.id,
   });
 
+  // Check if grading scale is locked (graded weigh tags exist)
+  const { data: hasGradedTags = false } = useQuery({
+    queryKey: ["contract-has-graded-tags", id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("weigh_tags")
+        .select("*", { count: "exact", head: true })
+        .eq("contract_id", id!)
+        .in("status", ["graded", "approved", "paid"] as any);
+      if (error) throw error;
+      return (count || 0) > 0;
+    },
+    enabled: isEdit,
+  });
+
+  const scaleIsLocked = isEdit && hasGradedTags;
+
   // Load existing contract for edit
   const { data: existingContract, isLoading: loadingContract } = useQuery({
     queryKey: ["contract-edit", id],
