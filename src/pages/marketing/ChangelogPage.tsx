@@ -17,9 +17,15 @@ const TAG_COLORS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  in_progress: "In Progress",
-  coming_soon: "Coming Soon",
+  in_progress: "In Development",
   planned: "Planned",
+  coming_soon: "Under Consideration",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  in_progress: "bg-amber-100 text-amber-800 border-amber-300",
+  planned: "bg-blue-100 text-blue-800 border-blue-300",
+  coming_soon: "bg-gray-100 text-gray-600 border-gray-300",
 };
 
 export default function ChangelogPage() {
@@ -131,20 +137,27 @@ export default function ChangelogPage() {
               <div className="grid md:grid-cols-3 gap-8">
                 {(["in_progress", "coming_soon", "planned"] as const).map((status) => (
                   <div key={status}>
-                    <h3 className="font-display text-xl font-bold text-foreground mb-4">
-                      {STATUS_LABELS[status]}
-                    </h3>
+                    <div className="flex items-center gap-2 mb-4">
+                      <h3 className="font-display text-xl font-bold text-foreground">
+                        {STATUS_LABELS[status]}
+                      </h3>
+                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${STATUS_COLORS[status]}`}>
+                        {STATUS_LABELS[status]}
+                      </span>
+                    </div>
                     <div className="space-y-4">
                       {roadmapItems
                         ?.filter((item) => item.status === status)
                         .map((item) => (
                           <Card key={item.id} className="bg-card">
                             <CardContent className="p-4">
-                              <h4 className="font-semibold text-foreground text-sm mb-1">{item.title}</h4>
+                              <div className="flex items-start justify-between gap-2 mb-1">
+                                <h4 className="font-semibold text-foreground text-sm">{item.title}</h4>
+                                {item.phase && (
+                                  <Badge variant="outline" className="text-[10px] shrink-0">{item.phase}</Badge>
+                                )}
+                              </div>
                               <p className="text-xs text-muted-foreground mb-3">{item.description}</p>
-                              {item.phase && (
-                                <Badge variant="outline" className="text-[10px] mb-3">{item.phase}</Badge>
-                              )}
                               <div className="flex items-center justify-between">
                                 <Button
                                   variant="ghost"
@@ -164,6 +177,13 @@ export default function ChangelogPage() {
                   </div>
                 ))}
               </div>
+              <p className="text-center text-sm text-muted-foreground mt-12">
+                Have a feature request? Email{" "}
+                <a href="mailto:kevin@solera.vin" className="text-primary hover:underline font-medium">
+                  kevin@solera.vin
+                </a>{" "}
+                — we build what winemakers actually need.
+              </p>
             </TabsContent>
           </Tabs>
         </div>
