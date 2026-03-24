@@ -54,7 +54,7 @@ const COMPETITORS = [
     ],
     savingStat: "Solera Growth at $129/mo includes COGS tracking that replaces vintrace ($159+/mo) AND Xero ($25+/mo) — saving you $55+/mo and 5+ hours of manual reconciliation.",
     features: {
-      "Starting price": ["$69/mo", "$199/mo"],
+      "Starting price": ["$69/mo", "Contact for pricing"],
       "Free tier": [true, false],
       "Vineyard ops": [true, false],
       "Lab tracking": [true, true],
@@ -142,7 +142,7 @@ const COMPETITORS = [
     name: "VinSuite",
     summary: "VinSuite offers DTC and POS but lacks modern cellar management, COGS tracking, and grower contracts. Solera covers the full lifecycle with real-time production costing and AI analytics.",
     features: {
-      "Starting price": ["$69/mo", "$200+/mo"],
+      "Starting price": ["$69/mo", "$149+/mo"],
       "Free tier": [true, false],
       "Vineyard ops": [true, false],
       "Lab tracking": [true, false],
@@ -281,7 +281,7 @@ export default function ComparePage() {
               </thead>
               <tbody>
                 {([
-                  ["Starting price", "$69/mo", "$149/mo", "$199/mo", "$279/mo", "$149/mo + fees", "$299/mo + fees", "$200+/mo"],
+                  ["Starting price", "$69/mo", "$149/mo", "Contact for pricing", "$279/mo", "$149/mo + fees", "$299/mo + fees", "$149+/mo"],
                   ["Free tier", true, false, false, false, false, false, false],
                   ["Vineyard ops", true, false, false, false, false, false, false],
                   ["Lab tracking", true, true, true, "Partial", false, false, false],
