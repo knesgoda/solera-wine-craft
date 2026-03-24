@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Loader2, DollarSign } from "lucide-react";
+import { Plus, Loader2, DollarSign, GitMerge } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { useNavigate } from "react-router-dom";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { AddCostDialog } from "@/components/costs/AddCostDialog";
 
 const STATUS_BADGE: Record<string, string> = {
@@ -31,6 +32,7 @@ interface VintageCostsTabProps {
 export function VintageCostsTab({ vintageId }: VintageCostsTabProps) {
   const { profile } = useAuth();
   const orgId = profile?.org_id;
+  const navigate = useNavigate();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   const { data: summary } = useQuery({
@@ -52,7 +54,7 @@ export function VintageCostsTab({ vintageId }: VintageCostsTabProps) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cost_entries")
-        .select("*, cost_categories(name, color)")
+        .select("*, cost_categories(name, color), blending_trials(name)")
         .eq("vintage_id", vintageId)
         .order("effective_date", { ascending: false });
       if (error) throw error;
@@ -153,8 +155,16 @@ export function VintageCostsTab({ vintageId }: VintageCostsTabProps) {
                           {e.cost_categories?.name}
                         </span>
                       </TableCell>
-                      <TableCell className={cn("text-sm max-w-[180px] truncate", e.status === "voided" && "line-through")}>
-                        {e.description}
+                      <TableCell className={cn("text-sm max-w-[180px]", e.status === "voided" && "line-through")}>
+                        <span className="truncate block">{e.description}</span>
+                        {e.blend_trial_id && (
+                          <button
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"
+                            onClick={() => navigate(`/cellar/blending/${e.blend_trial_id}`)}
+                          >
+                            <GitMerge className="h-3 w-3" /> From Blend{e.blending_trials?.name ? `: ${e.blending_trials.name}` : ""}
+                          </button>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm">{METHOD_LABELS[e.method]}</TableCell>
                       <TableCell className={cn("text-right font-mono text-sm", e.status === "voided" && "line-through")}>
