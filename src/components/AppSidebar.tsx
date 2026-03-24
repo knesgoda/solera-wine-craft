@@ -38,6 +38,16 @@ const NAV_GROUPS: NavGroupConfig[] = [
     ],
   },
   {
+    label: "Growers",
+    icon: Wheat,
+    requiredTier: "enterprise",
+    items: [
+      { title: "Growers", url: "/growers", icon: Wheat },
+      { title: "Contracts", url: "/growers/contracts", icon: FileText },
+      { title: "Intake", url: "/growers/intake", icon: Scale },
+    ],
+  },
+  {
     label: "Cellar",
     icon: Warehouse,
     requiredTier: "small_boutique",
