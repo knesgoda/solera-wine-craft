@@ -3,7 +3,7 @@ import {
   Grape, Warehouse, Beaker, Cylinder, Package, ShoppingBag,
   Users, GlassWater, Store, Building2, Scale, Upload, Bell,
   Settings, CreditCard, CloudSun, ShieldAlert, Plug, Key, ScrollText,
-  FileText, PenTool, TrendingUp, BarChart3,
+  FileText, PenTool, TrendingUp, BarChart3, DollarSign,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
