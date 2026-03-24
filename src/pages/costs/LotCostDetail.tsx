@@ -349,25 +349,39 @@ export default function LotCostDetail() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {entries.map((e: any) => (
-                    <TableRow key={e.id} className={e.status === "voided" ? "opacity-60" : ""}>
-                      <TableCell className="text-sm whitespace-nowrap">{format(parseISO(e.effective_date), "MMM d")}</TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center gap-1.5 text-sm">
-                          {e.cost_categories?.color && <span className="h-2 w-2 rounded-full" style={{ background: e.cost_categories.color }} />}
-                          {e.cost_categories?.name}
-                        </span>
-                      </TableCell>
-                      <TableCell className={cn("text-sm max-w-[200px]", e.status === "voided" && "line-through")}>
-                        <span className="truncate block">{e.description}</span>
-                        {e.blend_trial_id && (
-                          <button
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"
-                            onClick={() => navigate(`/cellar/blending/${e.blend_trial_id}`)}
-                          >
-                            <GitMerge className="h-3 w-3" /> From Blend{e.blending_trials?.name ? `: ${e.blending_trials.name}` : ""}
-                          </button>
-                        )}
+                  {entries.map((e: any) => {
+                    const isNeg = Number(e.total_amount) < 0;
+                    return (
+                      <TableRow key={e.id} className={cn(e.status === "voided" ? "opacity-60" : "", "cursor-pointer")} onClick={() => setExpandedEntry(expandedEntry === e.id ? null : e.id)}>
+                        <TableCell className="text-sm whitespace-nowrap">{format(parseISO(e.effective_date), "MMM d")}</TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center gap-1.5 text-sm">
+                            {e.cost_categories?.color && <span className="h-2 w-2 rounded-full" style={{ background: e.cost_categories.color }} />}
+                            {e.cost_categories?.name}
+                          </span>
+                        </TableCell>
+                        <TableCell className={cn("text-sm max-w-[200px]", e.status === "voided" && "line-through")}>
+                          <span className="truncate block">{e.description}</span>
+                          {e.blend_trial_id && (
+                            <button
+                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"
+                              onClick={(ev) => { ev.stopPropagation(); navigate(`/cellar/blending/${e.blend_trial_id}`); }}
+                            >
+                              <GitMerge className="h-3 w-3" /> From Blend{e.blending_trials?.name ? `: ${e.blending_trials.name}` : ""}
+                            </button>
+                          )}
+                          {expandedEntry === e.id && <CostEntryAudit entry={e} />}
+                        </TableCell>
+                        <TableCell className="text-sm">{METHOD_LABELS[e.method]}</TableCell>
+                        <TableCell className={cn("text-right font-mono text-sm", e.status === "voided" && "line-through", isNeg && "text-destructive")}>
+                          {fmt(Number(e.total_amount))}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={cn("text-xs capitalize", STATUS_BADGE[e.status])}>{e.status}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                       </TableCell>
                       <TableCell className="text-sm">{METHOD_LABELS[e.method]}</TableCell>
                       <TableCell className={cn("text-right font-mono text-sm", e.status === "voided" && "line-through")}>
