@@ -215,7 +215,16 @@ export default function CogsDashboard() {
           <h1 className="text-2xl font-display font-bold text-foreground">COGS Dashboard</h1>
           <p className="text-muted-foreground text-sm">Cost of goods sold across all lots, barrels, and vintages</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {isAtLeast("owner") && (
+            <Button variant="outline" size="sm" onClick={handleRecalcAll} disabled={recalculating}>
+              {recalculating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Recalculate All
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setQbExportOpen(true)}>
+            <Download className="h-4 w-4 mr-2" /> Export to QuickBooks
+          </Button>
           <div className="flex items-center gap-2">
             <Switch id="compare-yoy" checked={compareYears} onCheckedChange={setCompareYears} />
             <Label htmlFor="compare-yoy" className="text-sm">Compare Years</Label>
