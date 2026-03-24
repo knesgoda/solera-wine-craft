@@ -7,6 +7,7 @@ import { Clock, User, ArrowLeft, Twitter, Linkedin, Link2, ArrowRight } from "lu
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -169,6 +170,7 @@ export default function BlogPost() {
             {/* Markdown content */}
             <div className="prose prose-lg max-w-none prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground/80 prose-a:text-primary prose-strong:text-foreground prose-blockquote:border-l-secondary prose-blockquote:text-muted-foreground prose-code:text-primary prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-foreground/5">
               <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
                 components={{
                   h2: ({ children }) => {
                     const text = String(children);
