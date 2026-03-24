@@ -592,7 +592,16 @@ export default function ContractForm() {
       </Card>
 
       {/* SECTION C: Grading Scale */}
-      <GradingScaleBuilder scale={gradingScale} onChange={setGradingScale} templates={templates} />
+      {scaleIsLocked ? (
+        <Alert className="border-amber-300 bg-amber-50">
+          <Lock className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-700">
+            This grading scale is locked because deliveries have been graded against it. To change grading criteria, create a new contract.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <GradingScaleBuilder scale={gradingScale} onChange={setGradingScale} templates={templates} />
+      )}
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-3 pb-8">
