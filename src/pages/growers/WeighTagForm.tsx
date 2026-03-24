@@ -69,6 +69,8 @@ export default function WeighTagForm() {
   const [metricEntries, setMetricEntries] = useState<MetricEntry[]>([]);
   const [recordAnother, setRecordAnother] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [duplicateConfirmed, setDuplicateConfirmed] = useState(false);
 
   const { data: activeContracts = [] } = useQuery({
     queryKey: ["active-contracts-intake", organization?.id],
