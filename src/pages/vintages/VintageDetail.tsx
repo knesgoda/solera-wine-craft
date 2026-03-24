@@ -21,6 +21,9 @@ import { NewLabSampleDialog, type LabSampleData } from "@/components/vintages/Ne
 import { LabChart } from "@/components/vintages/LabChart";
 import { TtbAdditionsTab } from "@/components/vintages/TtbAdditionsTab";
 import { AnomaliesTab } from "@/components/vintages/AnomaliesTab";
+import { VintageCostsTab } from "@/components/costs/VintageCostsTab";
+import { useTierGate } from "@/hooks/useTierGate";
+import { DollarSign } from "lucide-react";
 
 const statusLabels: Record<string, string> = {
   planned: "Planned", in_progress: "In Progress", harvested: "Harvested",
@@ -42,6 +45,7 @@ export default function VintageDetail() {
   const [editTons, setEditTons] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const orgId = profile?.org_id;
+  const tierGate = useTierGate("mid_size");
 
   const deleteSample = useMutation({
     mutationFn: async (sampleId: string) => {
@@ -303,9 +307,9 @@ export default function VintageDetail() {
         </CardContent>
       </Card>
 
-      {/* Tabs for Lab Samples & TTB Additions */}
+      {/* Tabs for Lab Samples, TTB Additions, Costs */}
       <Tabs defaultValue="lab" className="space-y-4">
-        <TabsList className="w-full">
+        <TabsList className="w-full flex-wrap">
           <TabsTrigger value="lab" className="flex-1 gap-2">
             <FlaskConical className="h-4 w-4" /> Lab
           </TabsTrigger>
@@ -315,6 +319,11 @@ export default function VintageDetail() {
           <TabsTrigger value="anomalies" className="flex-1 gap-2">
             <AlertTriangle className="h-4 w-4" /> Anomalies
           </TabsTrigger>
+          {tierGate.allowed && (
+            <TabsTrigger value="costs" className="flex-1 gap-2">
+              <DollarSign className="h-4 w-4" /> Costs
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="lab">
@@ -324,7 +333,6 @@ export default function VintageDetail() {
               <CardContent><LabChart samples={labSamples} /></CardContent>
             </Card>
           )}
-
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -389,7 +397,14 @@ export default function VintageDetail() {
         <TabsContent value="anomalies">
           <AnomaliesTab vintageId={vintageId!} />
         </TabsContent>
+
+        {tierGate.allowed && (
+          <TabsContent value="costs">
+            <VintageCostsTab vintageId={vintageId!} />
+          </TabsContent>
+        )}
       </Tabs>
+
 
       <NewLabSampleDialog
         vintageId={vintageId!}

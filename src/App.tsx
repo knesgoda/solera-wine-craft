@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import { TierGate } from "@/components/TierGate";
+import { GrowthTierGate } from "@/components/GrowthTierGate";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -83,6 +84,9 @@ import BillingSettings from "./pages/settings/BillingSettings";
 import UserManagement from "./pages/settings/UserManagement";
 import AuditLog from "./pages/settings/AuditLog";
 import SmsSettings from "./pages/settings/SmsSettings";
+import CostOverview from "./pages/costs/CostOverview";
+import MaterialPrices from "./pages/costs/MaterialPrices";
+import CostCategorySettings from "./pages/costs/CostCategorySettings";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PushPrompt } from "./components/PushPrompt";
 import { useOfflineSync } from "./hooks/useOfflineSync";
@@ -182,6 +186,10 @@ const App = () => (
               <Route path="/reports/builder" element={<ReportsBuilder />} />
               <Route path="/data-import" element={<DataImport />} />
               <Route path="/analytics/analog" element={<AnalogExplorer />} />
+              <Route path="/costs" element={<GrowthTierGate><CostOverview /></GrowthTierGate>} />
+              <Route path="/costs/dashboard" element={<GrowthTierGate><CostOverview /></GrowthTierGate>} />
+              <Route path="/costs/materials" element={<GrowthTierGate><MaterialPrices /></GrowthTierGate>} />
+              <Route path="/costs/settings" element={<GrowthTierGate><CostCategorySettings /></GrowthTierGate>} />
               <Route path="/inventory" element={<InventoryList />} />
               <Route path="/inventory/:skuId" element={<SkuDetail />} />
               <Route path="/orders" element={<OrderList />} />

@@ -3,7 +3,7 @@ import {
   Grape, Warehouse, Beaker, Cylinder, Package, ShoppingBag,
   Users, GlassWater, Store, Building2, Scale, Upload, Bell,
   Settings, CreditCard, CloudSun, ShieldAlert, Plug, Key, ScrollText,
-  FileText, PenTool, TrendingUp, BarChart3,
+  FileText, PenTool, TrendingUp, BarChart3, DollarSign,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
@@ -33,6 +33,13 @@ const moreGroups = [
       { title: "Cellar Dashboard", url: "/cellar", icon: Warehouse },
       { title: "Barrels", url: "/cellar/barrels", icon: Cylinder },
       { title: "Blending", url: "/cellar/blending", icon: Beaker },
+    ],
+  },
+  {
+    label: "Production Costs",
+    items: [
+      { title: "Cost Overview", url: "/costs", icon: DollarSign },
+      { title: "Material Prices", url: "/costs/materials", icon: Package },
     ],
   },
   {

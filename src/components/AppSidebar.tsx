@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Grape, Wine, Warehouse, Bot, Upload, Settings, ClipboardList, Cylinder, Beaker,
   Bell, ShieldAlert, CloudSun, FileSpreadsheet, FileText, PenTool, TrendingUp, Star, BarChart3, Package,
   Store, ShoppingBag, Users, Plug, GlassWater, Truck, Building2, Scale, FileCheck, Shield, Key,
-  CreditCard, ScrollText, MessageSquare, Lock, ChevronRight, Wheat,
+  CreditCard, ScrollText, MessageSquare, Lock, ChevronRight, Wheat, DollarSign,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -55,6 +55,17 @@ const NAV_GROUPS: NavGroupConfig[] = [
       { title: "Cellar Dashboard", url: "/cellar", icon: Warehouse },
       { title: "Barrels", url: "/cellar/barrels", icon: Cylinder },
       { title: "Blending", url: "/cellar/blending", icon: Beaker },
+    ],
+  },
+  {
+    label: "Production Costs",
+    icon: DollarSign,
+    requiredTier: "mid_size",
+    items: [
+      { title: "Cost Overview", url: "/costs", icon: DollarSign },
+      { title: "COGS Dashboard", url: "/costs/dashboard", icon: BarChart3 },
+      { title: "Material Prices", url: "/costs/materials", icon: Package },
+      { title: "Settings", url: "/costs/settings", icon: Settings },
     ],
   },
   {
