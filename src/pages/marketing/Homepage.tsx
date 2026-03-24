@@ -59,7 +59,7 @@ export default function Homepage() {
               </p>
               <div className="flex flex-wrap gap-4 mb-8">
                 <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8" asChild>
-                  <Link to="/signup">Start Free</Link>
+                  <Link to="/coming-soon">Start Free</Link>
                 </Button>
                 <Button size="lg" variant="outline" className="text-base px-8" asChild>
                   <a href="#modules">See How It Works</a>
