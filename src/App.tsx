@@ -12,7 +12,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
-import ComingSoon from "./pages/ComingSoon";
+import ComingSoonPage from "./pages/ComingSoon";
 import AskSolera from "./pages/AskSolera";
 import Reports from "./pages/Reports";
 import DataImport from "./pages/DataImport";
