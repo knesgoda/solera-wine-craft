@@ -45,6 +45,7 @@ export default function VintageDetail() {
   const [editTons, setEditTons] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const orgId = profile?.org_id;
+  const tierGate = useTierGate("mid_size");
 
   const deleteSample = useMutation({
     mutationFn: async (sampleId: string) => {
