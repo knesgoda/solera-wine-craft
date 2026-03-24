@@ -518,6 +518,8 @@ export default function CogsDashboard() {
           )}
         </TabsContent>
       </Tabs>
+
+      <QbExportDialog open={qbExportOpen} onOpenChange={setQbExportOpen} />
     </div>
   );
 }

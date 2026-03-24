@@ -185,7 +185,7 @@ export default function CostCategorySettings() {
                       <Switch checked={cat.is_active} onCheckedChange={(checked) => toggleActive(cat.id, checked)} disabled={cat.is_system} />
                       <Button variant="ghost" size="sm" onClick={() => {
                         setEditingId(cat.id);
-                        setEditValues({ name: cat.name, description: cat.description || "", color: cat.color || "#999" });
+                        setEditValues({ name: cat.name, description: cat.description || "", color: cat.color || "#999", qb_account_name: (cat as any).qb_account_name || "" });
                       }}>Edit</Button>
                     </div>
                   </div>
