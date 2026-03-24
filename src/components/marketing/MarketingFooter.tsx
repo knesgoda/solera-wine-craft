@@ -16,6 +16,8 @@ const COLUMNS = [
     links: [
       { label: "vs Innovint", to: "/compare#innovint" },
       { label: "vs Ekos", to: "/compare#ekos" },
+      { label: "vs vintrace", to: "/compare#vintrace" },
+      { label: "vs VinSuite", to: "/compare#vinsuite" },
       { label: "vs WineDirect", to: "/compare#winedirect" },
       { label: "vs Commerce7", to: "/compare#commerce7" },
       { label: "vs Spreadsheets", to: "/compare#spreadsheets" },
