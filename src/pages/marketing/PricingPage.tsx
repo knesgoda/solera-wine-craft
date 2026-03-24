@@ -52,10 +52,12 @@ const TIERS = [
     users: "Up to 15 users",
     features: [
       "Everything in Pro",
+      "Production cost tracking (COGS per lot/barrel/gallon)",
+      "Blend cost propagation — costs follow gallons automatically",
+      "QuickBooks export (CSV/IIF)",
       "Ask Solera AI assistant",
       "DTC storefront & wine club",
       "Commerce7, WineDirect, Shopify sync",
-      "QuickBooks integration",
       "Multi-facility & API access",
       "Priority support",
     ],
@@ -68,6 +70,8 @@ const TIERS = [
     users: "Unlimited users",
     features: [
       "Everything in Growth",
+      "Grower contract management with grading scales",
+      "Automated harvest intake pricing at the scale",
       "Custom crush client portal (10 clients)",
       "SSO / SAML 2.0",
       "Audit logging",
