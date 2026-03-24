@@ -132,6 +132,11 @@ const Dashboard = () => {
         </Card>
       </Link>
 
+      {/* Grower Contracts Dashboard — Enterprise only */}
+      {hasAccess(organization?.tier || "hobbyist", "enterprise") && (
+        <GrowerDashboardWidgets />
+      )}
+
       {/* Prime Window Blocks Dialog */}
       <Dialog open={showPrimeBlocks} onOpenChange={setShowPrimeBlocks}>
         <DialogContent>
