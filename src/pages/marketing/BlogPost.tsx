@@ -7,6 +7,7 @@ import { Clock, User, ArrowLeft, Twitter, Linkedin, Link2, ArrowRight } from "lu
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
