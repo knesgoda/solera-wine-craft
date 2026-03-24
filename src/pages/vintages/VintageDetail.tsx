@@ -21,6 +21,9 @@ import { NewLabSampleDialog, type LabSampleData } from "@/components/vintages/Ne
 import { LabChart } from "@/components/vintages/LabChart";
 import { TtbAdditionsTab } from "@/components/vintages/TtbAdditionsTab";
 import { AnomaliesTab } from "@/components/vintages/AnomaliesTab";
+import { VintageCostsTab } from "@/components/costs/VintageCostsTab";
+import { useTierGate } from "@/hooks/useTierGate";
+import { DollarSign } from "lucide-react";
 
 const statusLabels: Record<string, string> = {
   planned: "Planned", in_progress: "In Progress", harvested: "Harvested",
