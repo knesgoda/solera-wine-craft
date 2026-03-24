@@ -45,6 +45,7 @@ export default function CogsDashboard() {
     try {
       const { data: vids } = await supabase.from("vintages").select("id").eq("org_id", orgId);
       if (!vids || vids.length === 0) { toast.info("No vintages to recalculate"); return; }
+      let done = 0;
       for (const v of vids) {
         // Trigger recalc by doing a no-op cost entry touch - the DB trigger handles the rest
         try {
