@@ -56,7 +56,7 @@ export default function LotCostDetail() {
     if (!vintageId) return;
     setRecalculating(true);
     try {
-      await supabase.rpc("recalculate_lot_cost_summary_for_vintage" as any, { p_vintage_id: vintageId }).catch(() => {});
+      try { await supabase.rpc("recalculate_lot_cost_summary_for_vintage" as any, { p_vintage_id: vintageId }); } catch {}
       queryClient.invalidateQueries({ queryKey: ["lot-cost-summary", vintageId] });
       queryClient.invalidateQueries({ queryKey: ["lot-cost-entries", vintageId] });
       toast.success("COGS recalculated for this lot");
