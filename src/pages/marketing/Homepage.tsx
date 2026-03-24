@@ -8,12 +8,12 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-const MODULES = [
+const MODULES: { icon: any; name: string; desc: string; tier?: string }[] = [
   { icon: Grape, name: "Vineyard Operations", desc: "GDD tracking, block management, task scheduling, and weather-driven harvest predictions." },
   { icon: FlaskConical, name: "Vintage & Lab Tracking", desc: "Record lab samples, track additions, detect anomalies with AI, and monitor every vintage's lifecycle." },
   { icon: Wine, name: "Cellar & Fermentation", desc: "Manage vessels, barrels, fermentation logs, and run blending trials with confidence." },
-  { icon: DollarSign, name: "Production Cost Tracking", desc: "Real-time COGS per lot, barrel, and gallon. Costs follow wine through blends automatically. Never reconcile a spreadsheet in Xero again." },
-  { icon: Wheat, name: "Grower Contracts", desc: "Grape purchase agreements, multi-metric grading scales, and automated intake pricing — connected to your cellar data and COGS." },
+  { icon: DollarSign, name: "Production Cost Tracking", desc: "Real-time COGS per gallon, barrel, and case. Costs follow wine through blends automatically.", tier: "Growth+" },
+  { icon: Wheat, name: "Grower Contracts", desc: "Manage grape purchase agreements with auto-pricing grading scales at harvest intake.", tier: "Enterprise" },
   { icon: Bot, name: "Ask Solera AI", desc: "Ask anything about your operation in plain English and get answers grounded in your actual data." },
   { icon: Upload, name: "Data Import & Migration", desc: "AI-assisted import from Innovint, VinNow, or any CSV/XLSX. Your history migrates in minutes." },
   { icon: ShoppingCart, name: "Sales & DTC Storefront", desc: "Public wine store, inventory management, order fulfillment, and wine club shipments." },
