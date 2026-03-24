@@ -335,7 +335,7 @@ export default function Homepage() {
             Start free. No credit card. No onboarding fees. Your first vintage set up in under 10 minutes.
           </p>
           <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-lg px-10 py-6" asChild>
-            <Link to="/signup">Start Free</Link>
+            <Link to="/coming-soon">Start Free</Link>
           </Button>
           <p className="text-sm text-muted-foreground mt-6">
             Already on Innovint? We'll help you migrate for free.

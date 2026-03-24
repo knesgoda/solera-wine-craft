@@ -162,46 +162,8 @@ export default function PricingPage() {
     fetchPrices();
   }, []);
 
-  const handleCheckout = async (tierKey: string) => {
-    if (tierKey === "hobbyist") {
-      if (user) {
-        navigate("/dashboard");
-      } else {
-        navigate("/signup");
-      }
-      return;
-    }
-
-    const priceConfig = PADDLE_PRICES[tierKey as keyof typeof PADDLE_PRICES];
-    if (!priceConfig) return;
-
-    const priceId = annual && "annual" in priceConfig
-      ? (priceConfig as any).annual
-      : priceConfig.monthly;
-
-    const paddle = await getPaddle();
-    if (!paddle) {
-      console.error("Paddle not initialized");
-      return;
-    }
-
-    const checkoutConfig: any = {
-      items: [{ priceId, quantity: 1 }],
-      settings: {
-        successUrl: `${window.location.origin}/dashboard?upgraded=true`,
-        theme: 'light',
-        locale: 'en',
-      },
-    };
-
-    if (organization?.id) {
-      checkoutConfig.customData = { org_id: organization.id };
-    }
-    if (user?.email) {
-      checkoutConfig.customer = { email: user.email };
-    }
-
-    paddle.Checkout.open(checkoutConfig);
+  const handleCheckout = async (_tierKey: string) => {
+    navigate("/coming-soon");
   };
 
   const getPrice = (tierKey: string): string => {
