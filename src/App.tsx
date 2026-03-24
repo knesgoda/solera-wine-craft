@@ -57,6 +57,8 @@ import VintageDetail from "./pages/vintages/VintageDetail";
 import GrowerList from "./pages/growers/GrowerList";
 import GrowerDetail from "./pages/growers/GrowerDetail";
 import GrowerContractList from "./pages/growers/GrowerContractList";
+import ContractForm from "./pages/growers/ContractForm";
+import ContractDetail from "./pages/growers/ContractDetail";
 import GrowerIntake from "./pages/growers/GrowerIntake";
 import ClientList from "./pages/clients/ClientList";
 import ClientDetail from "./pages/clients/ClientDetail";
