@@ -232,8 +232,8 @@ export default function PricingPage() {
   return (
     <>
       <SEOHead
-        title="Pricing — Solera Winery Management"
-        description="Solera pricing starts free for hobbyists. Pro at $69/mo, Growth at $129/mo with COGS tracking, Enterprise at $399/mo with grower contracts. No onboarding fees. 30-day free trial."
+        title="Pricing | Solera — Free Tier, Pro $69/mo, Growth $129/mo, Enterprise $399/mo"
+        description="Solera pricing starts free for hobbyists. Pro at $69/mo for boutique wineries. Growth at $129/mo with production cost tracking (COGS) and AI. Enterprise at $399/mo with grower contracts and custom crush portals. No onboarding fees. 30-day free trial on all paid plans."
         jsonLd={buildFaqSchema(FAQS)}
         breadcrumbs={[
           { name: "Home", url: "https://solera.vin" },
