@@ -162,9 +162,9 @@ export default function Homepage() {
               <ul className="space-y-4">
                 {[
                   "One platform — vineyard to DTC",
+                  "Real-time COGS per lot, barrel, and gallon",
+                  "Grower contracts with automated intake pricing",
                   "AI assistant built into every workflow",
-                  "Full TTB compliance from day one",
-                  "Mobile-first, works offline in the field",
                   "From $69/mo — or free for hobbyists",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3 text-foreground">
