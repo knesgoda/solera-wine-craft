@@ -1,5 +1,6 @@
 import { Wine, Calendar, CheckSquare, Send, Package, DollarSign } from "lucide-react";
 import { GrowerDashboardWidgets } from "@/components/growers/GrowerDashboardWidgets";
+import { CogsDashboardWidgets } from "@/components/costs/CogsDashboardWidgets";
 import { hasAccess } from "@/lib/tier-access";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -131,6 +132,11 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </Link>
+
+      {/* Production Costs Dashboard — Growth+ only */}
+      {hasAccess(organization?.tier || "hobbyist", "mid_size") && (
+        <CogsDashboardWidgets />
+      )}
 
       {/* Grower Contracts Dashboard — Enterprise only */}
       {hasAccess(organization?.tier || "hobbyist", "enterprise") && (
