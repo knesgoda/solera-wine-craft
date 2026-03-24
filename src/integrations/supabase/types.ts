@@ -1295,6 +1295,7 @@ export type Database = {
           is_system: boolean | null
           name: string
           org_id: string
+          qb_account_name: string | null
           sort_order: number
         }
         Insert: {
@@ -1306,6 +1307,7 @@ export type Database = {
           is_system?: boolean | null
           name: string
           org_id: string
+          qb_account_name?: string | null
           sort_order?: number
         }
         Update: {
@@ -1317,6 +1319,7 @@ export type Database = {
           is_system?: boolean | null
           name?: string
           org_id?: string
+          qb_account_name?: string | null
           sort_order?: number
         }
         Relationships: [
