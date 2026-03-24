@@ -211,7 +211,7 @@ export default function Homepage() {
                 Ask anything about your operation in plain English. When should we harvest Block A? Is our VA trending toward a problem? How does this vintage compare to 2019? Solera answers with your actual data — not generic advice.
               </p>
               <Button size="lg" className="bg-secondary text-secondary-foreground hover:bg-secondary/90" asChild>
-                <Link to="/signup">Try Ask Solera Free</Link>
+                <Link to="/coming-soon">Try Ask Solera Free</Link>
               </Button>
             </div>
             <div className="bg-primary-foreground/10 rounded-xl p-6 backdrop-blur-sm border border-primary-foreground/20">
