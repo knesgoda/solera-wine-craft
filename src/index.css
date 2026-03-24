@@ -108,6 +108,35 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Playfair Display', serif;
   }
+
+  /* Restore Tailwind Typography spacing inside .prose */
+  .prose p {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+  }
+  .prose ul, .prose ol {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+  }
+  .prose li {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+  .prose table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2em;
+    margin-bottom: 2em;
+  }
+  .prose th, .prose td {
+    border: 1px solid hsl(var(--border));
+    padding: 0.5em 0.75em;
+    text-align: left;
+  }
+  .prose th {
+    background: hsl(var(--muted));
+    font-weight: 600;
+  }
 }
 
 @layer utilities {
