@@ -380,12 +380,8 @@ export default function LotCostDetail() {
                           <Badge variant="outline" className={cn("text-xs capitalize", STATUS_BADGE[e.status])}>{e.status}</Badge>
                         </TableCell>
                       </TableRow>
-                    );
-
+                   })}
                 </TableBody>
-              </Table>
-            </div>
-          )}
               </Table>
             </div>
           )}
