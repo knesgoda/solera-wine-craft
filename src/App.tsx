@@ -168,6 +168,8 @@ const App = () => (
               <Route path="/growers/contracts/:id" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><ContractDetail /></TierGate>} />
               <Route path="/growers/contracts/:id/edit" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><ContractForm /></TierGate>} />
               <Route path="/growers/intake" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerIntake /></TierGate>} />
+              <Route path="/growers/intake/new" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><WeighTagForm /></TierGate>} />
+              <Route path="/growers/intake/:id" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><WeighTagDetail /></TierGate>} />
               <Route path="/growers/:id" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerDetail /></TierGate>} />
               <Route path="/cellar" element={<CellarDashboard />} />
               <Route path="/cellar/vessels/:vesselId" element={<VesselDetail />} />
