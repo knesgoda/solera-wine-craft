@@ -17,9 +17,15 @@ const TAG_COLORS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  in_progress: "In Progress",
-  coming_soon: "Coming Soon",
+  in_progress: "In Development",
   planned: "Planned",
+  coming_soon: "Under Consideration",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  in_progress: "bg-amber-100 text-amber-800 border-amber-300",
+  planned: "bg-blue-100 text-blue-800 border-blue-300",
+  coming_soon: "bg-gray-100 text-gray-600 border-gray-300",
 };
 
 export default function ChangelogPage() {
