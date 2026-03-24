@@ -198,7 +198,12 @@ export default function Homepage() {
               >
                 <CardContent className="p-6">
                   <m.icon className="h-8 w-8 text-primary mb-4 group-hover:text-secondary transition-colors" />
-                  <h3 className="font-display text-lg font-semibold text-foreground mb-2">{m.name}</h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-display text-lg font-semibold text-foreground">{m.name}</h3>
+                    {m.tier && (
+                      <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{m.tier}</span>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">{m.desc}</p>
                 </CardContent>
               </Card>
