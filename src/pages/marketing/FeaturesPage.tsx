@@ -106,16 +106,19 @@ const FEATURES = [
     id: "cogs",
     name: "Production Cost Tracking",
     icon: DollarSign,
-    desc: "Stop reconciling COGS in Xero. Every dollar from grape to bottle, tracked automatically.",
+    desc: "Know your true cost per gallon, per barrel, per case — in real time.",
     tier: "Growth+",
+    longDesc: "Track every dollar from grape purchase through bottling with real-time COGS at the lot level. Three costing methods — apportioned, transactional, and ad hoc — cover every type of production expense. When you blend wines, costs flow automatically based on gallon contribution. No more reconciling spreadsheets in Xero. Export to QuickBooks with one click.",
     bullets: [
-      "Real-time COGS per lot, per barrel, and per gallon",
-      "Three costing methods: apportioned, transactional, and ad hoc",
-      "Costs follow gallons through blending — automatically",
-      "Material price list with auto-calculated transactional costs",
-      "QuickBooks export with one-click CSV/IIF generation",
-      "What-if calculator to project COGS before bottling decisions",
+      "Real-time cost per gallon, per barrel, and per case for every lot",
+      "Costs follow wine through blending operations automatically",
+      "Three methods: spread costs across a lot, tie costs to specific operations, or enter manually",
+      "Configurable material price list for instant transactional costing",
+      "Category breakdown: grape, labor, cooperage, chemicals, bottling, overhead",
+      "One-click QuickBooks export for financial reconciliation",
+      "Year-over-year cost trend analysis",
     ],
+    cta: "Start tracking costs →",
     mockup: (
       <div className="bg-card rounded-lg border p-4 space-y-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -147,16 +150,20 @@ const FEATURES = [
     id: "growers",
     name: "Grower Contract Management",
     icon: Wheat,
-    desc: "Your grape purchase agreements, grading scales, and intake pricing — in the same platform as your cellar data.",
+    desc: "From handshake to harvest receipt — every grape purchase in one place.",
     tier: "Enterprise",
+    longDesc: "Manage grape purchase agreements with external growers, complete with multi-metric grading scales that automatically price fruit at delivery. Define contracts with per-ton or per-acre pricing, set grading tiers for Brix, MOG, acidity, pH, and any custom metric, then watch the system calculate bonuses and penalties in real time as fruit arrives at the crush pad. Grape costs flow directly into your COGS tracking — no manual entry.",
     bullets: [
-      "Multi-metric grading scales: Brix, MOG, pH, and custom tiers",
-      "Automated harvest intake with weigh tag pricing engine",
-      "Bonuses and penalties applied instantly at the scale",
-      "Grape costs auto-flow into COGS when deliveries are approved",
-      "Contract dashboards with delivery tracking and tonnage summaries",
-      "PDF/CSV financial reports for grower payment reconciliation",
+      "Grower registry with contact management and delivery history",
+      "Per-ton or per-acre contracts with minimum/maximum tonnage commitments",
+      "Multi-metric grading scales: Brix, MOG, TA, pH, berry size, or any custom metric",
+      "Automatic price calculation with bonuses for premium fruit and penalties for below-grade",
+      "Weigh tag recording with live grade display as metrics are entered",
+      "Grape purchase costs auto-feed into production cost tracking (COGS)",
+      "Contract financial summaries with PDF and CSV export",
+      "Reusable grading scale templates across contracts",
     ],
+    cta: "Manage grower contracts →",
     mockup: (
       <div className="bg-card rounded-lg border p-4 space-y-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -329,8 +336,8 @@ export default function FeaturesPage() {
   return (
     <>
       <SEOHead
-        title="Features — Solera Winery Management Platform"
-        description="Ten fully integrated modules: vineyard ops, lab tracking, cellar management, production cost tracking, grower contracts, AI assistant, DTC sales, custom crush portal, TTB compliance, and data migration."
+        title="Features | Solera — Winery Management, COGS Tracking, Grower Contracts & DTC Sales"
+        description="Solera manages your entire winery operation: vineyard ops, cellar management, production cost tracking (COGS per gallon), grower contracts with grading scales, AI analytics, DTC sales, and TTB compliance. One platform from vine to bottle to doorstep."
         breadcrumbs={[
           { name: "Home", url: "https://solera.vin" },
           { name: "Features", url: "https://solera.vin/features" },
@@ -341,7 +348,8 @@ export default function FeaturesPage() {
       <section className="pt-28 pb-16 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 lg:px-8 text-center">
           <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">Everything your winery needs.</h1>
-          <p className="text-xl text-primary-foreground/80">Ten fully integrated modules. One monthly price.</p>
+          <p className="text-xl text-primary-foreground/80 mb-4">Ten fully integrated modules — from vineyard ops and cellar management to production costing, grower contracts, and DTC sales.</p>
+          <p className="text-sm text-primary-foreground/60">One monthly price. No onboarding fees. No transaction markups.</p>
         </div>
       </section>
 
@@ -359,6 +367,9 @@ export default function FeaturesPage() {
                   )}
                 </div>
                 <p className="text-lg text-muted-foreground mb-6">{f.desc}</p>
+                {"longDesc" in f && f.longDesc && (
+                  <p className="text-sm text-muted-foreground mb-6">{f.longDesc}</p>
+                )}
                 <ul className="space-y-3">
                   {f.bullets.map((b) => (
                     <li key={b} className="flex items-start gap-3 text-foreground">
@@ -367,6 +378,11 @@ export default function FeaturesPage() {
                     </li>
                   ))}
                 </ul>
+                {"cta" in f && f.cta && (
+                  <Button variant="outline" className="mt-6" asChild>
+                    <Link to="/signup">{f.cta}</Link>
+                  </Button>
+                )}
               </div>
               <div className={i % 2 === 1 ? "lg:order-1" : ""}>
                 {f.mockup}
