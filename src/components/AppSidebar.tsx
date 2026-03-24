@@ -58,6 +58,17 @@ const NAV_GROUPS: NavGroupConfig[] = [
     ],
   },
   {
+    label: "Production Costs",
+    icon: DollarSign,
+    requiredTier: "mid_size",
+    items: [
+      { title: "Cost Overview", url: "/costs", icon: DollarSign },
+      { title: "COGS Dashboard", url: "/costs/dashboard", icon: BarChart3 },
+      { title: "Material Prices", url: "/costs/materials", icon: Package },
+      { title: "Settings", url: "/costs/settings", icon: Settings },
+    ],
+  },
+  {
     label: "AI & Analytics",
     icon: Bot,
     requiredTier: "mid_size",
