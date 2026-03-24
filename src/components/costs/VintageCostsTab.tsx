@@ -54,7 +54,7 @@ export function VintageCostsTab({ vintageId }: VintageCostsTabProps) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cost_entries")
-        .select("*, cost_categories(name, color)")
+        .select("*, cost_categories(name, color), blending_trials(name)")
         .eq("vintage_id", vintageId)
         .order("effective_date", { ascending: false });
       if (error) throw error;
