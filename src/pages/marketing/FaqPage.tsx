@@ -7,7 +7,7 @@ const FAQ_CATEGORIES = [
     category: "Getting Started",
     items: [
       { question: "What is Solera?", answer: "Solera is a complete winery management platform that covers vineyard operations, cellar management, lab tracking, DTC sales, wine clubs, custom crush, TTB compliance, and AI — all in one place." },
-      { question: "How do I sign up?", answer: "Visit solera.vin/signup and create a free account. No credit card required. You'll be making your first vintage in under 10 minutes." },
+      { question: "How do I sign up?", answer: "We're currently in final testing. Visit solera.vin/coming-soon to join the waitlist and be first to know when we go live." },
       { question: "Is there really a free plan forever?", answer: "Yes — the Hobbyist plan is free forever with no credit card required. It includes 1 vineyard, 2 blocks, vintage tracking, lab samples, weather, and data import." },
       { question: "What do I need to get started?", answer: "Just a web browser. Solera is a Progressive Web App (PWA) that works on desktop, tablet, and mobile. You can install it on your home screen for native-like experience." },
     ],

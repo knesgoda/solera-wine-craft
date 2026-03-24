@@ -189,7 +189,7 @@ export default function BlogPost() {
               <p className="text-muted-foreground mb-4">
                 Solera gives you lab tracking, cellar management, and TTB compliance in one platform — free to start.
               </p>
-              <Link to="/signup">
+              <Link to="/coming-soon">
                 <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
                   Start Free on Solera <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>

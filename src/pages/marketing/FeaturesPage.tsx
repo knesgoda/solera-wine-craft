@@ -301,7 +301,7 @@ export default function FeaturesPage() {
           <h2 className="font-display text-3xl font-bold mb-4">Ready to simplify your winery?</h2>
           <p className="text-primary-foreground/80 mb-8">Start free. No credit card required.</p>
           <Button size="lg" className="bg-secondary text-secondary-foreground hover:bg-secondary/90" asChild>
-            <Link to="/signup">Start Free</Link>
+            <Link to="/coming-soon">Start Free</Link>
           </Button>
         </div>
       </section>
