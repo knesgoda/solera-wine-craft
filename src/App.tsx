@@ -157,6 +157,10 @@ const App = () => (
               <Route path="/vineyard-ops" element={<Navigate to="/operations" replace />} />
               <Route path="/vintages" element={<VintageList />} />
               <Route path="/vintages/:vintageId" element={<VintageDetail />} />
+              <Route path="/growers" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerList /></TierGate>} />
+              <Route path="/growers/contracts" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerContractList /></TierGate>} />
+              <Route path="/growers/intake" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerIntake /></TierGate>} />
+              <Route path="/growers/:id" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerDetail /></TierGate>} />
               <Route path="/cellar" element={<CellarDashboard />} />
               <Route path="/cellar/vessels/:vesselId" element={<VesselDetail />} />
               <Route path="/cellar/barrels" element={<BarrelInventory />} />
