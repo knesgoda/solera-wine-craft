@@ -106,16 +106,19 @@ const FEATURES = [
     id: "cogs",
     name: "Production Cost Tracking",
     icon: DollarSign,
-    desc: "Stop reconciling COGS in Xero. Every dollar from grape to bottle, tracked automatically.",
+    desc: "Know your true cost per gallon, per barrel, per case — in real time.",
     tier: "Growth+",
+    longDesc: "Track every dollar from grape purchase through bottling with real-time COGS at the lot level. Three costing methods — apportioned, transactional, and ad hoc — cover every type of production expense. When you blend wines, costs flow automatically based on gallon contribution. No more reconciling spreadsheets in Xero. Export to QuickBooks with one click.",
     bullets: [
-      "Real-time COGS per lot, per barrel, and per gallon",
-      "Three costing methods: apportioned, transactional, and ad hoc",
-      "Costs follow gallons through blending — automatically",
-      "Material price list with auto-calculated transactional costs",
-      "QuickBooks export with one-click CSV/IIF generation",
-      "What-if calculator to project COGS before bottling decisions",
+      "Real-time cost per gallon, per barrel, and per case for every lot",
+      "Costs follow wine through blending operations automatically",
+      "Three methods: spread costs across a lot, tie costs to specific operations, or enter manually",
+      "Configurable material price list for instant transactional costing",
+      "Category breakdown: grape, labor, cooperage, chemicals, bottling, overhead",
+      "One-click QuickBooks export for financial reconciliation",
+      "Year-over-year cost trend analysis",
     ],
+    cta: "Start tracking costs →",
     mockup: (
       <div className="bg-card rounded-lg border p-4 space-y-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
