@@ -32,6 +32,7 @@ interface VintageCostsTabProps {
 export function VintageCostsTab({ vintageId }: VintageCostsTabProps) {
   const { profile } = useAuth();
   const orgId = profile?.org_id;
+  const navigate = useNavigate();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   const { data: summary } = useQuery({
