@@ -69,13 +69,15 @@ export default function WeighTagForm() {
   const [metricEntries, setMetricEntries] = useState<MetricEntry[]>([]);
   const [recordAnother, setRecordAnother] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [duplicateConfirmed, setDuplicateConfirmed] = useState(false);
 
   const { data: activeContracts = [] } = useQuery({
     queryKey: ["active-contracts-intake", organization?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("grower_contracts")
-        .select("id, contract_number, grower_id, growers(name), base_price_per_unit, pricing_unit")
+        .select("id, contract_number, grower_id, growers(name), base_price_per_unit, pricing_unit, max_tons, total_delivered_tons, estimated_tons")
         .eq("org_id", organization!.id)
         .eq("status", "active" as any)
         .order("contract_number");
@@ -183,7 +185,11 @@ export default function WeighTagForm() {
   const finalPrice = basePrice + totalAdjustment;
   const totalValue = finalPrice * netTons;
 
-  const validate = () => {
+  // Max tons warning
+  const maxTonsExceeded = selectedContract?.max_tons && netTons > 0 &&
+    (Number(selectedContract.total_delivered_tons || 0) + netTons) > Number(selectedContract.max_tons);
+
+  const validate = async () => {
     if (!contractId) { toast({ title: "Contract is required", variant: "destructive" }); return false; }
     if (!grossWeight || grossNum <= 0) { toast({ title: "Gross weight is required", variant: "destructive" }); return false; }
     if (!tareWeight || tareNum <= 0) { toast({ title: "Tare weight is required", variant: "destructive" }); return false; }
@@ -194,6 +200,25 @@ export default function WeighTagForm() {
           toast({ title: `${m.metric_name} value is required`, variant: "destructive" });
           return false;
         }
+      }
+    }
+    // Duplicate check
+    if (!duplicateConfirmed && selectedContract) {
+      const yesterday = new Date();
+      yesterday.setHours(yesterday.getHours() - 24);
+      const { data: dupes } = await supabase
+        .from("weigh_tags")
+        .select("tag_number, net_tons, created_at")
+        .eq("grower_id", selectedContract.grower_id)
+        .eq("delivery_date", deliveryDate)
+        .eq("gross_weight_lbs", grossNum)
+        .gte("created_at", yesterday.toISOString())
+        .limit(1);
+      if (dupes && dupes.length > 0) {
+        const d = dupes[0] as any;
+        const hoursAgo = Math.round((Date.now() - new Date(d.created_at).getTime()) / 3600000);
+        setDuplicateWarning(`A similar delivery was recorded ${hoursAgo}h ago (${d.tag_number}, ${Number(d.net_tons).toFixed(2)} tons). Are you sure this is a new delivery?`);
+        return false;
       }
     }
     return true;
@@ -532,6 +557,30 @@ export default function WeighTagForm() {
         </CardContent>
       </Card>
 
+      {/* Max tons warning */}
+      {maxTonsExceeded && (
+        <Alert className="border-amber-300 bg-amber-50">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-700">
+            This delivery would bring total tonnage to {(Number(selectedContract?.total_delivered_tons || 0) + netTons).toFixed(2)}, which exceeds the contract maximum of {Number(selectedContract?.max_tons).toFixed(1)} tons. You can still record it, but the excess may not be covered.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Duplicate warning */}
+      {duplicateWarning && (
+        <Alert className="border-amber-300 bg-amber-50">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-700 flex flex-col gap-2">
+            <span>{duplicateWarning}</span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => { setDuplicateWarning(null); setDuplicateConfirmed(true); }}>Continue Anyway</Button>
+              <Button size="sm" variant="ghost" onClick={() => setDuplicateWarning(null)}>Cancel</Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex items-center justify-between pb-8">
         <div className="flex items-center gap-2">
           <input
@@ -547,7 +596,7 @@ export default function WeighTagForm() {
           <Button variant="outline" onClick={() => { if (dirty && !confirm("Discard changes?")) return; navigate("/growers/intake"); }}>
             Cancel
           </Button>
-          <Button onClick={() => { if (validate()) saveMutation.mutate(); }} disabled={saveMutation.isPending}>
+          <Button onClick={async () => { if (await validate()) saveMutation.mutate(); }} disabled={saveMutation.isPending}>
             {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {anyReject ? "Record as Rejected" : "Save Delivery"}
           </Button>

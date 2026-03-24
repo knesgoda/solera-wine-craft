@@ -41,6 +41,24 @@ const WEIGH_TAG_STATUS_COLORS: Record<string, string> = {
   paid: "bg-muted text-muted-foreground",
 };
 
+const PAYMENT_LABELS: Record<string, string> = {
+  net_30: "Net 30", net_45: "Net 45", net_60: "Net 60", net_90: "Net 90",
+  on_delivery: "On Delivery", custom: "Custom",
+};
+
+function getPaymentStatus(contract: any, weighTags: any[]): { label: string; color: string } {
+  const contractTags = weighTags.filter((wt: any) => wt.contract_id === contract.id);
+  if (contractTags.length === 0) return { label: "Pending", color: "bg-muted text-muted-foreground" };
+  const allPaid = contractTags.every((wt: any) => wt.status === "paid");
+  const somePaid = contractTags.some((wt: any) => wt.status === "paid");
+  const hasApproved = contractTags.some((wt: any) => wt.status === "approved");
+
+  if (contract.status === "fulfilled" && allPaid) return { label: "Fully Paid", color: "bg-green-100 text-green-800" };
+  if (contract.status === "fulfilled" && somePaid) return { label: "Partially Paid", color: "bg-amber-100 text-amber-800" };
+  if (contract.status === "active" && hasApproved) return { label: "Due", color: "bg-blue-100 text-blue-800" };
+  return { label: "Pending", color: "bg-muted text-muted-foreground" };
+}
+
 export default function GrowerDetail() {
   const { id } = useParams<{ id: string }>();
   const { organization, user } = useAuth();
@@ -108,25 +126,24 @@ export default function GrowerDetail() {
   const totalTonsDelivered = contracts.reduce((sum: number, c: any) => sum + (Number(c.total_delivered_tons) || 0), 0);
   const totalValue = contracts.reduce((sum: number, c: any) => sum + (Number(c.total_contract_value) || 0), 0);
 
+  // Deletion guard
+  const canDeleteGrower = contracts.length === 0;
+
+  // Payment calculations
+  const totalOwed = weighTags
+    .filter((wt: any) => wt.status === "approved" && !wt.is_rejected)
+    .reduce((sum: number, wt: any) => sum + (Number(wt.total_value) || 0), 0);
+
   // Contact mutations
   const addContactMutation = useMutation({
     mutationFn: async (contact: { name: string; role: string; email: string; phone: string; is_primary?: boolean }) => {
       const { error } = await supabase.from("grower_contacts").insert({
-        org_id: organization!.id,
-        grower_id: id!,
-        name: contact.name.trim(),
-        role: contact.role.trim() || null,
-        email: contact.email.trim() || null,
-        phone: contact.phone.trim() || null,
-        is_primary: contact.is_primary || false,
+        org_id: organization!.id, grower_id: id!, name: contact.name.trim(),
+        role: contact.role.trim() || null, email: contact.email.trim() || null, phone: contact.phone.trim() || null, is_primary: contact.is_primary || false,
       });
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["grower-contacts", id] });
-      setContactForm(null);
-      toast({ title: "Contact added" });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["grower-contacts", id] }); setContactForm(null); toast({ title: "Contact added" }); },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
@@ -135,12 +152,7 @@ export default function GrowerDetail() {
       const { error } = await supabase.from("grower_contacts").update(fields).eq("id", contactId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["grower-contacts", id] });
-      setEditingContactId(null);
-      setContactForm(null);
-      toast({ title: "Contact updated" });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["grower-contacts", id] }); setEditingContactId(null); setContactForm(null); toast({ title: "Contact updated" }); },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
@@ -149,33 +161,30 @@ export default function GrowerDetail() {
       const { error } = await supabase.from("grower_contacts").delete().eq("id", contactId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["grower-contacts", id] });
-      toast({ title: "Contact removed" });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["grower-contacts", id] }); toast({ title: "Contact removed" }); },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
   const setPrimaryMutation = useMutation({
     mutationFn: async (contactId: string) => {
-      // Unset all primary first
       await supabase.from("grower_contacts").update({ is_primary: false }).eq("grower_id", id!);
       const { error } = await supabase.from("grower_contacts").update({ is_primary: true }).eq("id", contactId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["grower-contacts", id] });
-      toast({ title: "Primary contact updated" });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["grower-contacts", id] }); toast({ title: "Primary contact updated" }); },
   });
 
-  if (isLoading) {
-    return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
-  }
+  const deleteGrowerMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("growers").delete().eq("id", id!);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast({ title: "Grower deleted" }); navigate("/growers"); },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
 
-  if (!grower) {
-    return <div className="py-16 text-center text-muted-foreground">Grower not found.</div>;
-  }
+  if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+  if (!grower) return <div className="py-16 text-center text-muted-foreground">Grower not found.</div>;
 
   return (
     <div className="space-y-6">
@@ -194,17 +203,31 @@ export default function GrowerDetail() {
           <h1 className="text-2xl font-display font-bold">{grower.name}</h1>
           <Badge variant="secondary" className={STATUS_COLORS[grower.status] || ""}>{grower.status}</Badge>
         </div>
-        <Button variant="outline" onClick={() => setEditOpen(true)}>
-          <Pencil className="mr-2 h-4 w-4" /> Edit Grower
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setEditOpen(true)}>
+            <Pencil className="mr-2 h-4 w-4" /> Edit Grower
+          </Button>
+          {canDeleteGrower ? (
+            <Button variant="destructive" size="sm" onClick={() => { if (confirm("Delete this grower permanently?")) deleteGrowerMutation.mutate(); }}>
+              <Trash2 className="mr-1 h-3 w-3" /> Delete
+            </Button>
+          ) : null}
+        </div>
       </div>
 
+      {!canDeleteGrower && (
+        <p className="text-xs text-muted-foreground">
+          This grower has {contracts.length} contract(s) and cannot be deleted. Set status to Inactive instead.
+        </p>
+      )}
+
       <Tabs defaultValue="overview">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="contacts">Contacts ({contacts.length})</TabsTrigger>
           <TabsTrigger value="contracts">Contracts ({contracts.length})</TabsTrigger>
           <TabsTrigger value="weigh-tags">Weigh Tags ({weighTags.length})</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
         </TabsList>
 
         {/* OVERVIEW TAB */}
@@ -216,48 +239,28 @@ export default function GrowerDetail() {
               { label: "Total Tons Delivered", value: totalTonsDelivered.toFixed(2) },
               { label: "Total Value", value: `$${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}` },
             ].map((s) => (
-              <Card key={s.label}>
-                <CardContent className="pt-6">
-                  <p className="text-sm text-muted-foreground">{s.label}</p>
-                  <p className="text-2xl font-bold">{s.value}</p>
-                </CardContent>
-              </Card>
+              <Card key={s.label}><CardContent className="pt-6"><p className="text-sm text-muted-foreground">{s.label}</p><p className="text-2xl font-bold">{s.value}</p></CardContent></Card>
             ))}
           </div>
 
           <Card>
             <CardHeader><CardTitle>Grower Information</CardTitle></CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              {grower.contact_name && (
-                <div className="flex items-center gap-2"><span className="text-muted-foreground">Contact:</span> {grower.contact_name}</div>
-              )}
-              {grower.email && (
-                <div className="flex items-center gap-2"><Mail className="h-4 w-4 text-muted-foreground" /> {grower.email}</div>
-              )}
-              {grower.phone && (
-                <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /> {grower.phone}</div>
-              )}
+              {grower.contact_name && <div className="flex items-center gap-2"><span className="text-muted-foreground">Contact:</span> {grower.contact_name}</div>}
+              {grower.email && <div className="flex items-center gap-2"><Mail className="h-4 w-4 text-muted-foreground" /> {grower.email}</div>}
+              {grower.phone && <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /> {grower.phone}</div>}
               {(grower.address_line1 || grower.city) && (
                 <div className="flex items-start gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
                   <div>
                     {grower.address_line1 && <div>{grower.address_line1}</div>}
                     {grower.address_line2 && <div>{grower.address_line2}</div>}
-                    {(grower.city || grower.state || grower.zip) && (
-                      <div>{[grower.city, grower.state].filter(Boolean).join(", ")} {grower.zip}</div>
-                    )}
+                    {(grower.city || grower.state || grower.zip) && <div>{[grower.city, grower.state].filter(Boolean).join(", ")} {grower.zip}</div>}
                   </div>
                 </div>
               )}
-              {grower.tax_id && (
-                <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /> Tax ID: {grower.tax_id}</div>
-              )}
-              {grower.notes && (
-                <div className="col-span-full">
-                  <span className="text-muted-foreground">Notes:</span>
-                  <p className="mt-1">{grower.notes}</p>
-                </div>
-              )}
+              {grower.tax_id && <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /> Tax ID: {grower.tax_id}</div>}
+              {grower.notes && <div className="col-span-full"><span className="text-muted-foreground">Notes:</span><p className="mt-1">{grower.notes}</p></div>}
             </CardContent>
           </Card>
         </TabsContent>
@@ -265,10 +268,7 @@ export default function GrowerDetail() {
         {/* CONTACTS TAB */}
         <TabsContent value="contacts" className="space-y-4">
           <div className="flex justify-end">
-            <Button
-              size="sm"
-              onClick={() => { setContactForm({ name: "", role: "", email: "", phone: "" }); setEditingContactId(null); }}
-            >
+            <Button size="sm" onClick={() => { setContactForm({ name: "", role: "", email: "", phone: "" }); setEditingContactId(null); }}>
               <Plus className="mr-2 h-4 w-4" /> Add Contact
             </Button>
           </div>
@@ -293,25 +293,18 @@ export default function GrowerDetail() {
           {contacts.length === 0 && !contactForm ? (
             <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
               <p className="mb-2">No contacts yet.</p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setContactForm({ name: "", role: "", email: "", phone: "" })}
-              >
+              <Button size="sm" variant="outline" onClick={() => setContactForm({ name: "", role: "", email: "", phone: "" })}>
                 <Plus className="mr-2 h-4 w-4" /> Add Contact
               </Button>
             </div>
-          ) : (
+          ) : contacts.length > 0 && (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead className="hidden sm:table-cell">Email</TableHead>
-                    <TableHead className="hidden sm:table-cell">Phone</TableHead>
-                    <TableHead>Primary</TableHead>
-                    <TableHead></TableHead>
+                    <TableHead>Name</TableHead><TableHead>Role</TableHead>
+                    <TableHead className="hidden sm:table-cell">Email</TableHead><TableHead className="hidden sm:table-cell">Phone</TableHead>
+                    <TableHead>Primary</TableHead><TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -338,11 +331,7 @@ export default function GrowerDetail() {
                           <TableCell className="hidden sm:table-cell">{c.email || "—"}</TableCell>
                           <TableCell className="hidden sm:table-cell">{c.phone || "—"}</TableCell>
                           <TableCell>
-                            {c.is_primary ? (
-                              <Badge>Primary</Badge>
-                            ) : (
-                              <Button size="sm" variant="ghost" className="text-xs" onClick={() => setPrimaryMutation.mutate(c.id)}>Set Primary</Button>
-                            )}
+                            {c.is_primary ? <Badge>Primary</Badge> : <Button size="sm" variant="ghost" className="text-xs" onClick={() => setPrimaryMutation.mutate(c.id)}>Set Primary</Button>}
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
@@ -371,7 +360,6 @@ export default function GrowerDetail() {
               <Plus className="mr-2 h-4 w-4" /> New Contract
             </Button>
           </div>
-
           {contracts.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
               <ScaleIcon className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
@@ -385,9 +373,7 @@ export default function GrowerDetail() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Contract #</TableHead>
-                    <TableHead>Vintage</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Contract #</TableHead><TableHead>Vintage</TableHead><TableHead>Status</TableHead>
                     <TableHead className="hidden sm:table-cell">Pricing</TableHead>
                     <TableHead className="hidden sm:table-cell text-right">Base Price</TableHead>
                     <TableHead className="text-right">Delivered Tons</TableHead>
@@ -399,9 +385,7 @@ export default function GrowerDetail() {
                     <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/growers/contracts/${c.id}`)}>
                       <TableCell className="font-medium">{c.contract_number || "—"}</TableCell>
                       <TableCell>{c.vintage_year}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={CONTRACT_STATUS_COLORS[c.status] || ""}>{c.status}</Badge>
-                      </TableCell>
+                      <TableCell><Badge variant="secondary" className={CONTRACT_STATUS_COLORS[c.status] || ""}>{c.status}</Badge></TableCell>
                       <TableCell className="hidden sm:table-cell">{c.pricing_unit === "per_ton" ? "Per Ton" : "Per Acre"}</TableCell>
                       <TableCell className="hidden sm:table-cell text-right">${Number(c.base_price_per_unit).toLocaleString()}</TableCell>
                       <TableCell className="text-right">{Number(c.total_delivered_tons).toFixed(2)}</TableCell>
@@ -426,8 +410,7 @@ export default function GrowerDetail() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Tag #</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Tag #</TableHead><TableHead>Date</TableHead>
                     <TableHead className="hidden sm:table-cell">Contract</TableHead>
                     <TableHead className="hidden sm:table-cell">Block</TableHead>
                     <TableHead className="text-right">Net Tons</TableHead>
@@ -438,26 +421,81 @@ export default function GrowerDetail() {
                 </TableHeader>
                 <TableBody>
                   {weighTags.map((wt: any) => (
-                    <TableRow key={wt.id}>
+                    <TableRow key={wt.id} className="cursor-pointer" onClick={() => navigate(`/growers/intake/${wt.id}`)}>
                       <TableCell className="font-medium">{wt.tag_number}</TableCell>
                       <TableCell>{wt.delivery_date}</TableCell>
                       <TableCell className="hidden sm:table-cell">{wt.grower_contracts?.contract_number || "—"}</TableCell>
                       <TableCell className="hidden sm:table-cell">{wt.blocks?.name || "—"}</TableCell>
                       <TableCell className="text-right">{wt.net_tons != null ? Number(wt.net_tons).toFixed(2) : "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={WEIGH_TAG_STATUS_COLORS[wt.status] || ""}>{wt.status}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right hidden sm:table-cell">
-                        {wt.final_price_per_unit != null ? `$${Number(wt.final_price_per_unit).toLocaleString()}` : "—"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {wt.total_value != null ? `$${Number(wt.total_value).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "—"}
-                      </TableCell>
+                      <TableCell><Badge variant="secondary" className={WEIGH_TAG_STATUS_COLORS[wt.status] || ""}>{wt.status}</Badge></TableCell>
+                      <TableCell className="text-right hidden sm:table-cell">{wt.final_price_per_unit != null ? `$${Number(wt.final_price_per_unit).toLocaleString()}` : "—"}</TableCell>
+                      <TableCell className="text-right">{wt.total_value != null ? `$${Number(wt.total_value).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "—"}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
+          )}
+        </TabsContent>
+
+        {/* PAYMENTS TAB */}
+        <TabsContent value="payments" className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Payment tracking for reconciliation. Actual payments are processed via your accounting system.
+          </p>
+
+          {contracts.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">No contracts to show.</div>
+          ) : (
+            <>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Contract #</TableHead><TableHead>Vintage</TableHead>
+                      <TableHead className="text-right">Tons</TableHead>
+                      <TableHead className="text-right hidden sm:table-cell">Base Value</TableHead>
+                      <TableHead className="text-right hidden sm:table-cell">Adjustments</TableHead>
+                      <TableHead className="text-right">Final Value</TableHead>
+                      <TableHead className="hidden sm:table-cell">Payment Term</TableHead>
+                      <TableHead>Payment Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {contracts.map((c: any) => {
+                      const ps = getPaymentStatus(c, weighTags);
+                      const tons = Number(c.total_delivered_tons) || 0;
+                      const baseVal = tons * Number(c.base_price_per_unit);
+                      const finalVal = Number(c.total_contract_value) || 0;
+                      const adj = finalVal - baseVal;
+                      return (
+                        <TableRow key={c.id}>
+                          <TableCell className="font-medium">{c.contract_number}</TableCell>
+                          <TableCell>{c.vintage_year}</TableCell>
+                          <TableCell className="text-right">{tons.toFixed(2)}</TableCell>
+                          <TableCell className="text-right hidden sm:table-cell">${baseVal.toLocaleString("en-US", { minimumFractionDigits: 2 })}</TableCell>
+                          <TableCell className="text-right hidden sm:table-cell">
+                            <span className={adj > 0 ? "text-green-600" : adj < 0 ? "text-destructive" : ""}>
+                              {adj >= 0 ? "+" : ""}${adj.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">${finalVal.toLocaleString("en-US", { minimumFractionDigits: 2 })}</TableCell>
+                          <TableCell className="hidden sm:table-cell">{PAYMENT_LABELS[c.payment_term] || c.payment_term}</TableCell>
+                          <TableCell><Badge variant="secondary" className={ps.color}>{ps.label}</Badge></TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <Card>
+                <CardContent className="pt-4 flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">Total Owed (approved, unpaid deliveries)</p>
+                  <p className="text-2xl font-bold">${totalOwed.toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
+                </CardContent>
+              </Card>
+            </>
           )}
         </TabsContent>
       </Tabs>

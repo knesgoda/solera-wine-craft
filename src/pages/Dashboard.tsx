@@ -1,4 +1,6 @@
 import { Wine, Calendar, CheckSquare, Send, Package, DollarSign } from "lucide-react";
+import { GrowerDashboardWidgets } from "@/components/growers/GrowerDashboardWidgets";
+import { hasAccess } from "@/lib/tier-access";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -129,6 +131,11 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </Link>
+
+      {/* Grower Contracts Dashboard — Enterprise only */}
+      {hasAccess(organization?.tier || "hobbyist", "enterprise") && (
+        <GrowerDashboardWidgets />
+      )}
 
       {/* Prime Window Blocks Dialog */}
       <Dialog open={showPrimeBlocks} onOpenChange={setShowPrimeBlocks}>

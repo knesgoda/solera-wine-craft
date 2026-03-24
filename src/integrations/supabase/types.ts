@@ -1238,7 +1238,7 @@ export type Database = {
       }
       contract_block_assignments: {
         Row: {
-          block_id: string
+          block_id: string | null
           contract_id: string
           estimated_tons: number | null
           id: string
@@ -1246,7 +1246,7 @@ export type Database = {
           org_id: string
         }
         Insert: {
-          block_id: string
+          block_id?: string | null
           contract_id: string
           estimated_tons?: number | null
           id?: string
@@ -1254,7 +1254,7 @@ export type Database = {
           org_id: string
         }
         Update: {
-          block_id?: string
+          block_id?: string | null
           contract_id?: string
           estimated_tons?: number | null
           id?: string
