@@ -306,19 +306,8 @@ export default function VintageDetail() {
         </CardContent>
       </Card>
 
-      {/* Tabs for Lab Samples & TTB Additions */}
-      <Tabs defaultValue="lab" className="space-y-4">
-        <TabsList className="w-full">
-          <TabsTrigger value="lab" className="flex-1 gap-2">
-            <FlaskConical className="h-4 w-4" /> Lab
-          </TabsTrigger>
-          <TabsTrigger value="additions" className="flex-1 gap-2">
-            <FileText className="h-4 w-4" /> TTB
-          </TabsTrigger>
-          <TabsTrigger value="anomalies" className="flex-1 gap-2">
-            <AlertTriangle className="h-4 w-4" /> Anomalies
-          </TabsTrigger>
-        </TabsList>
+      {/* Tabs for Lab Samples, TTB Additions, Costs */}
+      <CostsAwareTabsSection vintageId={vintageId!} vintage={vintage} organization={organization} labSamples={labSamples} setLabDialogOpen={setLabDialogOpen} setEditingSample={setEditingSample} setDeletingSampleId={setDeletingSampleId} />
 
         <TabsContent value="lab">
           {labSamples.length >= 2 && (
