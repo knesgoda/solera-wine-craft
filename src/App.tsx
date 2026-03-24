@@ -60,6 +60,8 @@ import GrowerContractList from "./pages/growers/GrowerContractList";
 import ContractForm from "./pages/growers/ContractForm";
 import ContractDetail from "./pages/growers/ContractDetail";
 import GrowerIntake from "./pages/growers/GrowerIntake";
+import WeighTagForm from "./pages/growers/WeighTagForm";
+import WeighTagDetail from "./pages/growers/WeighTagDetail";
 import ClientList from "./pages/clients/ClientList";
 import ClientDetail from "./pages/clients/ClientDetail";
 import ClientLayout from "./components/ClientLayout";
