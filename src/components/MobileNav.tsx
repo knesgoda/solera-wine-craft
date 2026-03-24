@@ -36,6 +36,13 @@ const moreGroups = [
     ],
   },
   {
+    label: "Production Costs",
+    items: [
+      { title: "Cost Overview", url: "/costs", icon: DollarSign },
+      { title: "Material Prices", url: "/costs/materials", icon: Package },
+    ],
+  },
+  {
     label: "Sales & DTC",
     items: [
       { title: "Inventory", url: "/inventory", icon: Package },
