@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SEOHead, HOMEPAGE_SCHEMA } from "@/components/SEOHead";
 import {
   Grape, FlaskConical, Wine, Bot, Upload, ShoppingCart, Users, FileCheck,
-  Check, X, ChevronRight, BarChart3, Thermometer, Calendar, Bell
+  Check, X, ChevronRight, BarChart3, Thermometer, Calendar, Bell, DollarSign, Wheat
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -12,6 +12,8 @@ const MODULES = [
   { icon: Grape, name: "Vineyard Operations", desc: "GDD tracking, block management, task scheduling, and weather-driven harvest predictions." },
   { icon: FlaskConical, name: "Vintage & Lab Tracking", desc: "Record lab samples, track additions, detect anomalies with AI, and monitor every vintage's lifecycle." },
   { icon: Wine, name: "Cellar & Fermentation", desc: "Manage vessels, barrels, fermentation logs, and run blending trials with confidence." },
+  { icon: DollarSign, name: "Production Cost Tracking", desc: "Real-time COGS per lot, barrel, and gallon. Costs follow wine through blends automatically. Never reconcile a spreadsheet in Xero again." },
+  { icon: Wheat, name: "Grower Contracts", desc: "Grape purchase agreements, multi-metric grading scales, and automated intake pricing — connected to your cellar data and COGS." },
   { icon: Bot, name: "Ask Solera AI", desc: "Ask anything about your operation in plain English and get answers grounded in your actual data." },
   { icon: Upload, name: "Data Import & Migration", desc: "AI-assisted import from Innovint, VinNow, or any CSV/XLSX. Your history migrates in minutes." },
   { icon: ShoppingCart, name: "Sales & DTC Storefront", desc: "Public wine store, inventory management, order fulfillment, and wine club shipments." },
@@ -22,8 +24,9 @@ const MODULES = [
 const STATS = [
   "54% cheaper than Innovint",
   "Replaces $700/mo of fragmented tools",
-  "Full TTB compliance from day one",
+  "Real-time COGS per lot, barrel, and gallon",
   "AI harvest predictions built in",
+  "Grower contracts + intake pricing included",
   "Your historical data migrates in minutes",
 ];
 
@@ -66,7 +69,7 @@ export default function Homepage() {
                 </Button>
               </div>
               <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                {["Free for hobbyists", "Replaces Innovint + Commerce7", "AI-powered", "No transaction fees"].map((t) => (
+                {["Free for hobbyists", "Real-time COGS tracking", "AI-powered", "No transaction fees"].map((t) => (
                   <span key={t} className="flex items-center gap-1.5">
                     <Check className="h-4 w-4 text-green-600" /> {t}
                   </span>
@@ -143,7 +146,8 @@ export default function Homepage() {
                   "Innovint for cellar ($149/mo)",
                   "Commerce7 for DTC ($299/mo + 1% fees)",
                   "Spreadsheets for vineyard tracking",
-                  "Paper lab logs and manual compliance",
+                  "Xero or spreadsheets for COGS reconciliation",
+                  "Paper grower contracts and manual intake pricing",
                   "$700/mo and still missing features",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3 text-muted-foreground">
@@ -158,9 +162,9 @@ export default function Homepage() {
               <ul className="space-y-4">
                 {[
                   "One platform — vineyard to DTC",
+                  "Real-time COGS per lot, barrel, and gallon",
+                  "Grower contracts with automated intake pricing",
                   "AI assistant built into every workflow",
-                  "Full TTB compliance from day one",
-                  "Mobile-first, works offline in the field",
                   "From $69/mo — or free for hobbyists",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3 text-foreground">

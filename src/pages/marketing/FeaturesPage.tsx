@@ -5,7 +5,7 @@ import {
   Grape, FlaskConical, Wine, Bot, Upload, ShoppingCart, Users, FileCheck,
   MapPin, Thermometer, Calendar, BarChart3, TestTube, AlertTriangle, Bell,
   Database, FileSpreadsheet, Layers, CreditCard, Package, Truck, UserPlus,
-  FileText, Shield, Check
+  FileText, Shield, Check, DollarSign, Wheat, Scale, TrendingUp
 } from "lucide-react";
 
 const FEATURES = [
@@ -98,6 +98,84 @@ const FEATURES = [
               <span className="text-muted-foreground">{r.t}</span>
             </div>
           ))}
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "cogs",
+    name: "Production Cost Tracking",
+    icon: DollarSign,
+    desc: "Stop reconciling COGS in Xero. Every dollar from grape to bottle, tracked automatically.",
+    tier: "Growth+",
+    bullets: [
+      "Real-time COGS per lot, per barrel, and per gallon",
+      "Three costing methods: apportioned, transactional, and ad hoc",
+      "Costs follow gallons through blending — automatically",
+      "Material price list with auto-calculated transactional costs",
+      "QuickBooks export with one-click CSV/IIF generation",
+      "What-if calculator to project COGS before bottling decisions",
+    ],
+    mockup: (
+      <div className="bg-card rounded-lg border p-4 space-y-3">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <DollarSign className="h-4 w-4 text-primary" /> 2025 Estate Cab — COGS
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {[{ l: "Total COGS", v: "$14,230" }, { l: "$/Gallon", v: "$47.43" }, { l: "$/Case", v: "$71.80" }].map(s => (
+            <div key={s.l} className="bg-muted rounded p-2">
+              <p className="text-[10px] text-muted-foreground">{s.l}</p>
+              <p className="text-sm font-bold text-foreground">{s.v}</p>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-1.5">
+          {[{ cat: "Grape", pct: 62, color: "bg-primary" }, { cat: "Cooperage", pct: 18, color: "bg-secondary" }, { cat: "Labor", pct: 12, color: "bg-accent" }].map(c => (
+            <div key={c.cat} className="flex items-center gap-2 text-[10px]">
+              <span className="text-muted-foreground w-16">{c.cat} {c.pct}%</span>
+              <div className="flex-1 h-1.5 rounded-full bg-muted">
+                <div className={`h-full rounded-full ${c.color}`} style={{ width: `${c.pct}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] text-muted-foreground">Includes $3,200 blend transfer from 2025 Merlot</p>
+      </div>
+    ),
+  },
+  {
+    id: "growers",
+    name: "Grower Contract Management",
+    icon: Wheat,
+    desc: "Your grape purchase agreements, grading scales, and intake pricing — in the same platform as your cellar data.",
+    tier: "Enterprise",
+    bullets: [
+      "Multi-metric grading scales: Brix, MOG, pH, and custom tiers",
+      "Automated harvest intake with weigh tag pricing engine",
+      "Bonuses and penalties applied instantly at the scale",
+      "Grape costs auto-flow into COGS when deliveries are approved",
+      "Contract dashboards with delivery tracking and tonnage summaries",
+      "PDF/CSV financial reports for grower payment reconciliation",
+    ],
+    mockup: (
+      <div className="bg-card rounded-lg border p-4 space-y-3">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <Scale className="h-4 w-4 text-primary" /> Harvest Intake — WT-2025-0042
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {[{ l: "Grower", v: "Rancho Vista" }, { l: "Variety", v: "Cab Sauv" }, { l: "Net Tons", v: "4.82" }, { l: "Brix", v: "25.1°" }].map(s => (
+            <div key={s.l} className="bg-muted rounded p-2 flex justify-between">
+              <span className="text-[10px] text-muted-foreground">{s.l}</span>
+              <span className="text-xs font-semibold text-foreground">{s.v}</span>
+            </div>
+          ))}
+        </div>
+        <div className="bg-muted rounded p-2">
+          <div className="flex justify-between text-[10px]">
+            <span className="text-muted-foreground">Base: $3,200/ton</span>
+            <span className="text-green-600 font-semibold">+$150 Brix Bonus</span>
+          </div>
+          <p className="text-sm font-bold text-foreground mt-1">Total: $16,148.50</p>
         </div>
       </div>
     ),
@@ -252,7 +330,7 @@ export default function FeaturesPage() {
     <>
       <SEOHead
         title="Features — Solera Winery Management Platform"
-        description="Eight fully integrated modules: vineyard ops, lab tracking, cellar management, AI assistant, DTC sales, custom crush portal, TTB compliance, and data migration."
+        description="Ten fully integrated modules: vineyard ops, lab tracking, cellar management, production cost tracking, grower contracts, AI assistant, DTC sales, custom crush portal, TTB compliance, and data migration."
         breadcrumbs={[
           { name: "Home", url: "https://solera.vin" },
           { name: "Features", url: "https://solera.vin/features" },
@@ -263,7 +341,7 @@ export default function FeaturesPage() {
       <section className="pt-28 pb-16 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 lg:px-8 text-center">
           <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">Everything your winery needs.</h1>
-          <p className="text-xl text-primary-foreground/80">Eight fully integrated modules. One monthly price.</p>
+          <p className="text-xl text-primary-foreground/80">Ten fully integrated modules. One monthly price.</p>
         </div>
       </section>
 
@@ -276,6 +354,9 @@ export default function FeaturesPage() {
                 <div className="flex items-center gap-3 mb-4">
                   <f.icon className="h-8 w-8 text-primary" />
                   <h2 className="font-display text-3xl font-bold text-foreground">{f.name}</h2>
+                  {"tier" in f && f.tier && (
+                    <span className="text-xs font-semibold bg-secondary/20 text-secondary px-2 py-0.5 rounded-full">{f.tier}</span>
+                  )}
                 </div>
                 <p className="text-lg text-muted-foreground mb-6">{f.desc}</p>
                 <ul className="space-y-3">
