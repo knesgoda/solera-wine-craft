@@ -57,6 +57,8 @@ import VintageDetail from "./pages/vintages/VintageDetail";
 import GrowerList from "./pages/growers/GrowerList";
 import GrowerDetail from "./pages/growers/GrowerDetail";
 import GrowerContractList from "./pages/growers/GrowerContractList";
+import ContractForm from "./pages/growers/ContractForm";
+import ContractDetail from "./pages/growers/ContractDetail";
 import GrowerIntake from "./pages/growers/GrowerIntake";
 import ClientList from "./pages/clients/ClientList";
 import ClientDetail from "./pages/clients/ClientDetail";
@@ -160,6 +162,9 @@ const App = () => (
               <Route path="/vintages/:vintageId" element={<VintageDetail />} />
               <Route path="/growers" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerList /></TierGate>} />
               <Route path="/growers/contracts" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerContractList /></TierGate>} />
+              <Route path="/growers/contracts/new" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><ContractForm /></TierGate>} />
+              <Route path="/growers/contracts/:id" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><ContractDetail /></TierGate>} />
+              <Route path="/growers/contracts/:id/edit" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><ContractForm /></TierGate>} />
               <Route path="/growers/intake" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerIntake /></TierGate>} />
               <Route path="/growers/:id" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerDetail /></TierGate>} />
               <Route path="/cellar" element={<CellarDashboard />} />
