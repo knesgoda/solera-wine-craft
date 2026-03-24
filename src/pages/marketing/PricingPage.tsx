@@ -100,6 +100,8 @@ const FAQS = [
   { question: "Can I change plans at any time?", answer: "Yes — upgrade or downgrade any time. Changes take effect immediately." },
   { question: "What does the annual price lock mean?", answer: "Your rate is guaranteed for 24 months on any annual plan. Even if prices go up, your rate stays the same." },
   { question: "Does Solera work offline?", answer: "Yes — field crew task completion and lab entry work offline and sync automatically when reconnected." },
+  { question: "What is production cost tracking?", answer: "Growth plans include full COGS tracking per lot, barrel, and gallon. Costs follow wine through blending operations automatically. You'll never reconcile a COGS spreadsheet in Xero again." },
+  { question: "What is grower contract management?", answer: "Enterprise plans include grape purchase agreements with multi-metric grading scales, automated intake pricing, and financial reporting — all connected to your cellar data and COGS." },
   { question: "What is custom crush pricing?", answer: "Enterprise starts at $399/mo including up to 10 client organizations. Additional client orgs are $10–15/mo each." },
   { question: "How does the AI assistant work?", answer: "Ask Solera uses your actual winery data — lab readings, weather, GDD, vintage history — to answer questions in plain English. No generic advice." },
 ];
