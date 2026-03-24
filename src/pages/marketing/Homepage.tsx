@@ -146,7 +146,8 @@ export default function Homepage() {
                   "Innovint for cellar ($149/mo)",
                   "Commerce7 for DTC ($299/mo + 1% fees)",
                   "Spreadsheets for vineyard tracking",
-                  "Paper lab logs and manual compliance",
+                  "Xero or spreadsheets for COGS reconciliation",
+                  "Paper grower contracts and manual intake pricing",
                   "$700/mo and still missing features",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3 text-muted-foreground">
