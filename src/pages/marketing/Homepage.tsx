@@ -8,12 +8,12 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-const MODULES = [
+const MODULES: { icon: any; name: string; desc: string; tier?: string }[] = [
   { icon: Grape, name: "Vineyard Operations", desc: "GDD tracking, block management, task scheduling, and weather-driven harvest predictions." },
   { icon: FlaskConical, name: "Vintage & Lab Tracking", desc: "Record lab samples, track additions, detect anomalies with AI, and monitor every vintage's lifecycle." },
   { icon: Wine, name: "Cellar & Fermentation", desc: "Manage vessels, barrels, fermentation logs, and run blending trials with confidence." },
-  { icon: DollarSign, name: "Production Cost Tracking", desc: "Real-time COGS per lot, barrel, and gallon. Costs follow wine through blends automatically. Never reconcile a spreadsheet in Xero again." },
-  { icon: Wheat, name: "Grower Contracts", desc: "Grape purchase agreements, multi-metric grading scales, and automated intake pricing — connected to your cellar data and COGS." },
+  { icon: DollarSign, name: "Production Cost Tracking", desc: "Real-time COGS per gallon, barrel, and case. Costs follow wine through blends automatically.", tier: "Growth+" },
+  { icon: Wheat, name: "Grower Contracts", desc: "Manage grape purchase agreements with auto-pricing grading scales at harvest intake.", tier: "Enterprise" },
   { icon: Bot, name: "Ask Solera AI", desc: "Ask anything about your operation in plain English and get answers grounded in your actual data." },
   { icon: Upload, name: "Data Import & Migration", desc: "AI-assisted import from Innovint, VinNow, or any CSV/XLSX. Your history migrates in minutes." },
   { icon: ShoppingCart, name: "Sales & DTC Storefront", desc: "Public wine store, inventory management, order fulfillment, and wine club shipments." },
@@ -40,7 +40,11 @@ export default function Homepage() {
 
   return (
     <>
-      <SEOHead jsonLd={HOMEPAGE_SCHEMA} />
+      <SEOHead
+        title="Solera — Winery Management Software | Vineyard Ops, COGS Tracking, DTC Sales"
+        description="The all-in-one winery management platform. Vineyard operations, cellar management, production cost tracking, grower contracts, AI analytics, DTC sales, and TTB compliance. From vine to bottle to doorstep. Free tier available."
+        jsonLd={HOMEPAGE_SCHEMA}
+      />
 
       {/* HERO */}
       <section className="relative min-h-[90vh] flex items-center bg-background overflow-hidden">
@@ -194,7 +198,12 @@ export default function Homepage() {
               >
                 <CardContent className="p-6">
                   <m.icon className="h-8 w-8 text-primary mb-4 group-hover:text-secondary transition-colors" />
-                  <h3 className="font-display text-lg font-semibold text-foreground mb-2">{m.name}</h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-display text-lg font-semibold text-foreground">{m.name}</h3>
+                    {m.tier && (
+                      <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{m.tier}</span>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">{m.desc}</p>
                 </CardContent>
               </Card>
