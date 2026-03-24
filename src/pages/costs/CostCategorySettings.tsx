@@ -147,9 +147,18 @@ export default function CostCategorySettings() {
                       <Label>Color</Label>
                       <input type="color" value={editValues.color || "#000"} onChange={(e) => setEditValues({ ...editValues, color: e.target.value })} className="h-8 w-8 border rounded cursor-pointer" />
                     </div>
+                    <div className="space-y-1.5">
+                      <Label>QuickBooks Account</Label>
+                      <Input
+                        value={editValues.qb_account_name || ""}
+                        onChange={(e) => setEditValues({ ...editValues, qb_account_name: e.target.value })}
+                        placeholder="e.g. 5100 - Cost of Goods Sold"
+                      />
+                      <p className="text-xs text-muted-foreground">Maps to this QuickBooks account when exporting costs</p>
+                    </div>
                     <div className="flex gap-2">
                       <Button size="sm" onClick={() => {
-                        const updates: any = { description: editValues.description || null, color: editValues.color };
+                        const updates: any = { description: editValues.description || null, color: editValues.color, qb_account_name: editValues.qb_account_name || null };
                         if (!cat.is_system) updates.name = editValues.name;
                         updateMutation.mutate({ id: cat.id, updates });
                       }} disabled={updateMutation.isPending}>Save</Button>
@@ -176,7 +185,7 @@ export default function CostCategorySettings() {
                       <Switch checked={cat.is_active} onCheckedChange={(checked) => toggleActive(cat.id, checked)} disabled={cat.is_system} />
                       <Button variant="ghost" size="sm" onClick={() => {
                         setEditingId(cat.id);
-                        setEditValues({ name: cat.name, description: cat.description || "", color: cat.color || "#999" });
+                        setEditValues({ name: cat.name, description: cat.description || "", color: cat.color || "#999", qb_account_name: (cat as any).qb_account_name || "" });
                       }}>Edit</Button>
                     </div>
                   </div>

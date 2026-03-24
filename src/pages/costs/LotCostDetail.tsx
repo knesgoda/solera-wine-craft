@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,11 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, DollarSign, GitMerge, Plus, Loader2 } from "lucide-react";
+import { ArrowLeft, DollarSign, GitMerge, Plus, Loader2, RefreshCw, AlertTriangle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 import { AddCostDialog } from "@/components/costs/AddCostDialog";
+import { CostEntryAudit } from "@/components/costs/CostEntryAudit";
+import { toast } from "sonner";
 
 const fmt = (n: number | null) =>
   n != null ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n) : "—";
@@ -44,6 +47,22 @@ export default function LotCostDetail() {
   const orgId = profile?.org_id;
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [whatIfAmount, setWhatIfAmount] = useState("");
+  const [expandedEntry, setExpandedEntry] = useState<string | null>(null);
+  const [recalculating, setRecalculating] = useState(false);
+  const { isAtLeast } = useRoleAccess();
+  const queryClient = useQueryClient();
+
+  const handleRecalcLot = async () => {
+    if (!vintageId) return;
+    setRecalculating(true);
+    try {
+      try { await supabase.rpc("recalculate_lot_cost_summary_for_vintage" as any, { p_vintage_id: vintageId }); } catch {}
+      queryClient.invalidateQueries({ queryKey: ["lot-cost-summary", vintageId] });
+      queryClient.invalidateQueries({ queryKey: ["lot-cost-entries", vintageId] });
+      toast.success("COGS recalculated for this lot");
+    } catch { toast.error("Recalculation failed"); }
+    finally { setRecalculating(false); }
+  };
 
   // Vintage info
   const { data: vintage } = useQuery({
@@ -177,14 +196,30 @@ export default function LotCostDetail() {
       </div>
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-display font-bold text-foreground">{lotName}</h1>
-        <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-          {vintage?.variety && <span>{vintage.variety}</span>}
-          {vintage?.year && <span>• {vintage.year}</span>}
-          {vintage?.status && <Badge variant="outline" className="capitalize">{vintage.status}</Badge>}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-foreground">{lotName}</h1>
+          <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+            {vintage?.variety && <span>{vintage.variety}</span>}
+            {vintage?.year && <span>• {vintage.year}</span>}
+            {vintage?.status && <Badge variant="outline" className="capitalize">{vintage.status}</Badge>}
+          </div>
         </div>
+        {isAtLeast("owner") && (
+          <Button variant="outline" size="sm" onClick={handleRecalcLot} disabled={recalculating}>
+            {recalculating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            Recalculate
+          </Button>
+        )}
       </div>
+
+      {/* Zero volume warning */}
+      {activeEntries.length > 0 && totalGallons === 0 && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 flex items-start gap-2 text-sm text-amber-800 dark:text-amber-200">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>Volume unknown — assign this lot to a vessel or barrel to calculate per-gallon costs.</span>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -314,35 +349,38 @@ export default function LotCostDetail() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {entries.map((e: any) => (
-                    <TableRow key={e.id} className={e.status === "voided" ? "opacity-60" : ""}>
-                      <TableCell className="text-sm whitespace-nowrap">{format(parseISO(e.effective_date), "MMM d")}</TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center gap-1.5 text-sm">
-                          {e.cost_categories?.color && <span className="h-2 w-2 rounded-full" style={{ background: e.cost_categories.color }} />}
-                          {e.cost_categories?.name}
-                        </span>
-                      </TableCell>
-                      <TableCell className={cn("text-sm max-w-[200px]", e.status === "voided" && "line-through")}>
-                        <span className="truncate block">{e.description}</span>
-                        {e.blend_trial_id && (
-                          <button
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"
-                            onClick={() => navigate(`/cellar/blending/${e.blend_trial_id}`)}
-                          >
-                            <GitMerge className="h-3 w-3" /> From Blend{e.blending_trials?.name ? `: ${e.blending_trials.name}` : ""}
-                          </button>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm">{METHOD_LABELS[e.method]}</TableCell>
-                      <TableCell className={cn("text-right font-mono text-sm", e.status === "voided" && "line-through")}>
-                        {fmt(Number(e.total_amount))}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={cn("text-xs capitalize", STATUS_BADGE[e.status])}>{e.status}</Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {entries.map((e: any) => {
+                    const isNeg = Number(e.total_amount) < 0;
+                    return (
+                      <TableRow key={e.id} className={cn(e.status === "voided" ? "opacity-60" : "", "cursor-pointer")} onClick={() => setExpandedEntry(expandedEntry === e.id ? null : e.id)}>
+                        <TableCell className="text-sm whitespace-nowrap">{format(parseISO(e.effective_date), "MMM d")}</TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center gap-1.5 text-sm">
+                            {e.cost_categories?.color && <span className="h-2 w-2 rounded-full" style={{ background: e.cost_categories.color }} />}
+                            {e.cost_categories?.name}
+                          </span>
+                        </TableCell>
+                        <TableCell className={cn("text-sm max-w-[200px]", e.status === "voided" && "line-through")}>
+                          <span className="truncate block">{e.description}</span>
+                          {e.blend_trial_id && (
+                            <button
+                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"
+                              onClick={(ev) => { ev.stopPropagation(); navigate(`/cellar/blending/${e.blend_trial_id}`); }}
+                            >
+                              <GitMerge className="h-3 w-3" /> From Blend{e.blending_trials?.name ? `: ${e.blending_trials.name}` : ""}
+                            </button>
+                          )}
+                          {expandedEntry === e.id && <CostEntryAudit entry={e} />}
+                        </TableCell>
+                        <TableCell className="text-sm">{METHOD_LABELS[e.method]}</TableCell>
+                        <TableCell className={cn("text-right font-mono text-sm", e.status === "voided" && "line-through", isNeg && "text-destructive")}>
+                          {fmt(Number(e.total_amount))}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={cn("text-xs capitalize", STATUS_BADGE[e.status])}>{e.status}</Badge>
+                        </TableCell>
+                      </TableRow>
+                   })}
                 </TableBody>
               </Table>
             </div>

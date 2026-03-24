@@ -6,12 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Loader2, DollarSign, GitMerge } from "lucide-react";
+import { Plus, Loader2, DollarSign, GitMerge, History } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { AddCostDialog } from "@/components/costs/AddCostDialog";
+import { CostAuditDialog } from "@/components/costs/CostAuditDialog";
 
 const STATUS_BADGE: Record<string, string> = {
   active: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
@@ -34,6 +35,7 @@ export function VintageCostsTab({ vintageId }: VintageCostsTabProps) {
   const orgId = profile?.org_id;
   const navigate = useNavigate();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [auditOpen, setAuditOpen] = useState(false);
 
   const { data: summary } = useQuery({
     queryKey: ["lot-cost-summary", vintageId],
@@ -65,7 +67,6 @@ export function VintageCostsTab({ vintageId }: VintageCostsTabProps) {
 
   const fmt = (n: number | null) => n != null ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n) : "—";
 
-  // Pie chart data
   const pieData = summary ? [
     { name: "Grape", value: Number(summary.grape_cost) || 0, color: "#6B1B2A" },
     { name: "Labor", value: Number(summary.labor_cost) || 0, color: "#C8902A" },
@@ -77,9 +78,18 @@ export function VintageCostsTab({ vintageId }: VintageCostsTabProps) {
   ].filter((d) => d.value > 0) : [];
 
   const activeEntries = entries.filter((e: any) => e.status === "active");
+  const totalGallons = Number(summary?.total_gallons) || 0;
+  const zeroVolume = activeEntries.length > 0 && totalGallons === 0;
 
   return (
     <div className="space-y-4">
+      {/* Zero volume warning */}
+      {zeroVolume && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm text-amber-800 dark:text-amber-200">
+          Volume unknown — assign this lot to a vessel or barrel to calculate per-gallon costs.
+        </div>
+      )}
+
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
@@ -119,9 +129,14 @@ export function VintageCostsTab({ vintageId }: VintageCostsTabProps) {
       {/* Cost entries table */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="text-lg">Cost Entries ({activeEntries.length})</CardTitle>
-            <Button size="sm" onClick={() => setAddDialogOpen(true)}><Plus className="h-4 w-4 mr-2" /> Add Cost</Button>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setAuditOpen(true)}>
+                <History className="h-4 w-4 mr-2" /> Audit Log
+              </Button>
+              <Button size="sm" onClick={() => setAddDialogOpen(true)}><Plus className="h-4 w-4 mr-2" /> Add Cost</Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -139,42 +154,49 @@ export function VintageCostsTab({ vintageId }: VintageCostsTabProps) {
                   <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Method</TableHead>
+                    <TableHead className="hidden md:table-cell">Description</TableHead>
+                    <TableHead className="hidden md:table-cell">Method</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead className="hidden md:table-cell">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {entries.map((e: any) => (
-                    <TableRow key={e.id} className={e.status === "voided" ? "opacity-60" : ""}>
-                      <TableCell className="text-sm whitespace-nowrap">{format(parseISO(e.effective_date), "MMM d")}</TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center gap-1.5 text-sm">
-                          {e.cost_categories?.color && <span className="h-2 w-2 rounded-full" style={{ background: e.cost_categories.color }} />}
-                          {e.cost_categories?.name}
-                        </span>
-                      </TableCell>
-                      <TableCell className={cn("text-sm max-w-[180px]", e.status === "voided" && "line-through")}>
-                        <span className="truncate block">{e.description}</span>
-                        {e.blend_trial_id && (
-                          <button
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"
-                            onClick={() => navigate(`/cellar/blending/${e.blend_trial_id}`)}
-                          >
-                            <GitMerge className="h-3 w-3" /> From Blend{e.blending_trials?.name ? `: ${e.blending_trials.name}` : ""}
-                          </button>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm">{METHOD_LABELS[e.method]}</TableCell>
-                      <TableCell className={cn("text-right font-mono text-sm", e.status === "voided" && "line-through")}>
-                        {fmt(Number(e.total_amount))}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={cn("text-xs capitalize", STATUS_BADGE[e.status])}>{e.status}</Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {entries.map((e: any) => {
+                    const isNeg = Number(e.total_amount) < 0;
+                    return (
+                      <TableRow key={e.id} className={e.status === "voided" ? "opacity-60" : ""}>
+                        <TableCell className="text-sm whitespace-nowrap">{format(parseISO(e.effective_date), "MMM d")}</TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center gap-1.5 text-sm">
+                            {e.cost_categories?.color && <span className="h-2 w-2 rounded-full" style={{ background: e.cost_categories.color }} />}
+                            {e.cost_categories?.name}
+                          </span>
+                        </TableCell>
+                        <TableCell className={cn("text-sm max-w-[180px] hidden md:table-cell", e.status === "voided" && "line-through")}>
+                          <span className="truncate block">{e.description}</span>
+                          {e.blend_trial_id && (
+                            <button
+                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"
+                              onClick={() => navigate(`/cellar/blending/${e.blend_trial_id}`)}
+                            >
+                              <GitMerge className="h-3 w-3" /> From Blend{e.blending_trials?.name ? `: ${e.blending_trials.name}` : ""}
+                            </button>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm hidden md:table-cell">{METHOD_LABELS[e.method]}</TableCell>
+                        <TableCell className={cn(
+                          "text-right font-mono text-sm",
+                          e.status === "voided" && "line-through",
+                          isNeg && "text-destructive"
+                        )}>
+                          {fmt(Number(e.total_amount))}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <Badge variant="outline" className={cn("text-xs capitalize", STATUS_BADGE[e.status])}>{e.status}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -183,6 +205,7 @@ export function VintageCostsTab({ vintageId }: VintageCostsTabProps) {
       </Card>
 
       <AddCostDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} preselectedVintageId={vintageId} />
+      <CostAuditDialog open={auditOpen} onOpenChange={setAuditOpen} vintageId={vintageId} />
     </div>
   );
 }
