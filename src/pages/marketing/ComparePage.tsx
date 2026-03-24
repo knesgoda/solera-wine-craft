@@ -142,7 +142,7 @@ const COMPETITORS = [
     name: "VinSuite",
     summary: "VinSuite offers DTC and POS but lacks modern cellar management, COGS tracking, and grower contracts. Solera covers the full lifecycle with real-time production costing and AI analytics.",
     features: {
-      "Starting price": ["$69/mo", "$200+/mo"],
+      "Starting price": ["$69/mo", "$149+/mo"],
       "Free tier": [true, false],
       "Vineyard ops": [true, false],
       "Lab tracking": [true, false],
