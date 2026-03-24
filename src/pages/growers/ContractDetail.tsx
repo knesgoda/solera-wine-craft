@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -18,7 +19,10 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, Pencil, ChevronDown, Download, Plus, Scale } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { Loader2, Pencil, ChevronDown, Download, Plus, Scale, AlertTriangle, Lock, FileText } from "lucide-react";
 import { TierRangeBar } from "@/components/growers/TierRangeBar";
 import { SEOHead } from "@/components/SEOHead";
 
@@ -43,18 +47,12 @@ const PAYMENT_LABELS: Record<string, string> = {
   on_delivery: "On Delivery", custom: "Custom",
 };
 
-const STATUS_TRANSITIONS: Record<string, string[]> = {
-  draft: ["active"],
-  active: ["fulfilled", "cancelled"],
-  fulfilled: ["expired"],
-  cancelled: [],
-  expired: [],
-};
-
 export default function ContractDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { organization } = useAuth();
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; status: string; message: string }>({ open: false, status: "", message: "" });
 
   const { data: contract, isLoading } = useQuery({
     queryKey: ["contract-detail", id],
@@ -107,6 +105,18 @@ export default function ContractDetail() {
     enabled: !!id,
   });
 
+  // Auto-expire check
+  useEffect(() => {
+    if (contract && contract.status === "active" && contract.delivery_end_date) {
+      const endDate = new Date(contract.delivery_end_date);
+      if (endDate < new Date()) {
+        supabase.from("grower_contracts").update({ status: "expired" as any, updated_at: new Date().toISOString() }).eq("id", id!).then(() => {
+          queryClient.invalidateQueries({ queryKey: ["contract-detail", id] });
+        });
+      }
+    }
+  }, [contract, id, queryClient]);
+
   const statusMutation = useMutation({
     mutationFn: async (newStatus: string) => {
       const { error } = await supabase.from("grower_contracts").update({ status: newStatus as any }).eq("id", id!);
@@ -116,17 +126,70 @@ export default function ContractDetail() {
       queryClient.invalidateQueries({ queryKey: ["contract-detail", id] });
       queryClient.invalidateQueries({ queryKey: ["grower-contracts"] });
       toast({ title: "Status updated" });
+      setConfirmDialog({ open: false, status: "", message: "" });
     },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
+  const handleStatusChange = (newStatus: string) => {
+    if (!contract) return;
+
+    // Validate transitions
+    if (newStatus === "fulfilled") {
+      const hasApproved = weighTags.some((wt: any) => wt.status === "approved" && !wt.is_rejected);
+      if (!hasApproved) {
+        toast({ title: "Cannot fulfill", description: "At least one non-rejected, approved delivery is required.", variant: "destructive" });
+        return;
+      }
+    }
+
+    if (newStatus === "cancelled") {
+      setConfirmDialog({ open: true, status: "cancelled", message: "Cancelling will not delete existing weigh tags or payment records. Continue?" });
+      return;
+    }
+
+    if (newStatus === "active" && contract.status === "fulfilled") {
+      setConfirmDialog({ open: true, status: "active", message: "Re-opening this fulfilled contract will allow new deliveries. Continue?" });
+      return;
+    }
+
+    statusMutation.mutate(newStatus);
+  };
+
+  // Enhanced CSV export with metric columns
+  const { data: weighTagMetrics = [] } = useQuery({
+    queryKey: ["contract-wt-metrics", id],
+    queryFn: async () => {
+      const wtIds = weighTags.map((wt: any) => wt.id);
+      if (wtIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("weigh_tag_metrics")
+        .select("*, grading_scale_metrics(metric_name)")
+        .in("weigh_tag_id", wtIds);
+      if (error) throw error;
+      return data;
+    },
+    enabled: weighTags.length > 0,
+  });
+
   const exportCSV = () => {
     if (weighTags.length === 0) return;
-    const headers = ["Tag #", "Date", "Block", "Net Tons", "Status", "Base Price", "Adjustment", "Final Price", "Total Value"];
-    const rows = weighTags.map((wt: any) => [
-      wt.tag_number, wt.delivery_date, wt.blocks?.name || "", wt.net_tons, wt.status,
-      contract?.base_price_per_unit, wt.total_price_adjustment, wt.final_price_per_unit, wt.total_value,
-    ]);
+    const metricNames = gradingScale?.grading_scale_metrics
+      ? (gradingScale.grading_scale_metrics as any[]).sort((a, b) => a.sort_order - b.sort_order).map((m: any) => m.metric_name)
+      : [];
+    const headers = ["Tag Number", "Delivery Date", "Block", "Gross Weight (lbs)", "Tare Weight (lbs)", "Net Weight (lbs)", "Net Tons", ...metricNames, "Total Adjustment", "Final Price Per Ton", "Total Value", "Status"];
+    const rows = weighTags.map((wt: any) => {
+      const wtMetrics = weighTagMetrics.filter((m: any) => m.weigh_tag_id === wt.id);
+      const metricValues = metricNames.map((name) => {
+        const found = wtMetrics.find((m: any) => m.grading_scale_metrics?.metric_name === name);
+        return found ? Number(found.measured_value) : "";
+      });
+      return [
+        wt.tag_number, wt.delivery_date, wt.blocks?.name || "", wt.gross_weight_lbs, wt.tare_weight_lbs,
+        wt.net_weight_lbs, wt.net_tons, ...metricValues,
+        wt.total_price_adjustment, wt.final_price_per_unit, wt.total_value, wt.status,
+      ];
+    });
     const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -137,6 +200,47 @@ export default function ContractDetail() {
     URL.revokeObjectURL(url);
   };
 
+  const exportPDF = () => {
+    if (!contract) return;
+    const metricNames = gradingScale?.grading_scale_metrics
+      ? (gradingScale.grading_scale_metrics as any[]).sort((a, b) => a.sort_order - b.sort_order).map((m: any) => m.metric_name)
+      : [];
+
+    const deliveryRows = weighTags.map((wt: any) =>
+      `<tr><td>${wt.tag_number}</td><td>${wt.delivery_date}</td><td>${wt.blocks?.name || "—"}</td><td style="text-align:right">${Number(wt.net_tons).toFixed(2)}</td><td style="text-align:right">$${Number(wt.total_price_adjustment || 0)}</td><td style="text-align:right">$${Number(wt.final_price_per_unit || 0).toLocaleString()}</td><td style="text-align:right">$${Number(wt.total_value || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td></tr>`
+    ).join("");
+
+    const scaleHtml = gradingScale ? `
+      <h3>Grading Scale: ${gradingScale.name}</h3>
+      ${(gradingScale.grading_scale_metrics as any[] || []).map((m: any) =>
+        `<p><strong>${m.metric_name}</strong> (${m.unit || ""}) — ${m.direction === "higher_is_better" ? "Higher is better" : "Lower is better"}</p>`
+      ).join("")}
+    ` : "";
+
+    const html = `<!DOCTYPE html><html><head><title>${contract.contract_number} Summary</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:0 auto;padding:20px;font-size:14px}h1{font-size:20px}h2{font-size:16px;margin-top:24px}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f5f5f5}.total{font-weight:bold;background:#f0f0f0}</style></head><body>
+      <h1>Contract Summary: ${contract.contract_number}</h1>
+      <p><strong>Grower:</strong> ${contract.growers?.name} | <strong>Vintage:</strong> ${contract.vintage_year} | <strong>Status:</strong> ${contract.status}</p>
+      <h2>Terms</h2>
+      <p>Pricing: ${contract.pricing_unit === "per_ton" ? "Per Ton" : "Per Acre"} | Base Price: $${Number(contract.base_price_per_unit).toLocaleString()} | Payment: ${PAYMENT_LABELS[contract.payment_term] || contract.payment_term}</p>
+      ${contract.delivery_start_date ? `<p>Delivery Window: ${contract.delivery_start_date} — ${contract.delivery_end_date || "Open"}</p>` : ""}
+      ${scaleHtml}
+      <h2>Deliveries</h2>
+      <table><thead><tr><th>Tag #</th><th>Date</th><th>Block</th><th style="text-align:right">Net Tons</th><th style="text-align:right">Adjustment</th><th style="text-align:right">Final Price</th><th style="text-align:right">Total</th></tr></thead><tbody>
+      ${deliveryRows}
+      <tr class="total"><td colspan="3">Total</td><td style="text-align:right">${delivered.toFixed(2)}</td><td></td><td></td><td style="text-align:right">$${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</td></tr>
+      </tbody></table>
+      <h2>Summary</h2>
+      <p>Total Tons: ${delivered.toFixed(2)} | Total Value: $${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2 })} | Avg Price/Ton: $${avgPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
+    </body></html>`;
+
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => printWindow.print(), 500);
+    }
+  };
+
   if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   if (!contract) return <div className="py-16 text-center text-muted-foreground">Contract not found.</div>;
 
@@ -145,7 +249,22 @@ export default function ContractDetail() {
   const remaining = Math.max(estimated - delivered, 0);
   const totalValue = Number(contract.total_contract_value) || 0;
   const avgPrice = delivered > 0 ? totalValue / delivered : Number(contract.base_price_per_unit);
-  const transitions = STATUS_TRANSITIONS[contract.status] || [];
+  const hasGradedTags = weighTags.some((wt: any) => ["graded", "approved", "paid"].includes(wt.status));
+  const scaleIsLocked = hasGradedTags && contract.status !== "draft";
+
+  // Status transitions with edge cases
+  const getTransitions = () => {
+    const t: string[] = [];
+    if (contract.status === "draft") t.push("active");
+    if (contract.status === "active") { t.push("fulfilled"); t.push("cancelled"); }
+    if (contract.status === "fulfilled") t.push("active"); // re-open
+    return t;
+  };
+  const transitions = getTransitions();
+
+  // Min tons warning
+  const minTonsWarning = contract.min_tons && contract.delivery_end_date &&
+    new Date(contract.delivery_end_date) < new Date() && delivered < Number(contract.min_tons);
 
   const deliveryProgress = (() => {
     if (!contract.delivery_start_date || !contract.delivery_end_date) return null;
@@ -156,6 +275,9 @@ export default function ContractDetail() {
     if (now > end) return 100;
     return Math.round(((now - start) / (end - start)) * 100);
   })();
+
+  // Contract deletion check
+  const canDelete = contract.status === "draft" && weighTags.length === 0;
 
   return (
     <div className="space-y-6">
@@ -170,6 +292,16 @@ export default function ContractDetail() {
           <BreadcrumbItem><BreadcrumbPage>{contract.contract_number}</BreadcrumbPage></BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
+
+      {minTonsWarning && (
+        <Alert className="border-amber-300 bg-amber-50">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-800">Minimum Delivery Not Met</AlertTitle>
+          <AlertDescription className="text-amber-700">
+            Minimum delivery of {Number(contract.min_tons).toFixed(1)} tons was not met. Only {delivered.toFixed(2)} tons delivered.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -190,7 +322,7 @@ export default function ContractDetail() {
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 {transitions.map((s) => (
-                  <DropdownMenuItem key={s} onClick={() => statusMutation.mutate(s)} className="capitalize">{s}</DropdownMenuItem>
+                  <DropdownMenuItem key={s} onClick={() => handleStatusChange(s)} className="capitalize">{s}</DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -290,7 +422,13 @@ export default function ContractDetail() {
                 <TableBody>
                   {blockAssignments.map((ba: any) => (
                     <TableRow key={ba.id}>
-                      <TableCell className="font-medium">{ba.blocks?.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {ba.blocks ? ba.blocks.name : (
+                          <span className="text-amber-600 flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3" /> (Deleted Block)
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell>{ba.blocks?.vineyards?.name || "—"}</TableCell>
                       <TableCell>{ba.blocks?.variety || "—"}</TableCell>
                       <TableCell className="text-right">{ba.estimated_tons != null ? Number(ba.estimated_tons).toFixed(1) : "—"}</TableCell>
@@ -310,8 +448,17 @@ export default function ContractDetail() {
             </div>
           ) : (
             <>
-              <h3 className="font-semibold">{gradingScale.name}</h3>
-              {gradingScale.description && <p className="text-sm text-muted-foreground">{gradingScale.description}</p>}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold">{gradingScale.name}</h3>
+                  {gradingScale.description && <p className="text-sm text-muted-foreground">{gradingScale.description}</p>}
+                </div>
+                {scaleIsLocked && (
+                  <Badge variant="outline" className="text-amber-600 border-amber-300">
+                    <Lock className="mr-1 h-3 w-3" /> Locked — deliveries graded against this scale
+                  </Badge>
+                )}
+              </div>
 
               {(gradingScale.grading_scale_metrics || []).map((m: any) => (
                 <Card key={m.id}>
@@ -382,7 +529,7 @@ export default function ContractDetail() {
         {/* WEIGH TAGS */}
         <TabsContent value="weigh-tags" className="space-y-4">
           <div className="flex justify-end">
-            <Button size="sm" onClick={() => navigate(`/growers/intake?contract_id=${id}`)}>
+            <Button size="sm" onClick={() => navigate(`/growers/intake/new?contract_id=${id}`)}>
               <Plus className="mr-1 h-3 w-3" /> Record Delivery
             </Button>
           </div>
@@ -407,7 +554,7 @@ export default function ContractDetail() {
                 </TableHeader>
                 <TableBody>
                   {weighTags.map((wt: any) => (
-                    <TableRow key={wt.id}>
+                    <TableRow key={wt.id} className="cursor-pointer" onClick={() => navigate(`/growers/intake/${wt.id}`)}>
                       <TableCell className="font-medium">{wt.tag_number}</TableCell>
                       <TableCell>{wt.delivery_date}</TableCell>
                       <TableCell className="hidden sm:table-cell">{wt.blocks?.name || "—"}</TableCell>
@@ -428,9 +575,14 @@ export default function ContractDetail() {
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">Financial Summary</h3>
             {weighTags.length > 0 && (
-              <Button size="sm" variant="outline" onClick={exportCSV}>
-                <Download className="mr-1 h-3 w-3" /> Export CSV
-              </Button>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={exportPDF}>
+                  <FileText className="mr-1 h-3 w-3" /> Export PDF
+                </Button>
+                <Button size="sm" variant="outline" onClick={exportCSV}>
+                  <Download className="mr-1 h-3 w-3" /> Export CSV
+                </Button>
+              </div>
             )}
           </div>
 
@@ -494,6 +646,22 @@ export default function ContractDetail() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialog.open} onOpenChange={(o) => setConfirmDialog({ ...confirmDialog, open: o })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Status Change</DialogTitle>
+            <DialogDescription>{confirmDialog.message}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDialog({ open: false, status: "", message: "" })}>Cancel</Button>
+            <Button variant={confirmDialog.status === "cancelled" ? "destructive" : "default"} onClick={() => statusMutation.mutate(confirmDialog.status)}>
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
