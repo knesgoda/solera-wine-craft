@@ -87,6 +87,8 @@ import SmsSettings from "./pages/settings/SmsSettings";
 import CostOverview from "./pages/costs/CostOverview";
 import MaterialPrices from "./pages/costs/MaterialPrices";
 import CostCategorySettings from "./pages/costs/CostCategorySettings";
+import CogsDashboard from "./pages/costs/CogsDashboard";
+import LotCostDetail from "./pages/costs/LotCostDetail";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PushPrompt } from "./components/PushPrompt";
 import { useOfflineSync } from "./hooks/useOfflineSync";
