@@ -150,16 +150,20 @@ const FEATURES = [
     id: "growers",
     name: "Grower Contract Management",
     icon: Wheat,
-    desc: "Your grape purchase agreements, grading scales, and intake pricing — in the same platform as your cellar data.",
+    desc: "From handshake to harvest receipt — every grape purchase in one place.",
     tier: "Enterprise",
+    longDesc: "Manage grape purchase agreements with external growers, complete with multi-metric grading scales that automatically price fruit at delivery. Define contracts with per-ton or per-acre pricing, set grading tiers for Brix, MOG, acidity, pH, and any custom metric, then watch the system calculate bonuses and penalties in real time as fruit arrives at the crush pad. Grape costs flow directly into your COGS tracking — no manual entry.",
     bullets: [
-      "Multi-metric grading scales: Brix, MOG, pH, and custom tiers",
-      "Automated harvest intake with weigh tag pricing engine",
-      "Bonuses and penalties applied instantly at the scale",
-      "Grape costs auto-flow into COGS when deliveries are approved",
-      "Contract dashboards with delivery tracking and tonnage summaries",
-      "PDF/CSV financial reports for grower payment reconciliation",
+      "Grower registry with contact management and delivery history",
+      "Per-ton or per-acre contracts with minimum/maximum tonnage commitments",
+      "Multi-metric grading scales: Brix, MOG, TA, pH, berry size, or any custom metric",
+      "Automatic price calculation with bonuses for premium fruit and penalties for below-grade",
+      "Weigh tag recording with live grade display as metrics are entered",
+      "Grape purchase costs auto-feed into production cost tracking (COGS)",
+      "Contract financial summaries with PDF and CSV export",
+      "Reusable grading scale templates across contracts",
     ],
+    cta: "Manage grower contracts →",
     mockup: (
       <div className="bg-card rounded-lg border p-4 space-y-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
