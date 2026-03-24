@@ -77,7 +77,7 @@ export default function WeighTagForm() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("grower_contracts")
-        .select("id, contract_number, grower_id, growers(name), base_price_per_unit, pricing_unit")
+        .select("id, contract_number, grower_id, growers(name), base_price_per_unit, pricing_unit, max_tons, total_delivered_tons, estimated_tons")
         .eq("org_id", organization!.id)
         .eq("status", "active" as any)
         .order("contract_number");
