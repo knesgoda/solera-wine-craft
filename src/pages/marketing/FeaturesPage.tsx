@@ -336,8 +336,8 @@ export default function FeaturesPage() {
   return (
     <>
       <SEOHead
-        title="Features — Solera Winery Management Platform"
-        description="Ten fully integrated modules: vineyard ops, lab tracking, cellar management, production cost tracking, grower contracts, AI assistant, DTC sales, custom crush portal, TTB compliance, and data migration."
+        title="Features | Solera — Winery Management, COGS Tracking, Grower Contracts & DTC Sales"
+        description="Solera manages your entire winery operation: vineyard ops, cellar management, production cost tracking (COGS per gallon), grower contracts with grading scales, AI analytics, DTC sales, and TTB compliance. One platform from vine to bottle to doorstep."
         breadcrumbs={[
           { name: "Home", url: "https://solera.vin" },
           { name: "Features", url: "https://solera.vin/features" },
