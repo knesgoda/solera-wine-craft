@@ -3224,6 +3224,30 @@ export type Database = {
           },
         ]
       }
+      waitlist_signups: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          operation_type: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          operation_type: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          operation_type?: string
+        }
+        Relationships: []
+      }
       weather_readings: {
         Row: {
           created_at: string
