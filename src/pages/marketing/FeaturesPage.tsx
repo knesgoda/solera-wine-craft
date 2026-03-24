@@ -348,7 +348,8 @@ export default function FeaturesPage() {
       <section className="pt-28 pb-16 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 lg:px-8 text-center">
           <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">Everything your winery needs.</h1>
-          <p className="text-xl text-primary-foreground/80">Ten fully integrated modules. One monthly price.</p>
+          <p className="text-xl text-primary-foreground/80 mb-4">Ten fully integrated modules — from vineyard ops and cellar management to production costing, grower contracts, and DTC sales.</p>
+          <p className="text-sm text-primary-foreground/60">One monthly price. No onboarding fees. No transaction markups.</p>
         </div>
       </section>
 
