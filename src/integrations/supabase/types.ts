@@ -1285,6 +1285,217 @@ export type Database = {
           },
         ]
       }
+      cost_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_system: boolean | null
+          name: string
+          org_id: string
+          sort_order: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system?: boolean | null
+          name: string
+          org_id: string
+          sort_order?: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system?: boolean | null
+          name?: string
+          org_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_categories_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cost_entries: {
+        Row: {
+          addition_log_id: string | null
+          barrel_id: string | null
+          blend_trial_id: string | null
+          category_id: string
+          cost_per_gallon: number | null
+          cost_per_unit: number | null
+          created_at: string
+          created_by: string | null
+          description: string
+          effective_date: string
+          id: string
+          lot_gallons_at_entry: number | null
+          method: Database["public"]["Enums"]["cost_method"]
+          notes: string | null
+          org_id: string
+          quantity: number | null
+          source_cost_entry_id: string | null
+          source_vintage_id: string | null
+          status: Database["public"]["Enums"]["cost_entry_status"]
+          total_amount: number
+          transfer_ratio: number | null
+          unit: string | null
+          updated_at: string
+          vessel_id: string | null
+          vintage_id: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+          weigh_tag_id: string | null
+        }
+        Insert: {
+          addition_log_id?: string | null
+          barrel_id?: string | null
+          blend_trial_id?: string | null
+          category_id: string
+          cost_per_gallon?: number | null
+          cost_per_unit?: number | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          effective_date?: string
+          id?: string
+          lot_gallons_at_entry?: number | null
+          method: Database["public"]["Enums"]["cost_method"]
+          notes?: string | null
+          org_id: string
+          quantity?: number | null
+          source_cost_entry_id?: string | null
+          source_vintage_id?: string | null
+          status?: Database["public"]["Enums"]["cost_entry_status"]
+          total_amount: number
+          transfer_ratio?: number | null
+          unit?: string | null
+          updated_at?: string
+          vessel_id?: string | null
+          vintage_id: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+          weigh_tag_id?: string | null
+        }
+        Update: {
+          addition_log_id?: string | null
+          barrel_id?: string | null
+          blend_trial_id?: string | null
+          category_id?: string
+          cost_per_gallon?: number | null
+          cost_per_unit?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          effective_date?: string
+          id?: string
+          lot_gallons_at_entry?: number | null
+          method?: Database["public"]["Enums"]["cost_method"]
+          notes?: string | null
+          org_id?: string
+          quantity?: number | null
+          source_cost_entry_id?: string | null
+          source_vintage_id?: string | null
+          status?: Database["public"]["Enums"]["cost_entry_status"]
+          total_amount?: number
+          transfer_ratio?: number | null
+          unit?: string | null
+          updated_at?: string
+          vessel_id?: string | null
+          vintage_id?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+          weigh_tag_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_entries_barrel_id_fkey"
+            columns: ["barrel_id"]
+            isOneToOne: false
+            referencedRelation: "barrels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_entries_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "cost_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_entries_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_entries_source_cost_entry_id_fkey"
+            columns: ["source_cost_entry_id"]
+            isOneToOne: false
+            referencedRelation: "cost_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_entries_source_vintage_id_fkey"
+            columns: ["source_vintage_id"]
+            isOneToOne: false
+            referencedRelation: "vintages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_entries_vessel_id_fkey"
+            columns: ["vessel_id"]
+            isOneToOne: false
+            referencedRelation: "fermentation_vessels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_entries_vintage_id_fkey"
+            columns: ["vintage_id"]
+            isOneToOne: false
+            referencedRelation: "vintages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_entries_voided_by_fkey"
+            columns: ["voided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_entries_weigh_tag_id_fkey"
+            columns: ["weigh_tag_id"]
+            isOneToOne: false
+            referencedRelation: "weigh_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address_json: Json | null
@@ -2480,6 +2691,135 @@ export type Database = {
             columns: ["vintage_id"]
             isOneToOne: false
             referencedRelation: "vintages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lot_cost_summaries: {
+        Row: {
+          bottling_cost: number | null
+          chemicals_cost: number | null
+          cooperage_cost: number | null
+          cost_per_barrel: number | null
+          cost_per_case: number | null
+          cost_per_gallon: number | null
+          entry_count: number | null
+          grape_cost: number | null
+          id: string
+          labor_cost: number | null
+          last_updated: string | null
+          org_id: string
+          other_cost: number | null
+          overhead_cost: number | null
+          total_cost: number | null
+          total_gallons: number | null
+          vintage_id: string
+        }
+        Insert: {
+          bottling_cost?: number | null
+          chemicals_cost?: number | null
+          cooperage_cost?: number | null
+          cost_per_barrel?: number | null
+          cost_per_case?: number | null
+          cost_per_gallon?: number | null
+          entry_count?: number | null
+          grape_cost?: number | null
+          id?: string
+          labor_cost?: number | null
+          last_updated?: string | null
+          org_id: string
+          other_cost?: number | null
+          overhead_cost?: number | null
+          total_cost?: number | null
+          total_gallons?: number | null
+          vintage_id: string
+        }
+        Update: {
+          bottling_cost?: number | null
+          chemicals_cost?: number | null
+          cooperage_cost?: number | null
+          cost_per_barrel?: number | null
+          cost_per_case?: number | null
+          cost_per_gallon?: number | null
+          entry_count?: number | null
+          grape_cost?: number | null
+          id?: string
+          labor_cost?: number | null
+          last_updated?: string | null
+          org_id?: string
+          other_cost?: number | null
+          overhead_cost?: number | null
+          total_cost?: number | null
+          total_gallons?: number | null
+          vintage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lot_cost_summaries_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lot_cost_summaries_vintage_id_fkey"
+            columns: ["vintage_id"]
+            isOneToOne: true
+            referencedRelation: "vintages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      material_unit_costs: {
+        Row: {
+          category_id: string | null
+          cost_per_unit: number
+          created_at: string
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          org_id: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          cost_per_unit: number
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          org_id: string
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          cost_per_unit?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          org_id?: string
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_unit_costs_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "cost_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_unit_costs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -4215,6 +4555,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      seed_cost_categories: { Args: { p_org_id: string }; Returns: undefined }
     }
     Enums: {
       addition_type:
@@ -4295,6 +4636,8 @@ export type Database = {
         | "fulfilled"
         | "cancelled"
         | "expired"
+      cost_entry_status: "active" | "voided" | "transferred"
+      cost_method: "apportioned" | "transactional" | "ad_hoc"
       facility_type:
         | "winery"
         | "vineyard"
@@ -4568,6 +4911,8 @@ export const Constants = {
       conflict_resolution: ["solera_wins", "sheet_wins", "flag_for_review"],
       contract_pricing_unit: ["per_ton", "per_acre"],
       contract_status: ["draft", "active", "fulfilled", "cancelled", "expired"],
+      cost_entry_status: ["active", "voided", "transferred"],
+      cost_method: ["apportioned", "transactional", "ad_hoc"],
       facility_type: [
         "winery",
         "vineyard",
