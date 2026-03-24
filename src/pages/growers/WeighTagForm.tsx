@@ -185,7 +185,11 @@ export default function WeighTagForm() {
   const finalPrice = basePrice + totalAdjustment;
   const totalValue = finalPrice * netTons;
 
-  const validate = () => {
+  // Max tons warning
+  const maxTonsExceeded = selectedContract?.max_tons && netTons > 0 &&
+    (Number(selectedContract.total_delivered_tons || 0) + netTons) > Number(selectedContract.max_tons);
+
+  const validate = async () => {
     if (!contractId) { toast({ title: "Contract is required", variant: "destructive" }); return false; }
     if (!grossWeight || grossNum <= 0) { toast({ title: "Gross weight is required", variant: "destructive" }); return false; }
     if (!tareWeight || tareNum <= 0) { toast({ title: "Tare weight is required", variant: "destructive" }); return false; }
@@ -196,6 +200,25 @@ export default function WeighTagForm() {
           toast({ title: `${m.metric_name} value is required`, variant: "destructive" });
           return false;
         }
+      }
+    }
+    // Duplicate check
+    if (!duplicateConfirmed && selectedContract) {
+      const yesterday = new Date();
+      yesterday.setHours(yesterday.getHours() - 24);
+      const { data: dupes } = await supabase
+        .from("weigh_tags")
+        .select("tag_number, net_tons, created_at")
+        .eq("grower_id", selectedContract.grower_id)
+        .eq("delivery_date", deliveryDate)
+        .eq("gross_weight_lbs", grossNum)
+        .gte("created_at", yesterday.toISOString())
+        .limit(1);
+      if (dupes && dupes.length > 0) {
+        const d = dupes[0] as any;
+        const hoursAgo = Math.round((Date.now() - new Date(d.created_at).getTime()) / 3600000);
+        setDuplicateWarning(`A similar delivery was recorded ${hoursAgo}h ago (${d.tag_number}, ${Number(d.net_tons).toFixed(2)} tons). Are you sure this is a new delivery?`);
+        return false;
       }
     }
     return true;
