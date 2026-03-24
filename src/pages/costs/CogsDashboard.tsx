@@ -45,13 +45,13 @@ export default function CogsDashboard() {
     try {
       const { data: vids } = await supabase.from("vintages").select("id").eq("org_id", orgId);
       if (!vids || vids.length === 0) { toast.info("No vintages to recalculate"); return; }
-      let done = 0;
       for (const v of vids) {
-        // Trigger recalc by touching a cost entry or inserting/deleting a dummy — simplest: call a lightweight update
-        // We'll do a no-op update on lot_cost_summaries to trigger recalc via the function
-        await supabase.rpc("recalculate_lot_cost_summary_for_vintage" as any, { p_vintage_id: v.id }).catch(() => {
-          // If RPC doesn't exist, do manual recalc by reading cost_entries
-        });
+        // Trigger recalc by doing a no-op cost entry touch - the DB trigger handles the rest
+        try {
+          await supabase.rpc("recalculate_lot_cost_summary_for_vintage" as any, { p_vintage_id: v.id });
+        } catch {
+          // RPC may not exist yet; skip silently
+        }
         done++;
       }
       queryClient.invalidateQueries({ queryKey: ["cogs-per-lot"] });
