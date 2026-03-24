@@ -12,7 +12,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
-import ComingSoon from "./pages/ComingSoon";
+import ComingSoonPage from "./pages/ComingSoon";
 import AskSolera from "./pages/AskSolera";
 import Reports from "./pages/Reports";
 import DataImport from "./pages/DataImport";
@@ -116,9 +116,11 @@ const App = () => (
           <ImpersonationProvider>
           <AppInner />
           <Routes>
+            {/* Coming soon / waitlist - public */}
+            <Route path="/coming-soon" element={<ComingSoonPage />} />
             {/* Marketing routes */}
             <Route element={<MarketingLayout />}>
-              <Route path="/" element={<Homepage />} />
+              <Route path="/" element={<ComingSoonPage />} />
               <Route path="/features" element={<FeaturesPage />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/compare" element={<ComparePage />} />
