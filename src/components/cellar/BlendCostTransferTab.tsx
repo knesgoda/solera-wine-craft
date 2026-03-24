@@ -42,7 +42,7 @@ export function BlendCostTransferTab({ trialId, targetVintageId }: BlendCostTran
   const totalActive = activeEntries.reduce((s: number, e: any) => s + Number(e.total_amount), 0);
 
   // Group by source vintage
-  const grouped = activeEntries.reduce((acc: Record<string, any[]>, e: any) => {
+  const grouped = (activeEntries as any[]).reduce((acc: Record<string, any[]>, e: any) => {
     const key = e.source_vintage_id || "unknown";
     if (!acc[key]) acc[key] = [];
     acc[key].push(e);
