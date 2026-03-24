@@ -6,7 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { SEOHead, buildFaqSchema } from "@/components/SEOHead";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Check } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Check, Minus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPaddle } from "@/lib/paddle-client";
 import { PADDLE_PRICES, ALL_PAID_PRICE_IDS } from "@/constants/paddle-prices";
@@ -52,9 +54,9 @@ const TIERS = [
     users: "Up to 15 users",
     features: [
       "Everything in Pro",
-      "Production cost tracking (COGS per lot/barrel/gallon)",
+      "Production cost tracking (COGS per gallon, barrel, case)",
       "Blend cost propagation — costs follow gallons automatically",
-      "QuickBooks export (CSV/IIF)",
+      "QuickBooks cost export",
       "Ask Solera AI assistant",
       "DTC storefront & wine club",
       "Commerce7, WineDirect, Shopify sync",
@@ -71,7 +73,7 @@ const TIERS = [
     features: [
       "Everything in Growth",
       "Grower contract management with grading scales",
-      "Automated harvest intake pricing at the scale",
+      "Harvest intake with auto-pricing",
       "Custom crush client portal (10 clients)",
       "SSO / SAML 2.0",
       "Audit logging",
@@ -83,11 +85,38 @@ const TIERS = [
   },
 ];
 
+type ComparisonCell = true | string | false;
+
+const COMPARISON_ROWS: { feature: string; hobbyist: ComparisonCell; pro: ComparisonCell; growth: ComparisonCell; enterprise: ComparisonCell }[] = [
+  { feature: "Vineyards & blocks", hobbyist: "1 / 2", pro: "Unlimited", growth: "Unlimited", enterprise: "Unlimited" },
+  { feature: "Vintage & lab tracking", hobbyist: true, pro: true, growth: true, enterprise: true },
+  { feature: "Weather & GDD", hobbyist: true, pro: true, growth: true, enterprise: true },
+  { feature: "Data import (CSV/XLSX)", hobbyist: true, pro: true, growth: true, enterprise: true },
+  { feature: "Mobile PWA with offline", hobbyist: true, pro: true, growth: true, enterprise: true },
+  { feature: "Cellar & fermentation", hobbyist: false, pro: true, growth: true, enterprise: true },
+  { feature: "TTB compliance & OW-1", hobbyist: false, pro: true, growth: true, enterprise: true },
+  { feature: "Google Sheets sync", hobbyist: false, pro: true, growth: true, enterprise: true },
+  { feature: "Production cost tracking (COGS)", hobbyist: false, pro: false, growth: "Per-lot, per-barrel, per-gallon", enterprise: true },
+  { feature: "QuickBooks COGS export", hobbyist: false, pro: false, growth: true, enterprise: true },
+  { feature: "Ask Solera AI", hobbyist: false, pro: false, growth: true, enterprise: true },
+  { feature: "DTC storefront & wine club", hobbyist: false, pro: false, growth: true, enterprise: true },
+  { feature: "Commerce7 / WineDirect / Shopify", hobbyist: false, pro: false, growth: true, enterprise: true },
+  { feature: "Multi-facility", hobbyist: false, pro: false, growth: true, enterprise: true },
+  { feature: "Grower contract management", hobbyist: false, pro: false, growth: false, enterprise: "Multi-metric grading scales" },
+  { feature: "Harvest intake & weigh tags", hobbyist: false, pro: false, growth: false, enterprise: "Auto-pricing from contracts" },
+  { feature: "Custom crush client portal", hobbyist: false, pro: false, growth: false, enterprise: "10 clients included" },
+  { feature: "SSO / SAML 2.0", hobbyist: false, pro: false, growth: false, enterprise: true },
+  { feature: "Audit logging", hobbyist: false, pro: false, growth: false, enterprise: true },
+  { feature: "Webhooks & API", hobbyist: false, pro: false, growth: true, enterprise: true },
+  { feature: "Support", hobbyist: "Community", pro: "Email", growth: "Priority", enterprise: "Dedicated concierge" },
+];
+
 const COMPETITOR_DATA: Record<string, { cost: number; tier: string; tierCost: number }> = {
   innovint: { cost: 149, tier: "Pro", tierCost: 69 },
   ekos: { cost: 279, tier: "Pro", tierCost: 69 },
   winedirect: { cost: 149, tier: "Growth", tierCost: 129 },
   commerce7: { cost: 299, tier: "Growth", tierCost: 129 },
+  vintrace: { cost: 184, tier: "Growth", tierCost: 129 },
   spreadsheets: { cost: 0, tier: "Hobbyist", tierCost: 0 },
   multiple: { cost: 700, tier: "Growth", tierCost: 129 },
 };
@@ -116,20 +145,37 @@ const FALLBACK_PRICES: Record<string, Record<string, string>> = {
   'pri_01kmdxmnh6v670ng8dtz5skec8': { formatted: "$339/mo" },
 };
 
+function ComparisonCellContent({ value }: { value: ComparisonCell }) {
+  if (value === false) return <Minus className="h-4 w-4 text-muted-foreground/40 mx-auto" />;
+  if (value === true) return <Check className="h-4 w-4 text-secondary mx-auto" />;
+  // String = checkmark + tooltip subtext
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex flex-col items-center gap-0.5">
+            <Check className="h-4 w-4 text-secondary" />
+            <span className="text-[10px] text-muted-foreground leading-tight text-center hidden sm:block">{value}</span>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent><p className="text-xs">{value}</p></TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 export default function PricingPage() {
   const [annual, setAnnual] = useState(false);
   const [competitor, setCompetitor] = useState<string>("");
-  const [prices, setPrices] = useState<Record<string, string>>({}); // priceId → formatted price
+  const [prices, setPrices] = useState<Record<string, string>>({});
   const { user, profile, organization } = useAuth();
   const navigate = useNavigate();
 
-  // Fetch localized prices from Paddle on mount
   useEffect(() => {
     async function fetchPrices() {
       try {
         const paddle = await getPaddle();
         if (!paddle) {
-          // Fallback to hardcoded prices
           const fallback: Record<string, string> = {};
           for (const [id, data] of Object.entries(FALLBACK_PRICES)) {
             fallback[id] = data.formatted;
@@ -149,7 +195,6 @@ export default function PricingPage() {
         if (Object.keys(priceMap).length > 0) {
           setPrices(priceMap);
         } else {
-          // Fallback
           const fallback: Record<string, string> = {};
           for (const [id, data] of Object.entries(FALLBACK_PRICES)) {
             fallback[id] = data.formatted;
@@ -188,7 +233,7 @@ export default function PricingPage() {
     <>
       <SEOHead
         title="Pricing — Solera Winery Management"
-        description="Honest pricing for every winemaker. Free for hobbyists. From $69/mo for professional wineries. No onboarding fees."
+        description="Solera pricing starts free for hobbyists. Pro at $69/mo, Growth at $129/mo with COGS tracking, Enterprise at $399/mo with grower contracts. No onboarding fees. 30-day free trial."
         jsonLd={buildFaqSchema(FAQS)}
         breadcrumbs={[
           { name: "Home", url: "https://solera.vin" },
@@ -206,7 +251,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Toggle */}
+      {/* Toggle + Tier Cards */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="flex items-center justify-center gap-4 mb-12">
@@ -279,6 +324,39 @@ export default function PricingPage() {
         </div>
       </section>
 
+      {/* Feature Comparison Table */}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4 lg:px-8">
+          <h2 className="font-display text-3xl font-bold text-foreground text-center mb-10">
+            Compare plans side by side
+          </h2>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[200px]">Feature</TableHead>
+                  <TableHead className="text-center min-w-[100px]">Hobbyist</TableHead>
+                  <TableHead className="text-center min-w-[100px]">Pro</TableHead>
+                  <TableHead className="text-center min-w-[100px] text-secondary font-bold">Growth</TableHead>
+                  <TableHead className="text-center min-w-[100px]">Enterprise</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {COMPARISON_ROWS.map((row) => (
+                  <TableRow key={row.feature}>
+                    <TableCell className="font-medium text-sm">{row.feature}</TableCell>
+                    <TableCell className="text-center"><ComparisonCellContent value={row.hobbyist} /></TableCell>
+                    <TableCell className="text-center"><ComparisonCellContent value={row.pro} /></TableCell>
+                    <TableCell className="text-center"><ComparisonCellContent value={row.growth} /></TableCell>
+                    <TableCell className="text-center"><ComparisonCellContent value={row.enterprise} /></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </section>
+
       {/* Savings Calculator */}
       <section className="py-16 bg-muted/50">
         <div className="container mx-auto px-4 lg:px-8 max-w-2xl">
@@ -292,6 +370,7 @@ export default function PricingPage() {
                 <SelectItem value="ekos">Ekos</SelectItem>
                 <SelectItem value="winedirect">WineDirect</SelectItem>
                 <SelectItem value="commerce7">Commerce7</SelectItem>
+                <SelectItem value="vintrace">vintrace</SelectItem>
                 <SelectItem value="spreadsheets">Spreadsheets</SelectItem>
                 <SelectItem value="multiple">Multiple tools</SelectItem>
               </SelectContent>
@@ -314,6 +393,9 @@ export default function PricingPage() {
                     Solera is free! Upgrade to Pro at $69/mo when you need more.
                   </p>
                 )}
+                <p className="text-xs text-muted-foreground mt-3">
+                  Solera Growth includes COGS tracking — no separate accounting tool needed.
+                </p>
               </div>
             )}
           </div>
