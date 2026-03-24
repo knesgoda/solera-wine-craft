@@ -557,6 +557,30 @@ export default function WeighTagForm() {
         </CardContent>
       </Card>
 
+      {/* Max tons warning */}
+      {maxTonsExceeded && (
+        <Alert className="border-amber-300 bg-amber-50">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-700">
+            This delivery would bring total tonnage to {(Number(selectedContract?.total_delivered_tons || 0) + netTons).toFixed(2)}, which exceeds the contract maximum of {Number(selectedContract?.max_tons).toFixed(1)} tons. You can still record it, but the excess may not be covered.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Duplicate warning */}
+      {duplicateWarning && (
+        <Alert className="border-amber-300 bg-amber-50">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-700 flex flex-col gap-2">
+            <span>{duplicateWarning}</span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => { setDuplicateWarning(null); setDuplicateConfirmed(true); }}>Continue Anyway</Button>
+              <Button size="sm" variant="ghost" onClick={() => setDuplicateWarning(null)}>Cancel</Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex items-center justify-between pb-8">
         <div className="flex items-center gap-2">
           <input
@@ -572,7 +596,7 @@ export default function WeighTagForm() {
           <Button variant="outline" onClick={() => { if (dirty && !confirm("Discard changes?")) return; navigate("/growers/intake"); }}>
             Cancel
           </Button>
-          <Button onClick={() => { if (validate()) saveMutation.mutate(); }} disabled={saveMutation.isPending}>
+          <Button onClick={async () => { if (await validate()) saveMutation.mutate(); }} disabled={saveMutation.isPending}>
             {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {anyReject ? "Record as Rejected" : "Save Delivery"}
           </Button>
