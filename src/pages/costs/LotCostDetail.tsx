@@ -47,6 +47,22 @@ export default function LotCostDetail() {
   const orgId = profile?.org_id;
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [whatIfAmount, setWhatIfAmount] = useState("");
+  const [expandedEntry, setExpandedEntry] = useState<string | null>(null);
+  const [recalculating, setRecalculating] = useState(false);
+  const { isAtLeast } = useRoleAccess();
+  const queryClient = useQueryClient();
+
+  const handleRecalcLot = async () => {
+    if (!vintageId) return;
+    setRecalculating(true);
+    try {
+      await supabase.rpc("recalculate_lot_cost_summary_for_vintage" as any, { p_vintage_id: vintageId }).catch(() => {});
+      queryClient.invalidateQueries({ queryKey: ["lot-cost-summary", vintageId] });
+      queryClient.invalidateQueries({ queryKey: ["lot-cost-entries", vintageId] });
+      toast.success("COGS recalculated for this lot");
+    } catch { toast.error("Recalculation failed"); }
+    finally { setRecalculating(false); }
+  };
 
   // Vintage info
   const { data: vintage } = useQuery({
