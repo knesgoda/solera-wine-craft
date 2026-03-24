@@ -24,8 +24,9 @@ const MODULES = [
 const STATS = [
   "54% cheaper than Innovint",
   "Replaces $700/mo of fragmented tools",
-  "Full TTB compliance from day one",
+  "Real-time COGS per lot, barrel, and gallon",
   "AI harvest predictions built in",
+  "Grower contracts + intake pricing included",
   "Your historical data migrates in minutes",
 ];
 
