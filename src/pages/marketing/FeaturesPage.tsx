@@ -367,6 +367,9 @@ export default function FeaturesPage() {
                   )}
                 </div>
                 <p className="text-lg text-muted-foreground mb-6">{f.desc}</p>
+                {"longDesc" in f && f.longDesc && (
+                  <p className="text-sm text-muted-foreground mb-6">{f.longDesc}</p>
+                )}
                 <ul className="space-y-3">
                   {f.bullets.map((b) => (
                     <li key={b} className="flex items-start gap-3 text-foreground">
@@ -375,6 +378,11 @@ export default function FeaturesPage() {
                     </li>
                   ))}
                 </ul>
+                {"cta" in f && f.cta && (
+                  <Button variant="outline" className="mt-6" asChild>
+                    <Link to="/signup">{f.cta}</Link>
+                  </Button>
+                )}
               </div>
               <div className={i % 2 === 1 ? "lg:order-1" : ""}>
                 {f.mockup}
