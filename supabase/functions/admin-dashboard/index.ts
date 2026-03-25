@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
     }
 
     // ─── Revenue Detail ───
-    if (action === "stripe-revenue") {
+    if (action === "revenue-detail") {
       // Build revenue data from DB (organizations table)
       const { data: allOrgs } = await supabase.from("organizations")
         .select("id, name, tier, subscription_status, paddle_customer_id, paddle_subscription_id, next_billed_at, created_at");
