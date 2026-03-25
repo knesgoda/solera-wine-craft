@@ -97,7 +97,7 @@ export default function VintageList() {
           title="No vintages yet"
           description="Create your first vintage to start tracking fermentation, lab data, and cellar operations."
           actionLabel="Add Vintage"
-          onAction={() => setOpen(true)}
+          onAction={() => setDialogOpen(true)}
         />
       ) : (
         <div className="space-y-2">
