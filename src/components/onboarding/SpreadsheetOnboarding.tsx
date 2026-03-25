@@ -283,7 +283,7 @@ function StepImport({ onBack, onFinish }: StepImportProps) {
           />
           {fileName ? (
             <>
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+              <CheckCircle2 className="h-8 w-8 text-primary" />
               <div className="text-center">
                 <p className="font-medium text-foreground">{fileName}</p>
                 {rowCount > 0 && (
