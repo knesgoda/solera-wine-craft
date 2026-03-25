@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Check, Grape, Wine, Warehouse, Brain, ShoppingCart, RefreshCw, LogOut } from "lucide-react";
+import { Check, Grape, Wine, Warehouse, Brain, ShoppingCart, RefreshCw, LogOut, FileSpreadsheet } from "lucide-react";
 import soleraLogo from "@/assets/solera-logo.png";
+import { SpreadsheetOnboarding } from "@/components/onboarding/SpreadsheetOnboarding";
 
 const OPERATION_TYPES = [
   { value: "hobbyist", label: "Hobbyist", desc: "Home or hobby winemaker, <500 cases", type: "winery", tier: "hobbyist" },
@@ -33,6 +34,7 @@ const Onboarding = () => {
   const { profile, refreshProfile, signOut } = useAuth();
   const [step, setStep] = useState(1);
   const [selection, setSelection] = useState<string | null>(null);
+  const [spreadsheetPath, setSpreadsheetPath] = useState(false);
   const [enabledModules, setEnabledModules] = useState<string[]>(["vineyard_ops", "vintage_management", "cellar_management"]);
   const [loading, setLoading] = useState(false);
   const [setupFailed, setSetupFailed] = useState(false);
@@ -76,6 +78,19 @@ const Onboarding = () => {
     );
   }
 
+  // ── Spreadsheet onboarding path ──────────────────────────────────────
+  if (spreadsheetPath) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-cream px-4 py-8">
+        <SpreadsheetOnboarding
+          onComplete={(dest) => navigate(dest)}
+          onBack={() => setSpreadsheetPath(false)}
+        />
+      </div>
+    );
+  }
+
+  // ── Standard onboarding path ─────────────────────────────────────────
   const selectedType = OPERATION_TYPES.find((t) => t.value === selection);
 
   const toggleModule = (key: string) => {
@@ -128,25 +143,67 @@ const Onboarding = () => {
               <CardTitle className="text-2xl font-display text-primary">What type of operation?</CardTitle>
               <CardDescription>This helps us tailor Solera to your needs</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {OPERATION_TYPES.map((t) => (
-                <button
-                  key={t.value}
-                  onClick={() => setSelection(t.value)}
-                  className={`p-4 rounded-lg border-2 text-left transition-all min-h-[80px] ${
-                    selection === t.value
-                      ? "border-primary bg-primary/5 shadow-md"
-                      : "border-border hover:border-secondary/50"
-                  }`}
-                >
-                  <div className="font-semibold text-foreground">{t.label}</div>
-                  <div className="text-sm text-muted-foreground mt-1">{t.desc}</div>
-                  {selection === t.value && <Check className="h-4 w-4 text-primary mt-2" />}
-                </button>
-              ))}
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {OPERATION_TYPES.map((t) => (
+                  <button
+                    key={t.value}
+                    onClick={() => { setSelection(t.value); setSpreadsheetPath(false); }}
+                    className={`p-4 rounded-lg border-2 text-left transition-all min-h-[80px] ${
+                      selection === t.value && !spreadsheetPath
+                        ? "border-primary bg-primary/5 shadow-md"
+                        : "border-border hover:border-secondary/50"
+                    }`}
+                  >
+                    <div className="font-semibold text-foreground">{t.label}</div>
+                    <div className="text-sm text-muted-foreground mt-1">{t.desc}</div>
+                    {selection === t.value && !spreadsheetPath && <Check className="h-4 w-4 text-primary mt-2" />}
+                  </button>
+                ))}
+              </div>
+
+              {/* Spreadsheet path CTA */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">or</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => { setSelection(null); setSpreadsheetPath(true); }}
+                className={`w-full p-4 rounded-lg border-2 text-left transition-all flex items-center gap-3 ${
+                  spreadsheetPath
+                    ? "border-primary bg-primary/5 shadow-md"
+                    : "border-dashed border-border hover:border-secondary/50"
+                }`}
+              >
+                <div className="p-2 rounded-md bg-primary/10">
+                  <FileSpreadsheet className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <div className="font-semibold text-foreground">I use spreadsheets</div>
+                  <div className="text-sm text-muted-foreground">
+                    Guided import — see your own data in Solera in under 5 minutes
+                  </div>
+                </div>
+                {spreadsheetPath && <Check className="h-4 w-4 text-primary ml-auto" />}
+              </button>
             </CardContent>
             <div className="p-6 pt-0">
-              <Button className="w-full" disabled={!selection} onClick={() => setStep(2)}>
+              <Button
+                className="w-full"
+                disabled={!selection && !spreadsheetPath}
+                onClick={() => {
+                  if (spreadsheetPath) {
+                    // handled by the spreadsheetPath state above — triggers re-render
+                    return;
+                  }
+                  setStep(2);
+                }}
+              >
                 Continue
               </Button>
             </div>
