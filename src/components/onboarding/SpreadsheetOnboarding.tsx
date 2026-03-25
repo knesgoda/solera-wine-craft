@@ -270,7 +270,7 @@ function StepImport({ onBack, onFinish }: StepImportProps) {
             isDragging
               ? "border-primary bg-primary/5"
               : fileName
-                ? "border-green-500 bg-green-50"
+                ? "border-primary bg-primary/5"
                 : "border-border hover:border-secondary/50 hover:bg-muted/30"
           }`}
         >
