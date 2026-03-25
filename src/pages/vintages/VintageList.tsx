@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ArrowUpDown } from "lucide-react";
+import { Plus, ArrowUpDown, Wine } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { format, parseISO } from "date-fns";
 import { NewVintageDialog } from "@/components/vintages/NewVintageDialog";
 
