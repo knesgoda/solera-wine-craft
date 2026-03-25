@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
         method: "POST",
         headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          from: `${facilityName} <noreply@${Deno.env.get("RESEND_DOMAIN") || "solera.app"}>`,
+          from: `${facilityName} <noreply@${Deno.env.get("RESEND_DOMAIN") || "solera.vin"}>`,
           to: [email],
           subject: `You're invited to the ${facilityName} client portal`,
           html: `<h2>Welcome to ${facilityName}</h2>
