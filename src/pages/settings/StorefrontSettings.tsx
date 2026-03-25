@@ -156,12 +156,13 @@ const StorefrontSettings = () => {
       </Card>
 
       <Card className="border-none shadow-md">
-        <CardHeader><CardTitle className="font-display">Stripe Connect</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="font-display">Payment Processing</CardTitle></CardHeader>
         <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">Storefront payments are processed via Stripe Connect — separate from your Solera subscription billing.</p>
           <div>
-            <Label>Stripe Account ID</Label>
+            <Label>Stripe Connect Account ID</Label>
             <Input value={currentForm.stripe_account_id || ""} onChange={(e) => updateForm("stripe_account_id", e.target.value)} placeholder="acct_..." />
-            <p className="text-xs text-muted-foreground mt-1">Enter your Stripe Connect account ID. Set up your Stripe keys in backend secrets.</p>
+            <p className="text-xs text-muted-foreground mt-1">Used for DTC storefront transactions only. Set up your Stripe keys in backend secrets.</p>
           </div>
           <Button variant="outline" onClick={() => window.open("https://dashboard.stripe.com", "_blank")}>
             <ExternalLink className="h-4 w-4 mr-2" />Open Stripe Dashboard
