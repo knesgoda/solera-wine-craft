@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Users } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 
 const CustomerList = () => {
   const { organization } = useAuth();
