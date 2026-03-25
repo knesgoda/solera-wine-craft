@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
                 <tr><td style="padding: 4px 16px 4px 0; font-weight: 600;">Value</td><td>${match.actualValue}</td></tr>
                 <tr><td style="padding: 4px 16px 4px 0; font-weight: 600;">Threshold</td><td>${op} ${match.threshold}</td></tr>
               </table>
-              <a href="https://solera-wine-craft.lovable.app/dashboard" style="display: inline-block; background: #6B1B2A; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600;">View in Solera</a>
+              <a href="https://solera.vin/dashboard" style="display: inline-block; background: #6B1B2A; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600;">View in Solera</a>
               <p style="font-size: 12px; color: #999; margin: 32px 0 0;">Solera — Alert Notifications</p>
             </div>
           `;
