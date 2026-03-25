@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Wine } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 
 export default function ClientVintages() {
   const { clientUser } = useOutletContext<{ clientUser: any }>();
