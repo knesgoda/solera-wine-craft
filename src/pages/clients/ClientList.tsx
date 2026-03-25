@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Users, Loader2 } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -77,7 +78,13 @@ const ClientList = () => {
           {isLoading ? (
             <div className="p-8 text-center text-muted-foreground">Loading...</div>
           ) : clients.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">No clients yet.</div>
+            <EmptyState
+              icon={Users}
+              title="No clients yet"
+              description="Add your first custom crush client to manage their vintages and communications."
+              actionLabel="Add Client"
+              onAction={() => setOpen(true)}
+            />
           ) : (
             <Table>
               <TableHeader>

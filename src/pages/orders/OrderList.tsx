@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EmptyState } from "@/components/EmptyState";
 import { ShoppingBag } from "lucide-react";
 import { format } from "date-fns";
 
@@ -107,8 +108,12 @@ const OrderList = () => {
               ))}
               {orders.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                    <ShoppingBag className="h-8 w-8 mx-auto mb-2 opacity-50" />No orders yet
+                  <TableCell colSpan={6}>
+                    <EmptyState
+                      icon={ShoppingBag}
+                      title="No orders yet"
+                      description="Orders will appear here when synced from your storefront or entered manually."
+                    />
                   </TableCell>
                 </TableRow>
               )}

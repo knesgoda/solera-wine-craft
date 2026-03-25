@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Wine } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 
 export default function ClientVintages() {
   const { clientUser } = useOutletContext<{ clientUser: any }>();
@@ -25,7 +27,11 @@ export default function ClientVintages() {
       <Card className="border-none shadow-md">
         <CardContent className="p-0">
           {vintages.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">No vintages assigned yet.</div>
+            <EmptyState
+              icon={Wine}
+              title="No vintages assigned yet"
+              description="Your winery will assign vintages here as they become available."
+            />
           ) : (
             <Table>
               <TableHeader><TableRow><TableHead>Year</TableHead><TableHead>Block</TableHead><TableHead>Status</TableHead><TableHead>Harvest Date</TableHead></TableRow></TableHeader>

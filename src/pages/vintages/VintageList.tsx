@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ArrowUpDown } from "lucide-react";
+import { Plus, ArrowUpDown, Wine } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { format, parseISO } from "date-fns";
 import { NewVintageDialog } from "@/components/vintages/NewVintageDialog";
 
@@ -91,7 +92,13 @@ export default function VintageList() {
       {isLoading ? (
         <p className="text-center py-12 text-muted-foreground">Loading…</p>
       ) : sorted.length === 0 ? (
-        <p className="text-center py-12 text-muted-foreground">No vintages yet. Create your first vintage to get started.</p>
+        <EmptyState
+          icon={Wine}
+          title="No vintages yet"
+          description="Create your first vintage to start tracking fermentation, lab data, and cellar operations."
+          actionLabel="Add Vintage"
+          onAction={() => setDialogOpen(true)}
+        />
       ) : (
         <div className="space-y-2">
           {sorted.map((v) => (

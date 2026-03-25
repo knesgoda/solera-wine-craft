@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Calendar as CalendarIcon, List, MapPin, Clock, CheckCircle2 } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { format, isPast, isToday, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { NewTaskDialog } from "@/components/tasks/NewTaskDialog";
@@ -98,9 +99,13 @@ export default function TaskList() {
     </Card>
   );
 
-  const renderList = (items: TaskRow[], empty: string) =>
+  const renderList = (items: TaskRow[], emptyTitle: string, emptyDesc: string) =>
     items.length === 0 ? (
-      <p className="text-muted-foreground text-center py-12">{empty}</p>
+      <EmptyState
+        icon={CheckCircle2}
+        title={emptyTitle}
+        description={emptyDesc}
+      />
     ) : (
       <div className="space-y-2">{items.map(renderTask)}</div>
     );
@@ -146,13 +151,13 @@ export default function TaskList() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="upcoming" className="mt-4">
-            {isLoading ? <p className="text-center py-12 text-muted-foreground">Loading…</p> : renderList(upcoming, "No upcoming tasks")}
+            {isLoading ? <p className="text-center py-12 text-muted-foreground">Loading…</p> : renderList(upcoming, "No upcoming tasks", "Create a task to track vineyard or cellar work.")}
           </TabsContent>
           <TabsContent value="overdue" className="mt-4">
-            {renderList(overdue, "No overdue tasks 🎉")}
+            {renderList(overdue, "No overdue tasks 🎉", "All caught up — nothing overdue.")}
           </TabsContent>
           <TabsContent value="completed" className="mt-4">
-            {renderList(completed, "No completed tasks yet")}
+            {renderList(completed, "No completed tasks yet", "Completed tasks will appear here as you check them off.")}
           </TabsContent>
         </Tabs>
       )}
