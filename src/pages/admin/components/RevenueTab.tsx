@@ -32,13 +32,13 @@ function BigStat({ label, value, icon: Icon, loading }: { label: string; value: 
 
 export function RevenueTab({ api }: Props) {
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-stripe-revenue"],
-    queryFn: () => api("stripe-revenue"),
+    queryKey: ["admin-revenue-detail"],
+    queryFn: () => api("revenue-detail"),
   });
 
   const { data: mrrData, isLoading: mrrLoading } = useQuery({
     queryKey: ["admin-weekly-mrr"],
-    queryFn: () => api("stripe-weekly-mrr"),
+    queryFn: () => api("weekly-mrr"),
   });
 
   const weeks = mrrData?.weeks || [];

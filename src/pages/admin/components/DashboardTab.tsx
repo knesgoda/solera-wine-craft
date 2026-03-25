@@ -125,17 +125,17 @@ export function DashboardTab({ api }: Props) {
           Revenue
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <StatCard label="Current MRR" value={`$${data?.stripe?.mrr || 0}`} icon={DollarSign} loading={isLoading} />
-          <StatCard label="MRR Added (7d)" value={`$${data?.stripe?.mrrAdded7d || 0}`} icon={TrendingUp} loading={isLoading} />
-          <StatCard label="Churned MRR (7d)" value={`$${data?.stripe?.mrrChurned7d || 0}`} icon={TrendingDown} loading={isLoading} />
-          <StatCard label="Net New MRR (7d)" value={`$${(data?.stripe?.mrrAdded7d || 0) - (data?.stripe?.mrrChurned7d || 0)}`} icon={DollarSign} loading={isLoading} />
+          <StatCard label="Current MRR" value={`$${data?.revenue?.mrr || 0}`} icon={DollarSign} loading={isLoading} />
+          <StatCard label="MRR Added (7d)" value={`$${data?.revenue?.mrrAdded7d || 0}`} icon={TrendingUp} loading={isLoading} />
+          <StatCard label="Churned MRR (7d)" value={`$${data?.revenue?.mrrChurned7d || 0}`} icon={TrendingDown} loading={isLoading} />
+          <StatCard label="Net New MRR (7d)" value={`$${(data?.revenue?.mrrAdded7d || 0) - (data?.revenue?.mrrChurned7d || 0)}`} icon={DollarSign} loading={isLoading} />
           <Card className="bg-white shadow-sm">
             <CardContent className="p-4">
               <p className="text-xs text-muted-foreground mb-1">Active Paid Subs</p>
-              <p className="text-2xl font-bold" style={{ color: "#1A1A1A" }}>{data?.stripe?.activeSubscriptions || 0}</p>
-              {(data?.stripe?.failedPayments7d || 0) > 0 && (
+              <p className="text-2xl font-bold" style={{ color: "#1A1A1A" }}>{data?.revenue?.activeSubscriptions || 0}</p>
+              {(data?.revenue?.failedPayments7d || 0) > 0 && (
                 <Badge variant="destructive" className="mt-1 text-xs">
-                  {data.stripe.failedPayments7d} failed payments
+                  {data.revenue.failedPayments7d} failed payments
                 </Badge>
               )}
             </CardContent>
@@ -156,7 +156,7 @@ export function DashboardTab({ api }: Props) {
           <StatCard label="Imports Completed" value={data?.totalImportsCompleted || 0} icon={Upload} loading={isLoading} />
           <StatCard label="Total Vintages" value={data?.totalVintages || 0} icon={Wine} loading={isLoading} />
           <StatCard label="Ask Solera (7d)" value={data?.aiQueries7d || 0} icon={Sparkles} loading={isLoading} />
-          <StatCard label="Active Subs" value={data?.stripe?.activeSubscriptions || 0} icon={CreditCard} loading={isLoading} />
+          <StatCard label="Active Subs" value={data?.revenue?.activeSubscriptions || 0} icon={CreditCard} loading={isLoading} />
         </div>
       </section>
 

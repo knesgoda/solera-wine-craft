@@ -161,13 +161,13 @@ Deno.serve(async (req) => {
         totalImportsCompleted: allImports.filter((i: any) => i.status === "completed").length,
         totalVintages: vintagesRes.count || 0,
         aiQueries7d,
-        stripe: revenueSummary,
+        revenue: revenueSummary,
         alerts,
       });
     }
 
     // ─── Revenue Detail ───
-    if (action === "stripe-revenue") {
+    if (action === "revenue-detail") {
       // Build revenue data from DB (organizations table)
       const { data: allOrgs } = await supabase.from("organizations")
         .select("id, name, tier, subscription_status, paddle_customer_id, paddle_subscription_id, next_billed_at, created_at");
@@ -215,7 +215,7 @@ Deno.serve(async (req) => {
     }
 
     // ─── Weekly MRR Trend ───
-    if (action === "stripe-weekly-mrr") {
+    if (action === "weekly-mrr") {
       // Build from DB - approximate using current tier assignments
       const { data: allOrgs } = await supabase.from("organizations")
         .select("id, tier, created_at, subscription_status");
