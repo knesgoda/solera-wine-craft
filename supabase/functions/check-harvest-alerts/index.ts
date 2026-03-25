@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
             <h2 style="color: #6B1B2A; font-size: 20px; margin: 0 0 16px;">🍇 Harvest Window Alert</h2>
             <p style="font-size: 15px; line-height: 1.6; margin: 0 0 24px; color: #333;">${alertText}</p>
             <a href="https://solera-wine-craft.lovable.app${blockPath}" style="display: inline-block; background: #6B1B2A; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600;">View in Solera</a>
-            <p style="font-size: 12px; color: #999; margin: 32px 0 0;">Solera Wine Craft — Harvest Alerts</p>
+            <p style="font-size: 12px; color: #999; margin: 32px 0 0;">Solera — Harvest Alerts</p>
           </div>
         `;
         for (const p of orgUsers) {
