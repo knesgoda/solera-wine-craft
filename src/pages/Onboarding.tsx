@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Check, Grape, Wine, Warehouse, Brain, ShoppingCart, RefreshCw, LogOut, FileSpreadsheet } from "lucide-react";
+import { Check, Grape, Wine, Warehouse, Brain, ShoppingCart, RefreshCw, LogOut, FileSpreadsheet, Scale, Users } from "lucide-react";
 import soleraLogo from "@/assets/solera-logo.png";
 import { SpreadsheetOnboarding } from "@/components/onboarding/SpreadsheetOnboarding";
 
@@ -23,9 +23,14 @@ const MODULES = [
   { key: "vineyard_ops", label: "Vineyard Ops", icon: Grape, desc: "Track blocks, vines, and field work" },
   { key: "vintage_management", label: "Vintage Management", icon: Wine, desc: "Manage fermentation and aging" },
   { key: "cellar_management", label: "Cellar Management", icon: Warehouse, desc: "Barrel tracking and inventory" },
+  { key: "ttb_compliance", label: "TTB Compliance", icon: Scale, desc: "Automated TTB reporting and audit trails" },
+  { key: "custom_crush", label: "Custom Crush", icon: Users, desc: "Client portal and multi-label management" },
   { key: "ai_analytics", label: "AI Analytics", icon: Brain, desc: "Smart insights from your data" },
   { key: "sales_dtc", label: "Sales & DTC", icon: ShoppingCart, desc: "Direct-to-consumer and orders" },
 ];
+
+// Always-on module — included automatically, not toggleable
+const ALWAYS_ON_MODULES = ["data_import"];
 
 const MAX_RETRIES = 5;
 
@@ -111,7 +116,7 @@ const Onboarding = () => {
       .update({
         tier: selectedType.tier as "hobbyist" | "small_boutique" | "mid_size" | "enterprise",
         type: selectedType.type,
-        enabled_modules: enabledModules,
+        enabled_modules: [...new Set([...enabledModules, ...ALWAYS_ON_MODULES])],
         onboarding_completed: true,
       })
       .eq("id", profile.org_id);
