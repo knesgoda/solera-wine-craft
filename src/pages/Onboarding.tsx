@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Check, Grape, Wine, Warehouse, Brain, ShoppingCart, RefreshCw, LogOut, FileSpreadsheet } from "lucide-react";
+import { Check, Grape, Wine, Warehouse, Brain, ShoppingCart, RefreshCw, LogOut, FileSpreadsheet, Scale, Users } from "lucide-react";
 import soleraLogo from "@/assets/solera-logo.png";
 import { SpreadsheetOnboarding } from "@/components/onboarding/SpreadsheetOnboarding";
 
