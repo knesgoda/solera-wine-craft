@@ -116,7 +116,7 @@ const Onboarding = () => {
       .update({
         tier: selectedType.tier as "hobbyist" | "small_boutique" | "mid_size" | "enterprise",
         type: selectedType.type,
-        enabled_modules: enabledModules,
+        enabled_modules: [...new Set([...enabledModules, ...ALWAYS_ON_MODULES])],
         onboarding_completed: true,
       })
       .eq("id", profile.org_id);
