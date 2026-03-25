@@ -103,17 +103,17 @@ export function PdfReportsTab({ api }: Props) {
       doc.text("Revenue", 15, y);
       y += 8;
 
-      if (dashData?.stripe) {
+      if (dashData?.revenue) {
         autoTable(doc, {
           startY: y,
           head: [["Metric", "Value"]],
           body: [
-            ["Current MRR", `$${dashData.stripe.mrr}`],
-            ["MRR Added (7d)", `$${dashData.stripe.mrrAdded7d}`],
-            ["Churned MRR (7d)", `$${dashData.stripe.mrrChurned7d}`],
-            ["Net New MRR (7d)", `$${dashData.stripe.mrrAdded7d - dashData.stripe.mrrChurned7d}`],
-            ["Active Subscriptions", String(dashData.stripe.activeSubscriptions)],
-            ["Failed Payments (7d)", String(dashData.stripe.failedPayments7d)],
+            ["Current MRR", `$${dashData.revenue.mrr}`],
+            ["MRR Added (7d)", `$${dashData.revenue.mrrAdded7d}`],
+            ["Churned MRR (7d)", `$${dashData.revenue.mrrChurned7d}`],
+            ["Net New MRR (7d)", `$${dashData.revenue.mrrAdded7d - dashData.revenue.mrrChurned7d}`],
+            ["Active Subscriptions", String(dashData.revenue.activeSubscriptions)],
+            ["Failed Payments (7d)", String(dashData.revenue.failedPayments7d)],
           ],
           theme: "striped",
           headStyles: { fillColor: [107, 27, 42] },

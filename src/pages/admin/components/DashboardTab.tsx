@@ -156,7 +156,7 @@ export function DashboardTab({ api }: Props) {
           <StatCard label="Imports Completed" value={data?.totalImportsCompleted || 0} icon={Upload} loading={isLoading} />
           <StatCard label="Total Vintages" value={data?.totalVintages || 0} icon={Wine} loading={isLoading} />
           <StatCard label="Ask Solera (7d)" value={data?.aiQueries7d || 0} icon={Sparkles} loading={isLoading} />
-          <StatCard label="Active Subs" value={data?.stripe?.activeSubscriptions || 0} icon={CreditCard} loading={isLoading} />
+          <StatCard label="Active Subs" value={data?.revenue?.activeSubscriptions || 0} icon={CreditCard} loading={isLoading} />
         </div>
       </section>
 

@@ -215,7 +215,7 @@ Deno.serve(async (req) => {
     }
 
     // ─── Weekly MRR Trend ───
-    if (action === "stripe-weekly-mrr") {
+    if (action === "weekly-mrr") {
       // Build from DB - approximate using current tier assignments
       const { data: allOrgs } = await supabase.from("organizations")
         .select("id, tier, created_at, subscription_status");

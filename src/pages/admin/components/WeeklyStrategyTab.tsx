@@ -22,7 +22,7 @@ export function WeeklyStrategyTab({ api }: Props) {
 
   const { data: mrrData, isLoading: mrrLoading } = useQuery({
     queryKey: ["admin-weekly-mrr"],
-    queryFn: () => api("stripe-weekly-mrr"),
+    queryFn: () => api("weekly-mrr"),
   });
 
   const { data: engData, isLoading: engLoading } = useQuery({
