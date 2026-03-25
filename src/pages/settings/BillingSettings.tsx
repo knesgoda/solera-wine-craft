@@ -72,7 +72,6 @@ const BillingSettings = () => {
     if (!downgradeTarget) return;
     setDowngradeLoading(true);
     try {
-      const paddleKey = TIER_TO_PADDLE_KEY[downgradeTarget];
       if (downgradeTarget === "hobbyist") {
         // Cancel subscription
         const { error } = await supabase.functions.invoke("paddle-subscription", {
@@ -80,8 +79,8 @@ const BillingSettings = () => {
         });
         if (error) throw error;
         toast({ title: "Subscription canceled", description: "Your subscription will end at the current billing period." });
-      } else if (paddleKey) {
-        const priceId = (PADDLE_PRICES as any)[paddleKey]?.monthly;
+      } else {
+        const priceId = (PADDLE_PRICES as any)[downgradeTarget]?.monthly;
         if (priceId) {
           const { error } = await supabase.functions.invoke("paddle-subscription", {
             body: {
