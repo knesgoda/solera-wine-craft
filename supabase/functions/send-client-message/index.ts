@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
           method: "POST",
           headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            from: `Solera <noreply@${Deno.env.get("RESEND_DOMAIN") || "solera.app"}>`,
+            from: `Solera <noreply@${Deno.env.get("RESEND_DOMAIN") || "solera.vin"}>`,
             to: [ownerEmail],
             subject: `New message from ${cOrg?.name || "client"}`,
             html: `<p>${cOrg?.name || "A client"} sent you a message:</p><blockquote>${message}</blockquote>`,

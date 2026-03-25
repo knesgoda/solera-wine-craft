@@ -24,7 +24,8 @@ Deno.serve(async (req) => {
     if (tokenErr) throw tokenErr;
 
     const facilityName = (clientOrg as any).organizations?.name || "Facility";
-    const signupUrl = `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || req.headers.get("origin")}/client/signup?token=${token.token}`;
+    const appUrl = Deno.env.get("APP_URL") || "https://solera.vin";
+    const signupUrl = `${appUrl}/client/signup?token=${token.token}`;
 
     // Send invite email via Resend (if RESEND_API_KEY is set)
     const resendKey = Deno.env.get("RESEND_API_KEY");
@@ -33,12 +34,12 @@ Deno.serve(async (req) => {
         method: "POST",
         headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          from: `${facilityName} <noreply@${Deno.env.get("RESEND_DOMAIN") || "solera.app"}>`,
+          from: `${facilityName} <noreply@${Deno.env.get("RESEND_DOMAIN") || "solera.vin"}>`,
           to: [email],
           subject: `You're invited to the ${facilityName} client portal`,
           html: `<h2>Welcome to ${facilityName}</h2>
             <p>You've been invited to access the client portal for ${clientOrg.name}.</p>
-            <p><a href="${signupUrl}" style="background:#7c3aed;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">Create Your Account</a></p>
+            <p><a href="${signupUrl}" style="background:#6B1B2A;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">Create Your Account</a></p>
             <p style="color:#888;font-size:12px;">This link expires in 48 hours.</p>`,
         }),
       });
