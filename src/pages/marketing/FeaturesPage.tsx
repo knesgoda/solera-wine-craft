@@ -380,7 +380,7 @@ export default function FeaturesPage() {
                 </ul>
                 {"cta" in f && f.cta && (
                   <Button variant="outline" className="mt-6" asChild>
-                    <Link to="/signup">{f.cta}</Link>
+                    <Link to="/coming-soon">{f.cta}</Link>
                   </Button>
                 )}
               </div>

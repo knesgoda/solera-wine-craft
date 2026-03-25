@@ -61,7 +61,7 @@ export function MarketingNavbar() {
             <Link to="/login">Log In</Link>
           </Button>
           <Button className={solid ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"} asChild>
-            <Link to="/signup">Start Free</Link>
+            <Link to="/coming-soon">Start Free</Link>
           </Button>
         </div>
 
@@ -93,7 +93,7 @@ export function MarketingNavbar() {
               <Link to="/login" onClick={() => setMenuOpen(false)}>Log In</Link>
             </Button>
             <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90" asChild>
-              <Link to="/signup" onClick={() => setMenuOpen(false)}>Start Free</Link>
+              <Link to="/coming-soon" onClick={() => setMenuOpen(false)}>Start Free</Link>
             </Button>
           </div>
         </div>
