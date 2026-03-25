@@ -26,7 +26,7 @@ export function PdfReportsTab({ api }: Props) {
 
   const { data: mrrData } = useQuery({
     queryKey: ["admin-weekly-mrr"],
-    queryFn: () => api("stripe-weekly-mrr"),
+    queryFn: () => api("weekly-mrr"),
   });
 
   const { data: metricsData } = useQuery({
