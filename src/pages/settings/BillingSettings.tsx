@@ -37,12 +37,6 @@ const PLANS = [
   },
 ];
 
-// Map internal tier names to Paddle price keys
-const TIER_TO_PADDLE_KEY: Record<string, string> = {
-  small_boutique: "pro",
-  mid_size: "growth",
-  enterprise: "enterprise",
-};
 
 const BillingSettings = () => {
   const { user, organization } = useAuth();
