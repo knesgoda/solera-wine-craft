@@ -23,9 +23,14 @@ const MODULES = [
   { key: "vineyard_ops", label: "Vineyard Ops", icon: Grape, desc: "Track blocks, vines, and field work" },
   { key: "vintage_management", label: "Vintage Management", icon: Wine, desc: "Manage fermentation and aging" },
   { key: "cellar_management", label: "Cellar Management", icon: Warehouse, desc: "Barrel tracking and inventory" },
+  { key: "ttb_compliance", label: "TTB Compliance", icon: Scale, desc: "Automated TTB reporting and audit trails" },
+  { key: "custom_crush", label: "Custom Crush", icon: Users, desc: "Client portal and multi-label management" },
   { key: "ai_analytics", label: "AI Analytics", icon: Brain, desc: "Smart insights from your data" },
   { key: "sales_dtc", label: "Sales & DTC", icon: ShoppingCart, desc: "Direct-to-consumer and orders" },
 ];
+
+// Always-on module — included automatically, not toggleable
+const ALWAYS_ON_MODULES = ["data_import"];
 
 const MAX_RETRIES = 5;
 
