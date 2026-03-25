@@ -58,8 +58,12 @@ const CustomerList = () => {
               ))}
               {customers.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
-                    <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />No customers yet
+                  <TableCell colSpan={4}>
+                    <EmptyState
+                      icon={Users}
+                      title="No customers yet"
+                      description="Customers will appear here when orders are synced or added manually."
+                    />
                   </TableCell>
                 </TableRow>
               )}

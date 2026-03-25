@@ -78,7 +78,13 @@ const ClientList = () => {
           {isLoading ? (
             <div className="p-8 text-center text-muted-foreground">Loading...</div>
           ) : clients.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">No clients yet.</div>
+            <EmptyState
+              icon={Users}
+              title="No clients yet"
+              description="Add your first custom crush client to manage their vintages and communications."
+              actionLabel="Add Client"
+              onAction={() => setOpen(true)}
+            />
           ) : (
             <Table>
               <TableHeader>

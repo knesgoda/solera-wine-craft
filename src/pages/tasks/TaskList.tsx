@@ -99,9 +99,13 @@ export default function TaskList() {
     </Card>
   );
 
-  const renderList = (items: TaskRow[], empty: string) =>
+  const renderList = (items: TaskRow[], emptyTitle: string, emptyDesc: string) =>
     items.length === 0 ? (
-      <p className="text-muted-foreground text-center py-12">{empty}</p>
+      <EmptyState
+        icon={CheckCircle2}
+        title={emptyTitle}
+        description={emptyDesc}
+      />
     ) : (
       <div className="space-y-2">{items.map(renderTask)}</div>
     );

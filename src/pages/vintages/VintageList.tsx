@@ -92,7 +92,13 @@ export default function VintageList() {
       {isLoading ? (
         <p className="text-center py-12 text-muted-foreground">Loading…</p>
       ) : sorted.length === 0 ? (
-        <p className="text-center py-12 text-muted-foreground">No vintages yet. Create your first vintage to get started.</p>
+        <EmptyState
+          icon={Wine}
+          title="No vintages yet"
+          description="Create your first vintage to start tracking fermentation, lab data, and cellar operations."
+          actionLabel="Add Vintage"
+          onAction={() => setOpen(true)}
+        />
       ) : (
         <div className="space-y-2">
           {sorted.map((v) => (
