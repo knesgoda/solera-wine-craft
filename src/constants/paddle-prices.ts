@@ -1,12 +1,13 @@
+// Keys match DB tier names (hobbyist, small_boutique, mid_size, enterprise)
 export const PADDLE_PRICES = {
   hobbyist: {
     monthly: 'pri_01kmdwyrebec33s3kkrv4akap2',
   },
-  pro: {
+  small_boutique: {
     monthly: 'pri_01kmdx9xd7y43185qppke728d9',
     annual:  'pri_01kmdxb9xev9x8823v4ssbvj1m',
   },
-  growth: {
+  mid_size: {
     monthly: 'pri_01kmdxcs28byfa4q5ye3kh1xj3',
     annual:  'pri_01kmdxeyq34dvq3mxex2xdyfwm',
   },
@@ -18,10 +19,10 @@ export const PADDLE_PRICES = {
 
 export const PRICE_TO_TIER: Record<string, string> = {
   'pri_01kmdwyrebec33s3kkrv4akap2': 'hobbyist',
-  'pri_01kmdx9xd7y43185qppke728d9': 'pro',
-  'pri_01kmdxb9xev9x8823v4ssbvj1m': 'pro',
-  'pri_01kmdxcs28byfa4q5ye3kh1xj3': 'growth',
-  'pri_01kmdxeyq34dvq3mxex2xdyfwm': 'growth',
+  'pri_01kmdx9xd7y43185qppke728d9': 'small_boutique',
+  'pri_01kmdxb9xev9x8823v4ssbvj1m': 'small_boutique',
+  'pri_01kmdxcs28byfa4q5ye3kh1xj3': 'mid_size',
+  'pri_01kmdxeyq34dvq3mxex2xdyfwm': 'mid_size',
   'pri_01kmdxkejxc2bssknbrm9phj48': 'enterprise',
   'pri_01kmdxmnh6v670ng8dtz5skec8': 'enterprise',
 };
