@@ -24,7 +24,8 @@ Deno.serve(async (req) => {
     if (tokenErr) throw tokenErr;
 
     const facilityName = (clientOrg as any).organizations?.name || "Facility";
-    const signupUrl = `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || req.headers.get("origin")}/client/signup?token=${token.token}`;
+    const appUrl = Deno.env.get("APP_URL") || "https://solera.vin";
+    const signupUrl = `${appUrl}/client/signup?token=${token.token}`;
 
     // Send invite email via Resend (if RESEND_API_KEY is set)
     const resendKey = Deno.env.get("RESEND_API_KEY");
