@@ -16,7 +16,7 @@ const FAQ_CATEGORIES = [
     category: "Pricing & Billing",
     items: [
       { question: "Do you charge onboarding fees?", answer: "Never. Every Solera plan includes free onboarding. Enterprise plans include a dedicated concierge call." },
-      { question: "What happens to my DTC transaction fees?", answer: "You pay Stripe's standard rate (2.9% + $0.30). Solera adds zero markup. Many competitors add 1-3% on top." },
+      { question: "What happens to my DTC transaction fees?", answer: "You pay standard payment processing fees. Solera adds zero markup. Many competitors add 1-3% on top." },
       { question: "Is there a free trial on paid plans?", answer: "Yes — 30 days free on Pro, Growth, and Enterprise. No credit card required to start." },
       { question: "Can I change plans at any time?", answer: "Yes — upgrade or downgrade any time. Upgrades take effect immediately. Downgrades apply at the end of your current billing period." },
       { question: "What does the annual price lock mean?", answer: "Your rate is guaranteed for 24 months on any annual plan. Even if we raise prices, your rate stays the same." },
