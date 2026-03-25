@@ -254,7 +254,7 @@ export default function ComparePage() {
 
             <div className="mt-8">
               <Button asChild>
-                <Link to="/signup">Switch from {c.name} — we'll migrate your data free</Link>
+                <Link to="/coming-soon">Switch from {c.name} — we'll migrate your data free</Link>
               </Button>
             </div>
           </div>

@@ -57,7 +57,7 @@ const Login = () => {
             </Button>
             <div className="flex justify-between w-full text-sm">
               <Link to="/forgot-password" className="text-secondary hover:underline">Forgot password?</Link>
-              <Link to="/signup" className="text-secondary hover:underline">Create account</Link>
+              <Link to="/coming-soon" className="text-secondary hover:underline">Create account</Link>
             </div>
           </CardFooter>
         </form>
