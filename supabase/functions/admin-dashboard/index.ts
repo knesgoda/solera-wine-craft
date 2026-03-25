@@ -856,13 +856,12 @@ Deno.serve(async (req) => {
         const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=38.5&longitude=-122.5&current=temperature_2m");
         checks.openMeteo = res.ok ? { status: "green" } : { status: "red", detail: `HTTP ${res.status}` };
       } catch (e: any) { checks.openMeteo = { status: "red", detail: e.message }; }
-      if (stripeKey) {
+      if (paddleKey) {
         try {
-          const res = await fetch("https://api.stripe.com/v1/balance", { headers: { Authorization: `Bearer ${stripeKey}` } });
-          const isTest = stripeKey.startsWith("sk_test_");
-          checks.stripe = res.ok ? { status: "green", detail: isTest ? "Test mode" : "Live mode" } : { status: "red", detail: `HTTP ${res.status}` };
-        } catch (e: any) { checks.stripe = { status: "red", detail: e.message }; }
-      } else { checks.stripe = { status: "red", detail: "Not configured" }; }
+          const res = await fetch("https://api.paddle.com/event-types", { headers: { Authorization: `Bearer ${paddleKey}`, "Content-Type": "application/json" } });
+          checks.paddle = res.ok ? { status: "green", detail: "Live" } : { status: "red", detail: `HTTP ${res.status}` };
+        } catch (e: any) { checks.paddle = { status: "red", detail: e.message }; }
+      } else { checks.paddle = { status: "red", detail: "Not configured" }; }
       checks.resend = Deno.env.get("RESEND_API_KEY") ? { status: "green" } : { status: "red", detail: "Not configured" };
       checks.ai = Deno.env.get("LOVABLE_API_KEY") ? { status: "green" } : { status: "red", detail: "Not configured" };
       return json({ checks, checkedAt: new Date().toISOString() });
