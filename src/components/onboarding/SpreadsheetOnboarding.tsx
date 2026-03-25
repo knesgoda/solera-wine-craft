@@ -410,10 +410,7 @@ export function SpreadsheetOnboarding({ onComplete, onBack }: Props) {
           {innerStep === 1 && (
             <StepPreviewData
               onNext={() => setInnerStep(2)}
-              onBack={() => {
-                if (innerStep === 0) onBack();
-                else setInnerStep(0);
-              }}
+              onBack={() => setInnerStep(0)}
             />
           )}
           {innerStep === 2 && (
