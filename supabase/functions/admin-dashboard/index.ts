@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
         totalImportsCompleted: allImports.filter((i: any) => i.status === "completed").length,
         totalVintages: vintagesRes.count || 0,
         aiQueries7d,
-        stripe: revenueSummary,
+        revenue: revenueSummary,
         alerts,
       });
     }
