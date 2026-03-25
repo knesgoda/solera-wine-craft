@@ -105,12 +105,9 @@ const BillingSettings = () => {
   const handleUpgrade = async (tier: string) => {
     setUpgradeLoading(tier);
     try {
-      const paddleKey = TIER_TO_PADDLE_KEY[tier];
-      if (!paddleKey) return;
-
       if (hasPaddleSub) {
         // Existing subscriber — change plan via API
-        const priceId = (PADDLE_PRICES as any)[paddleKey]?.monthly;
+        const priceId = (PADDLE_PRICES as any)[tier]?.monthly;
         if (priceId) {
           const { error } = await supabase.functions.invoke("paddle-subscription", {
             body: {
@@ -125,7 +122,8 @@ const BillingSettings = () => {
         }
       } else {
         // No subscription — open Paddle checkout
-        const priceId = (PADDLE_PRICES as any)[paddleKey]?.monthly;
+        const priceId = (PADDLE_PRICES as any)[tier]?.monthly;
+        if (!priceId) return;
         if (!priceId) return;
 
         const paddle = await getPaddle();
