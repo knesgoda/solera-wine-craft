@@ -1,3 +1,4 @@
+// Required secrets: ANTHROPIC_API_KEY
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -12,27 +13,23 @@ serve(async (req) => {
   try {
     const { analogYear, analogRegion, analogGdd, analogRating, currentVintageYear, currentGdd, similarityScore, varietyName } = await req.json();
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not configured");
 
     const prompt = `Based on vintage analog data, the current ${currentVintageYear} vintage (${varietyName || "wine"}) with ${currentGdd} GDD accumulated so far most closely matches the ${analogYear} vintage in ${analogRegion} (${similarityScore}% similarity, ${analogGdd} GDD total${analogRating ? `, rated ${analogRating}/100` : ""}). What does the match to ${analogYear} suggest about this vintage's potential quality and optimal harvest timing? Give a 2-3 sentence practical interpretation for a winemaker.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: "You are Ask Solera, an expert AI winery assistant. Provide concise, practical vintage analysis based on analog year comparisons. Always reference specific data points.",
-          },
-          { role: "user", content: prompt },
-        ],
+        model: "claude-sonnet-4-6-20250514",
         max_tokens: 300,
+        system: "You are Ask Solera, an expert AI winery assistant. Provide concise, practical vintage analysis based on analog year comparisons. Always reference specific data points.",
+        messages: [{ role: "user", content: prompt }],
       }),
     });
 
@@ -48,12 +45,12 @@ serve(async (req) => {
         });
       }
       const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      throw new Error("AI gateway error");
+      console.error("Anthropic API error:", response.status, t);
+      throw new Error("AI request failed");
     }
 
     const result = await response.json();
-    const insight = result.choices?.[0]?.message?.content || "Unable to generate insight.";
+    const insight = result.content?.[0]?.text || "Unable to generate insight.";
 
     return new Response(JSON.stringify({ insight }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
