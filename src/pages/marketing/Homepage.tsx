@@ -66,7 +66,7 @@ export default function Homepage() {
               </p>
               <div className="flex flex-wrap gap-4 mb-8">
                 <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8" asChild>
-                  <Link to="/coming-soon">Start Free</Link>
+                  <Link to="/signup">Start Free</Link>
                 </Button>
                 <Button size="lg" variant="outline" className="text-base px-8" asChild>
                   <a href="#modules">See How It Works</a>
@@ -224,7 +224,7 @@ export default function Homepage() {
                 Ask anything about your operation in plain English. When should we harvest Block A? Is our VA trending toward a problem? How does this vintage compare to 2019? Solera answers with your actual data — not generic advice.
               </p>
               <Button size="lg" className="bg-secondary text-secondary-foreground hover:bg-secondary/90" asChild>
-                <Link to="/coming-soon">Try Ask Solera Free</Link>
+                <Link to="/signup">Try Ask Solera Free</Link>
               </Button>
             </div>
             <div className="bg-primary-foreground/10 rounded-xl p-6 backdrop-blur-sm border border-primary-foreground/20">
@@ -348,7 +348,7 @@ export default function Homepage() {
             Start free. No credit card. No onboarding fees. Your first vintage set up in under 10 minutes.
           </p>
           <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-lg px-10 py-6" asChild>
-            <Link to="/coming-soon">Start Free</Link>
+            <Link to="/signup">Start Free</Link>
           </Button>
           <p className="text-sm text-muted-foreground mt-6">
             Already on Innovint? We'll help you migrate for free.
