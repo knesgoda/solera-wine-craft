@@ -334,8 +334,8 @@ export default function VintageDetail() {
               <CardContent>
                 <LabChartWithComparison
                   vintageId={vintageId!}
-                  blockId={vintage?.block_id || null}
-                  variety={vintage?.blocks?.name ? null : null}
+                  blockId={vintage?.blocks?.id || null}
+                  variety={vintage?.blocks?.variety || null}
                   orgId={orgId || ""}
                   currentSamples={labSamples}
                 />
