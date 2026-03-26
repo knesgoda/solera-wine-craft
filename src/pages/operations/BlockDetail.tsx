@@ -178,6 +178,9 @@ const BlockDetail = () => {
       {/* Harvest Window Prediction */}
       <HarvestWindowCard blockId={blockId!} vineyardId={vineyardId!} />
 
+      {/* Ripening History */}
+      <RipeningHistorySection blockId={blockId!} vineyardId={vineyardId!} />
+
       {/* Soil Profile */}
       {(block.soil_ph || block.soil_texture || block.soil_organic_matter || (block as any).drainage) && (
         <Card className="border-none shadow-md">
