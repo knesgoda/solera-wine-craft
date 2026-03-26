@@ -145,6 +145,26 @@ export default function FacilitySettings() {
     );
   }
 
+  const handleCreate = async () => {
+    if (!profile?.org_id || !form.name) return;
+    setSaving(true);
+    const { error } = await supabase.from("facilities").insert({
+      parent_org_id: profile.org_id,
+      name: form.name,
+      address: form.address || null,
+      region: form.region || null,
+      facility_type: form.facility_type as any,
+    });
+    if (error) toast.error(error.message);
+    else { toast.success("Facility created"); setDialogOpen(false); setForm({ name: "", address: "", region: "", facility_type: "winery" }); fetchFacilities(); }
+    setSaving(false);
+  };
+
+  const toggleActive = async (id: string, active: boolean) => {
+    await supabase.from("facilities").update({ active }).eq("id", id);
+    fetchFacilities();
+  };
+
   if (loading) return <div className="p-6 text-muted-foreground">Loading…</div>;
 
   return (
