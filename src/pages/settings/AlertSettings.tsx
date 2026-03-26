@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Bell, ShieldAlert, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { useTierGate } from "@/hooks/useTierGate";
 
 const PARAMETERS = [
   { value: "brix", label: "Brix" },
@@ -55,6 +56,7 @@ const AlertSettings = () => {
   });
 
   const isDivergence = form.parameter === "ripening_divergence";
+  const { allowed: divergenceAllowed, requiredTierDisplay } = useTierGate("small_boutique");
 
   const { data: rules = [], isLoading } = useQuery({
     queryKey: ["alert-rules", orgId],
@@ -177,9 +179,16 @@ const AlertSettings = () => {
                   <SelectTrigger><SelectValue placeholder="Select parameter" /></SelectTrigger>
                   <SelectContent>
                     {PARAMETERS.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>
+                      <SelectItem
+                        key={p.value}
+                        value={p.value}
+                        disabled={p.value === "ripening_divergence" && !divergenceAllowed}
+                      >
                         {p.value === "ripening_divergence" && <TrendingUp className="h-3.5 w-3.5 mr-1.5 inline" />}
                         {p.label}
+                        {p.value === "ripening_divergence" && !divergenceAllowed && (
+                          <span className="text-xs text-muted-foreground ml-1">({requiredTierDisplay}+)</span>
+                        )}
                       </SelectItem>
                     ))}
                   </SelectContent>

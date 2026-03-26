@@ -251,12 +251,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Divergence rules (only for lab_sample type)
+    // Divergence rules (only for lab_sample type, Pro+ tier only)
     if (type === "lab_sample" && divergenceRules.length > 0) {
+      const TIER_ORDER = ["hobbyist", "small_boutique", "mid_size", "enterprise"];
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("tier")
+        .eq("id", orgId)
+        .single();
+      const orgTier = org?.tier || "hobbyist";
+      const tierIdx = TIER_ORDER.indexOf(orgTier);
+      if (tierIdx < 1) {
+        // Hobbyist tier — skip divergence alerts
+      } else {
       const divergenceMatches = await checkDivergenceRules(
         supabase, orgId, divergenceRules, record, now, twentyFourHoursAgo
       );
-      matches.push(...divergenceMatches);
+        matches.push(...divergenceMatches);
+      }
     }
 
     if (matches.length === 0) {
