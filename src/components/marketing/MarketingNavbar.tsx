@@ -58,6 +58,7 @@ export function MarketingNavbar() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-3">
+          <LanguageSelector compact />
           <Button variant="ghost" className={`${textClass} ${solid ? "hover:bg-primary-foreground/10" : "hover:bg-foreground/10"}`} asChild>
             <Link to="/login">Log In</Link>
           </Button>
