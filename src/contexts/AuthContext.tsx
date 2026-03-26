@@ -94,6 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setOrganization(orgData);
           setOrgTimezone(orgData.timezone ?? null);
+          setUnitSystem((orgData.units_preference as any) ?? "imperial");
         }
       }
     }
