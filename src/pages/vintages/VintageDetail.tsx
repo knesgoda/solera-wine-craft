@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { NewLabSampleDialog, type LabSampleData } from "@/components/vintages/NewLabSampleDialog";
 import { LabChart } from "@/components/vintages/LabChart";
+import { LabChartWithComparison } from "@/components/vintages/LabChartWithComparison";
 import { TtbAdditionsTab } from "@/components/vintages/TtbAdditionsTab";
 import { AnomaliesTab } from "@/components/vintages/AnomaliesTab";
 import { VintageCostsTab } from "@/components/costs/VintageCostsTab";
