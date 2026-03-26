@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, Navigate } from "react-router-dom";
+import { Link, useNavigate, Navigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,8 @@ import { useAuth } from "@/contexts/AuthContext";
 const Signup = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteCode = searchParams.get("invite");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [wineryName, setWineryName] = useState("");
@@ -41,6 +43,17 @@ const Signup = () => {
 
       if (authError) throw authError;
       if (!authData.user) throw new Error("Signup failed. Please try again.");
+
+      // Activate invite code if present
+      if (inviteCode) {
+        try {
+          await supabase.functions.invoke("activate-invite", {
+            body: { code: inviteCode },
+          });
+        } catch (inviteErr) {
+          console.error("Invite activation failed:", inviteErr);
+        }
+      }
 
       toast.success("Account created! Let's set up your winery.");
       navigate("/onboarding");
