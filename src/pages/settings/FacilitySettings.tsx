@@ -47,35 +47,94 @@ export default function FacilitySettings() {
   };
 
   useEffect(() => { fetchFacilities(); }, [profile?.org_id]);
+  useEffect(() => { if (organization?.timezone) setTimezone(organization.timezone); }, [organization?.timezone]);
 
-  const handleCreate = async () => {
-    if (!profile?.org_id || !form.name) return;
-    setSaving(true);
-    const { error } = await supabase.from("facilities").insert({
-      parent_org_id: profile.org_id,
-      name: form.name,
-      address: form.address || null,
-      region: form.region || null,
-      facility_type: form.facility_type as any,
-    });
-    if (error) toast.error(error.message);
-    else { toast.success("Facility created"); setDialogOpen(false); setForm({ name: "", address: "", region: "", facility_type: "winery" }); fetchFacilities(); }
-    setSaving(false);
+  const handleSaveTimezone = async () => {
+    if (!organization?.id) return;
+    setSavingTz(true);
+    const { error } = await supabase
+      .from("organizations")
+      .update({ timezone } as any)
+      .eq("id", organization.id);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      setOrgTimezone(timezone || null);
+      toast.success("Timezone updated");
+      refreshProfile();
+    }
+    setSavingTz(false);
   };
 
-  const toggleActive = async (id: string, active: boolean) => {
-    await supabase.from("facilities").update({ active }).eq("id", id);
-    fetchFacilities();
+  const handleDetectTimezone = () => {
+    const detected = detectBrowserTimezone();
+    setTimezone(detected);
   };
+
+  const TimezoneCard = () => (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Globe className="h-5 w-5 text-primary" />
+          <CardTitle className="text-base">Organization Timezone</CardTitle>
+        </div>
+        <CardDescription>
+          All dates and times across the app display in this timezone. Choose the timezone where your winery operates.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 space-y-2">
+            <Label>Timezone</Label>
+            <Select value={timezone} onValueChange={setTimezone}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select timezone…" />
+              </SelectTrigger>
+              <SelectContent>
+                {TIMEZONE_GROUPS.map((group) => (
+                  <SelectGroup key={group.label}>
+                    <SelectLabel>{group.label}</SelectLabel>
+                    {group.zones.map((z) => (
+                      <SelectItem key={z.value} value={z.value}>
+                        {z.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-end gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={handleDetectTimezone}>
+              <Locate className="h-4 w-4 mr-1.5" /> Detect
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSaveTimezone}
+              disabled={savingTz || timezone === (organization?.timezone || "")}
+            >
+              {savingTz ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        </div>
+        {!timezone && (
+          <p className="text-xs text-muted-foreground">
+            No timezone set — the app is using your browser's timezone as a fallback.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   if (!isEnterprise) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-display font-bold text-foreground">Multi-Facility Management</h1>
+        <h1 className="text-2xl font-display font-bold text-foreground">Organization Settings</h1>
+        <TimezoneCard />
         <Card className="border-2 border-dashed border-muted">
           <CardContent className="pt-6 text-center space-y-4">
             <Lock className="h-12 w-12 mx-auto text-muted-foreground" />
-            <h2 className="text-xl font-semibold text-foreground">Enterprise Feature</h2>
+            <h2 className="text-xl font-semibold text-foreground">Multi-Facility Management — Enterprise</h2>
             <p className="text-muted-foreground max-w-md mx-auto">
               Multi-facility support is available on the Enterprise tier. Manage multiple wineries, vineyards, and tasting rooms under one organization.
             </p>
