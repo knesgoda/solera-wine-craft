@@ -85,6 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error("fetchOrg error:", orgError.message);
         } else {
           setOrganization(orgData);
+          setOrgTimezone(orgData.timezone ?? null);
         }
       }
     }

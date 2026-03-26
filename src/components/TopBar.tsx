@@ -47,6 +47,7 @@ export function TopBar() {
         )}
       </div>
       <div className="flex items-center gap-2">
+        <TimezoneIndicator />
         <NotificationBell />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
