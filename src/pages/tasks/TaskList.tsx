@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { NewTaskDialog } from "@/components/tasks/NewTaskDialog";
 import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
 import { FormattedDate } from "@/components/timezone";
+import { useTranslation } from "react-i18next";
 
 type TaskRow = {
   id: string;
