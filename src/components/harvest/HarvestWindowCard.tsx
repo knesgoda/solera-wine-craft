@@ -1,7 +1,10 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import {
   HarvestPrediction,
@@ -12,7 +15,7 @@ import {
 } from "@/hooks/useHarvestPrediction";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Grape, TrendingUp, TrendingDown, Minus, ThermometerSun, CalendarCheck } from "lucide-react";
+import { Grape, TrendingUp, TrendingDown, Minus, ThermometerSun, CalendarCheck, Info, ExternalLink } from "lucide-react";
 
 const TRAJECTORY_ICON = {
   rising: <TrendingUp className="h-4 w-4 text-green-600" />,
@@ -43,6 +46,21 @@ export const HarvestWindowCard = ({
 }) => {
   const { data: prediction, isLoading } = useHarvestPrediction(blockId, vineyardId);
   const [daysFromNow, setDaysFromNow] = useState(0);
+
+  // Get block info for clone/rootstock and compare link
+  const { data: blockInfo } = useQuery({
+    queryKey: ["block-info-harvest", blockId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blocks")
+        .select("variety, clone, rootstock")
+        .eq("id", blockId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!blockId,
+  });
 
   // Get average daily GDD for projection
   const { data: avgDailyGdd = 0 } = useQuery({
@@ -100,6 +118,18 @@ export const HarvestWindowCard = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        {/* Clone/Rootstock info */}
+        {blockInfo && (blockInfo.clone || blockInfo.rootstock) && (
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            {blockInfo.clone && (
+              <span className="text-muted-foreground">Clone: <span className="font-medium text-foreground">{blockInfo.clone}</span></span>
+            )}
+            {blockInfo.rootstock && (
+              <span className="text-muted-foreground">Rootstock: <span className="font-medium text-foreground">{blockInfo.rootstock}</span></span>
+            )}
+          </div>
+        )}
+
         {/* Key metrics */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
@@ -192,6 +222,19 @@ export const HarvestWindowCard = ({
             </div>
           </div>
         </div>
+
+        {/* Compare Similar Blocks link */}
+        {blockInfo?.variety && (
+          <div className="border-t border-border pt-4">
+            <Link to={`/ripening-comparison`}>
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                <TrendingUp className="h-4 w-4 mr-1.5" />
+                Compare all {blockInfo.variety} blocks
+                <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

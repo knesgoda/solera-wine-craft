@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { NewLabSampleDialog, type LabSampleData } from "@/components/vintages/NewLabSampleDialog";
 import { LabChart } from "@/components/vintages/LabChart";
+import { LabChartWithComparison } from "@/components/vintages/LabChartWithComparison";
 import { TtbAdditionsTab } from "@/components/vintages/TtbAdditionsTab";
 import { AnomaliesTab } from "@/components/vintages/AnomaliesTab";
 import { VintageCostsTab } from "@/components/costs/VintageCostsTab";
@@ -65,7 +66,7 @@ export default function VintageDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vintages")
-        .select("*, blocks(name, vineyard_id, vineyards(name))")
+        .select("*, blocks(id, name, variety, vineyard_id, vineyards(name))")
         .eq("id", vintageId!)
         .single();
       if (error) throw error;
@@ -327,10 +328,22 @@ export default function VintageDetail() {
         </TabsList>
 
         <TabsContent value="lab">
-          {labSamples.length >= 2 && (
+          {labSamples.length >= 1 && (
             <Card className="mb-4">
               <CardHeader><CardTitle className="text-lg">Lab Trends</CardTitle></CardHeader>
-              <CardContent><LabChart samples={labSamples} /></CardContent>
+              <CardContent>
+                <LabChartWithComparison
+                  vintageId={vintageId!}
+                  blockId={vintage?.blocks?.id || null}
+                  variety={vintage?.blocks?.variety || null}
+                  orgId={orgId || ""}
+                  currentSamples={labSamples}
+                />
+                {/* Fallback to original chart if comparison not applicable */}
+                {labSamples.length >= 2 && !vintage?.block_id && (
+                  <LabChart samples={labSamples} />
+                )}
+              </CardContent>
             </Card>
           )}
           <Card>

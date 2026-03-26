@@ -13,7 +13,7 @@ import { ArrowLeft, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { HarvestWindowCard } from "@/components/harvest/HarvestWindowCard";
-
+import { RipeningHistorySection } from "@/components/ripening/RipeningHistorySection";
 type LifecycleStage = Database["public"]["Enums"]["block_lifecycle_stage"];
 
 const LIFECYCLE_LABELS: Record<LifecycleStage, string> = {
@@ -177,6 +177,9 @@ const BlockDetail = () => {
 
       {/* Harvest Window Prediction */}
       <HarvestWindowCard blockId={blockId!} vineyardId={vineyardId!} />
+
+      {/* Ripening History */}
+      <RipeningHistorySection blockId={blockId!} vineyardId={vineyardId!} />
 
       {/* Soil Profile */}
       {(block.soil_ph || block.soil_texture || block.soil_organic_matter || (block as any).drainage) && (
