@@ -56,6 +56,7 @@ const AlertSettings = () => {
   });
 
   const isDivergence = form.parameter === "ripening_divergence";
+  const { allowed: divergenceAllowed, requiredTierDisplay } = useTierGate("small_boutique");
 
   const { data: rules = [], isLoading } = useQuery({
     queryKey: ["alert-rules", orgId],
