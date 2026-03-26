@@ -133,7 +133,7 @@ export default function TaskList() {
             <CalendarIcon className="h-4 w-4" />
           </Button>
           <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" /> New Task
+            <Plus className="h-4 w-4 mr-2" /> {t("tasks.newTask")}
           </Button>
         </div>
       </div>
