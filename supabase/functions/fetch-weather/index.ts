@@ -67,6 +67,10 @@ Deno.serve(async (req) => {
 
     const results: any[] = [];
 
+    // Look up org timezone for this config's org, to pass to Open-Meteo
+    // This ensures daily aggregations align with local day boundaries
+    const orgTimezones: Record<string, string> = {};
+
     for (const config of configs) {
       if (!config.latitude || !config.longitude) continue;
 
