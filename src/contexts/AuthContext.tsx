@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { setOrgTimezone } from "@/lib/timezone";
 
 interface Profile {
   id: string;
@@ -18,6 +19,7 @@ interface Organization {
   tier: string | null;
   enabled_modules: string[] | null;
   onboarding_completed: boolean;
+  timezone: string | null;
 }
 
 interface AuthContextType {
@@ -83,6 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error("fetchOrg error:", orgError.message);
         } else {
           setOrganization(orgData);
+          setOrgTimezone(orgData.timezone ?? null);
         }
       }
     }

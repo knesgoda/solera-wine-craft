@@ -67,6 +67,10 @@ Deno.serve(async (req) => {
 
     const results: any[] = [];
 
+    // Look up org timezone for this config's org, to pass to Open-Meteo
+    // This ensures daily aggregations align with local day boundaries
+    const orgTimezones: Record<string, string> = {};
+
     for (const config of configs) {
       if (!config.latitude || !config.longitude) continue;
 
@@ -74,14 +78,24 @@ Deno.serve(async (req) => {
       const startDate = isBackfill ? april1 : today;
       const endDate = today;
 
+      // Resolve org timezone for proper daily boundaries
+      if (orgId && !orgTimezones[orgId]) {
+        const { data: orgRow } = await supabase
+          .from("organizations")
+          .select("timezone")
+          .eq("id", orgId)
+          .single();
+        orgTimezones[orgId] = orgRow?.timezone || "auto";
+      }
+      const tzParam = orgTimezones[orgId] || "auto";
+
       // Choose API based on backfill vs daily
+      // Pass org timezone so daily aggregations align with local day boundaries, not UTC
       let apiUrl: string;
       if (isBackfill && startDate < today) {
-        // Use archive API for historical data
-        apiUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${config.latitude}&longitude=${config.longitude}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max&temperature_unit=celsius&timezone=auto`;
+        apiUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${config.latitude}&longitude=${config.longitude}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max&temperature_unit=celsius&timezone=${encodeURIComponent(tzParam)}`;
       } else {
-        // Use forecast API for today + upcoming
-        apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${config.latitude}&longitude=${config.longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max&temperature_unit=celsius&timezone=auto&past_days=1&forecast_days=4`;
+        apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${config.latitude}&longitude=${config.longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max&temperature_unit=celsius&timezone=${encodeURIComponent(tzParam)}&past_days=1&forecast_days=4`;
       }
 
       const weatherRes = await fetch(apiUrl);

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useNavigate } from "react-router-dom";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { TimezoneIndicator } from "@/components/timezone";
 
 export function TopBar() {
   const { organization, profile, signOut } = useAuth();
@@ -46,6 +47,7 @@ export function TopBar() {
         )}
       </div>
       <div className="flex items-center gap-2">
+        <TimezoneIndicator />
         <NotificationBell />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

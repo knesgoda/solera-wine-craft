@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
+import { FormattedDateTime } from "@/components/timezone";
 import { useState } from "react";
 import { NewLabSampleDialog, type LabSampleData } from "@/components/vintages/NewLabSampleDialog";
 import { LabChart } from "@/components/vintages/LabChart";
@@ -362,7 +363,7 @@ export default function VintageDetail() {
                     <div key={s.id} className="border border-border rounded-lg p-3 relative">
                       <div className="flex items-start justify-between">
                         <p className="text-sm font-medium text-foreground mb-1">
-                          {format(parseISO(s.sampled_at), "MMM d, yyyy h:mm a")}
+                          <FormattedDateTime date={s.sampled_at} format="short" />
                         </p>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

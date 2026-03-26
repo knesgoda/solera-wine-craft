@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ArrowLeft, Truck, RefreshCcw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { FormattedDateTime } from "@/components/timezone";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "Pending", payment_failed: "Payment Failed", paid: "Paid",
@@ -97,7 +98,7 @@ const OrderDetail = () => {
         <Button variant="ghost" size="icon" onClick={() => navigate("/orders")}><ArrowLeft className="h-5 w-5" /></Button>
         <div className="flex-1">
           <h1 className="text-2xl font-display font-bold text-foreground">Order #{order.id.slice(0, 8)}</h1>
-          <p className="text-sm text-muted-foreground">{format(new Date(order.created_at), "MMMM d, yyyy 'at' h:mm a")}</p>
+          <p className="text-sm text-muted-foreground"><FormattedDateTime date={order.created_at} format="full" /></p>
         </div>
         <Badge className="text-sm">{STATUS_LABELS[order.status] || order.status}</Badge>
       </div>

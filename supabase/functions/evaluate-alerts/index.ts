@@ -64,6 +64,8 @@ async function checkDivergenceRules(
 
   // Check each ripening_divergence rule
   for (const rule of rules) {
+    // 24-hour cooldown: last_triggered_at and twentyFourHoursAgo are both UTC — this is intentional.
+    // UTC comparison is correct here because we're measuring elapsed time, not local calendar dates.
     if (rule.last_triggered_at && new Date(rule.last_triggered_at) > twentyFourHoursAgo) continue;
     if (rule.variety_filter && rule.variety_filter !== block.variety) continue;
 

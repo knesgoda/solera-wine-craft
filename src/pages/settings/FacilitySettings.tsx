@@ -7,12 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Building, Lock, MapPin } from "lucide-react";
+import { Plus, Building, Lock, MapPin, Globe, Locate } from "lucide-react";
+import { TIMEZONE_GROUPS, detectBrowserTimezone, setOrgTimezone } from "@/lib/timezone";
 
 const FACILITY_TYPES = [
   { value: "winery", label: "Winery" },
@@ -23,12 +24,14 @@ const FACILITY_TYPES = [
 ] as const;
 
 export default function FacilitySettings() {
-  const { profile, organization } = useAuth();
+  const { profile, organization, refreshProfile } = useAuth();
   const [facilities, setFacilities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", address: "", region: "", facility_type: "winery" });
+  const [timezone, setTimezone] = useState(organization?.timezone || "");
+  const [savingTz, setSavingTz] = useState(false);
 
   const isEnterprise = organization?.tier === "enterprise";
 
@@ -44,6 +47,103 @@ export default function FacilitySettings() {
   };
 
   useEffect(() => { fetchFacilities(); }, [profile?.org_id]);
+  useEffect(() => { if (organization?.timezone) setTimezone(organization.timezone); }, [organization?.timezone]);
+
+  const handleSaveTimezone = async () => {
+    if (!organization?.id) return;
+    setSavingTz(true);
+    const { error } = await supabase
+      .from("organizations")
+      .update({ timezone } as any)
+      .eq("id", organization.id);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      setOrgTimezone(timezone || null);
+      toast.success("Timezone updated");
+      refreshProfile();
+    }
+    setSavingTz(false);
+  };
+
+  const handleDetectTimezone = () => {
+    const detected = detectBrowserTimezone();
+    setTimezone(detected);
+  };
+
+  const TimezoneCard = () => (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Globe className="h-5 w-5 text-primary" />
+          <CardTitle className="text-base">Organization Timezone</CardTitle>
+        </div>
+        <CardDescription>
+          All dates and times across the app display in this timezone. Choose the timezone where your winery operates.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 space-y-2">
+            <Label>Timezone</Label>
+            <Select value={timezone} onValueChange={setTimezone}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select timezone…" />
+              </SelectTrigger>
+              <SelectContent>
+                {TIMEZONE_GROUPS.map((group) => (
+                  <SelectGroup key={group.label}>
+                    <SelectLabel>{group.label}</SelectLabel>
+                    {group.zones.map((z) => (
+                      <SelectItem key={z.value} value={z.value}>
+                        {z.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-end gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={handleDetectTimezone}>
+              <Locate className="h-4 w-4 mr-1.5" /> Detect
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSaveTimezone}
+              disabled={savingTz || timezone === (organization?.timezone || "")}
+            >
+              {savingTz ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        </div>
+        {!timezone && (
+          <p className="text-xs text-muted-foreground">
+            No timezone set — the app is using your browser's timezone as a fallback.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  if (!isEnterprise) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-display font-bold text-foreground">Organization Settings</h1>
+        <TimezoneCard />
+        <Card className="border-2 border-dashed border-muted">
+          <CardContent className="pt-6 text-center space-y-4">
+            <Lock className="h-12 w-12 mx-auto text-muted-foreground" />
+            <h2 className="text-xl font-semibold text-foreground">Multi-Facility Management — Enterprise</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Multi-facility support is available on the Enterprise tier. Manage multiple wineries, vineyards, and tasting rooms under one organization.
+            </p>
+            <Button variant="secondary" size="lg">Contact Sales to Upgrade</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleCreate = async () => {
     if (!profile?.org_id || !form.name) return;
@@ -65,28 +165,11 @@ export default function FacilitySettings() {
     fetchFacilities();
   };
 
-  if (!isEnterprise) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-display font-bold text-foreground">Multi-Facility Management</h1>
-        <Card className="border-2 border-dashed border-muted">
-          <CardContent className="pt-6 text-center space-y-4">
-            <Lock className="h-12 w-12 mx-auto text-muted-foreground" />
-            <h2 className="text-xl font-semibold text-foreground">Enterprise Feature</h2>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Multi-facility support is available on the Enterprise tier. Manage multiple wineries, vineyards, and tasting rooms under one organization.
-            </p>
-            <Button variant="secondary" size="lg">Contact Sales to Upgrade</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   if (loading) return <div className="p-6 text-muted-foreground">Loading…</div>;
 
   return (
     <div className="space-y-6">
+      <TimezoneCard />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Facilities</h1>

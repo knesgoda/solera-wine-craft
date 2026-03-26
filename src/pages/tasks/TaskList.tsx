@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Calendar as CalendarIcon, List, MapPin, Clock, CheckCircle2 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
-import { format, isPast, isToday, parseISO } from "date-fns";
+import { isPast, isToday, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { NewTaskDialog } from "@/components/tasks/NewTaskDialog";
 import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
+import { FormattedDate } from "@/components/timezone";
 
 type TaskRow = {
   id: string;
@@ -81,7 +82,7 @@ export default function TaskList() {
             {task.due_date && (
               <span className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
-                {format(parseISO(task.due_date), "MMM d")}
+                <FormattedDate date={task.due_date} short />
               </span>
             )}
             {(task.gps_lat || task.gps_lng) && (
