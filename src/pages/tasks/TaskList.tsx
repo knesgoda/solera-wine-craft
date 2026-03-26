@@ -81,7 +81,7 @@ export default function TaskList() {
             {task.due_date && (
               <span className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
-                {format(parseISO(task.due_date), "MMM d")}
+                <FormattedDate date={task.due_date} short />
               </span>
             )}
             {(task.gps_lat || task.gps_lng) && (
