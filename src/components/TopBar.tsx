@@ -41,7 +41,7 @@ export function TopBar() {
               <SelectValue placeholder="All Facilities" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Facilities</SelectItem>
+              <SelectItem value="all">{t("settings.facilities")}</SelectItem>
               {facilities.map((f) => (
                 <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
               ))}
