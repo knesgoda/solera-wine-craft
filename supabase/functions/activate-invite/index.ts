@@ -8,6 +8,8 @@ const corsHeaders = {
 
 const VALID_INVITE_CODES: Record<string, { tier: string; note: string }> = {
   "solera-vip-2026-kN9x": { tier: "enterprise", note: "VIP winemaker invite" },
+  "solera-vip-2026-Qm7w": { tier: "enterprise", note: "VIP winemaker invite 2" },
+  "solera-vip-2026-Xt4j": { tier: "enterprise", note: "VIP winemaker invite 3" },
 };
 
 Deno.serve(async (req) => {
