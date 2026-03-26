@@ -1,4 +1,3 @@
-// Required secrets: ANTHROPIC_API_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
@@ -36,35 +35,35 @@ async function buildWineryContext(supabase: any, orgId: string): Promise<string>
     for (const v of vintages) {
       const { data: latestLab } = await supabase
         .from("lab_samples")
-        .select("brix, ph, ta, va, so2_free, sampled_at")
+        .select("brix, ph, ta, va, so2_free, so2_total, alcohol, rs, sampled_at")
         .eq("vintage_id", v.id)
         .order("sampled_at", { ascending: false })
         .limit(1);
       const lab = latestLab?.[0];
       let line = `${v.year} ${v.blocks?.name || "Unknown block"} (${v.blocks?.variety || "Unknown variety"}) — ${v.status}`;
+      if (v.tons_harvested) line += `, ${v.tons_harvested} tons`;
       if (lab) {
-        line += ` | Latest lab (${lab.sampled_at?.split("T")[0]}): Brix=${lab.brix ?? "—"}, pH=${lab.ph ?? "—"}, TA=${lab.ta ?? "—"}, VA=${lab.va ?? "—"}, Free SO₂=${lab.so2_free ?? "—"}`;
+        line += ` | Latest lab (${lab.sampled_at?.split("T")[0]}): Brix=${lab.brix ?? "—"}, pH=${lab.ph ?? "—"}, TA=${lab.ta ?? "—"}, VA=${lab.va ?? "—"}, Free SO₂=${lab.so2_free ?? "—"}, Total SO₂=${lab.so2_total ?? "—"}, Alc=${lab.alcohol ?? "—"}%, RS=${lab.rs ?? "—"}`;
       }
       vintageLines.push(line);
     }
-    parts.push(`Active Vintages:\n${vintageLines.join("\n")}`);
+    parts.push(`ACTIVE VINTAGES:\n${vintageLines.join("\n")}`);
   }
 
-  // Blocks with GDD
+  // Blocks with GDD and lifecycle
   const { data: vineyards } = await supabase
     .from("vineyards")
-    .select("id, name")
+    .select("id, name, region")
     .eq("org_id", orgId);
 
   if (vineyards?.length) {
     const { data: blocks } = await supabase
       .from("blocks")
-      .select("name, variety, lifecycle_stage, status, vineyard_id, acres")
+      .select("name, variety, lifecycle_stage, status, vineyard_id, acres, clone, rootstock")
       .in("vineyard_id", vineyards.map((v: any) => v.id))
       .eq("status", "active");
 
     if (blocks?.length) {
-      // Get latest GDD for each vineyard
       const gddMap: Record<string, number> = {};
       for (const vy of vineyards) {
         const { data: weather } = await supabase
@@ -79,34 +78,129 @@ async function buildWineryContext(supabase: any, orgId: string): Promise<string>
       const blockLines = blocks.map((b: any) => {
         const vyName = vineyards.find((v: any) => v.id === b.vineyard_id)?.name || "";
         const gdd = gddMap[b.vineyard_id];
-        return `${b.name} (${b.variety || "—"}) at ${vyName} — ${b.lifecycle_stage || "—"}${b.acres ? `, ${b.acres} acres` : ""}${gdd ? `, GDD: ${gdd}` : ""}`;
+        return `${b.name} (${b.variety || "—"}${b.clone ? `, clone: ${b.clone}` : ""}${b.rootstock ? `, rootstock: ${b.rootstock}` : ""}) at ${vyName} — ${b.lifecycle_stage || "—"}${b.acres ? `, ${b.acres} acres` : ""}${gdd ? `, GDD: ${gdd}` : ""}`;
       });
-      parts.push(`Vineyard Blocks:\n${blockLines.join("\n")}`);
+      parts.push(`VINEYARDS & BLOCKS:\n${blockLines.join("\n")}`);
     }
   }
 
+  // Fermentation vessels with current readings
+  const { data: vessels } = await supabase
+    .from("fermentation_vessels")
+    .select("id, name, material, capacity_liters, temp_controlled, vintage_id, vintages(year, blocks(name, variety))")
+    .eq("org_id", orgId)
+    .not("vintage_id", "is", null);
+
+  if (vessels?.length) {
+    const vesselLines: string[] = [];
+    for (const v of vessels) {
+      const { data: latestLog } = await supabase
+        .from("fermentation_logs")
+        .select("brix, temp_f, logged_at")
+        .eq("vessel_id", v.id)
+        .order("logged_at", { ascending: false })
+        .limit(1);
+      const log = latestLog?.[0];
+      const contents = v.vintages ? `${(v.vintages as any).year} ${(v.vintages as any).blocks?.name || ""}` : "Unknown";
+      let line = `${v.name} (${v.material || "—"}, ${v.capacity_liters ? Math.round(v.capacity_liters / 3.785) + " gal" : "—"}): ${contents}`;
+      if (log) {
+        line += ` | Brix=${log.brix ?? "—"}, Temp=${log.temp_f ?? "—"}°F (${log.logged_at?.split("T")[0]})`;
+      }
+      vesselLines.push(line);
+    }
+    parts.push(`FERMENTATION VESSELS:\n${vesselLines.join("\n")}`);
+  }
+
+  // Barrel inventory summary
+  const { data: barrels } = await supabase
+    .from("barrels")
+    .select("cooperage, toast, type, status, vintage_id")
+    .eq("org_id", orgId)
+    .eq("status", "filled");
+
+  if (barrels?.length) {
+    const summary: Record<string, number> = {};
+    for (const b of barrels) {
+      const key = `${b.cooperage || "Unknown"} ${b.toast || "unknown toast"} ${b.type || ""}`.trim();
+      summary[key] = (summary[key] || 0) + 1;
+    }
+    const barrelLines = Object.entries(summary).map(([k, v]) => `${v} × ${k}`);
+    parts.push(`BARRELS (${barrels.length} filled total):\n${barrelLines.join("\n")}`);
+  }
+
+  // Tasks (last 30 days completed + open/overdue)
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: openTasks } = await supabase
+    .from("tasks")
+    .select("title, status, due_date, assigned_to")
+    .eq("org_id", orgId)
+    .in("status", ["pending", "in_progress"])
+    .order("due_date", { ascending: true })
+    .limit(20);
+
+  const { data: completedTasks } = await supabase
+    .from("tasks")
+    .select("title, due_date")
+    .eq("org_id", orgId)
+    .eq("status", "complete")
+    .gte("updated_at", thirtyDaysAgo)
+    .limit(10);
+
+  if (openTasks?.length || completedTasks?.length) {
+    const taskLines: string[] = [];
+    if (openTasks?.length) {
+      const now = new Date().toISOString().split("T")[0];
+      taskLines.push("Open/Overdue:");
+      for (const t of openTasks) {
+        const overdue = t.due_date && t.due_date < now ? " ⚠️ OVERDUE" : "";
+        taskLines.push(`- ${t.title} (due ${t.due_date || "no date"})${overdue}`);
+      }
+    }
+    if (completedTasks?.length) {
+      taskLines.push(`Recently completed (${completedTasks.length}):`);
+      for (const t of completedTasks) {
+        taskLines.push(`- ${t.title}`);
+      }
+    }
+    parts.push(`TASKS:\n${taskLines.join("\n")}`);
+  }
+
   // Weather summary (last 30 days)
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+  const weatherStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
   const { data: weather } = await supabase
     .from("weather_readings")
     .select("temp_max_f, temp_min_f, precip_inches, gdd_daily, vineyard_id")
     .eq("org_id", orgId)
-    .gte("recorded_at", thirtyDaysAgo);
+    .gte("recorded_at", weatherStart);
 
   if (weather?.length) {
     const avgHigh = (weather.reduce((s: number, w: any) => s + (w.temp_max_f || 0), 0) / weather.length).toFixed(1);
     const avgLow = (weather.reduce((s: number, w: any) => s + (w.temp_min_f || 0), 0) / weather.length).toFixed(1);
     const totalPrecip = weather.reduce((s: number, w: any) => s + (w.precip_inches || 0), 0).toFixed(2);
     const gddAccum = weather.reduce((s: number, w: any) => s + (w.gdd_daily || 0), 0).toFixed(1);
-    parts.push(`Weather (last 30 days): Avg high ${avgHigh}°F, Avg low ${avgLow}°F, Total precip ${totalPrecip}" , GDD accumulated ${gddAccum}`);
+    parts.push(`WEATHER (last 30 days): Avg high ${avgHigh}°F, Avg low ${avgLow}°F, Total precip ${totalPrecip}", GDD accumulated ${gddAccum}`);
   }
 
-  // Last 10 lab samples — scoped to org via vintage IDs
-  const { data: orgVintages } = await supabase
-    .from("vintages")
-    .select("id")
-    .eq("org_id", orgId);
-  const vintageIds = (orgVintages || []).map((v: any) => v.id);
+  // TTB additions (last 30 days)
+  const vintageIds = (vintages || []).map((v: any) => v.id);
+  if (vintageIds.length > 0) {
+    const { data: additions } = await supabase
+      .from("addition_logs")
+      .select("addition_type, amount, unit, added_at, vintage_id, vintages(year, blocks(name))")
+      .in("vintage_id", vintageIds)
+      .gte("added_at", thirtyDaysAgo)
+      .order("added_at", { ascending: false })
+      .limit(20);
+
+    if (additions?.length) {
+      const addLines = additions.map((a: any) =>
+        `${a.added_at?.split("T")[0]} ${a.vintages?.year || ""} ${a.vintages?.blocks?.name || ""}: ${a.addition_type} ${a.amount} ${a.unit || ""}`
+      );
+      parts.push(`TTB ADDITIONS (last 30 days):\n${addLines.join("\n")}`);
+    }
+  }
+
+  // Recent lab samples
   let recentLabs: any[] = [];
   if (vintageIds.length > 0) {
     const { data } = await supabase
@@ -122,7 +216,7 @@ async function buildWineryContext(supabase: any, orgId: string): Promise<string>
     const labLines = recentLabs.map((l: any) =>
       `${l.sampled_at?.split("T")[0]} ${l.vintages?.year || ""} ${l.vintages?.blocks?.name || ""}: Brix=${l.brix ?? "—"} pH=${l.ph ?? "—"} TA=${l.ta ?? "—"} VA=${l.va ?? "—"} SO₂f=${l.so2_free ?? "—"} Alc=${l.alcohol ?? "—"}`
     );
-    parts.push(`Recent Lab Samples:\n${labLines.join("\n")}`);
+    parts.push(`RECENT LAB SAMPLES:\n${labLines.join("\n")}`);
   }
 
   // Alert rules
@@ -135,7 +229,23 @@ async function buildWineryContext(supabase: any, orgId: string): Promise<string>
   if (alerts?.length) {
     const opMap: Record<string, string> = { gte: ">=", lte: "<=", eq: "=" };
     const alertLines = alerts.map((a: any) => `${a.parameter} ${opMap[a.operator] || a.operator} ${a.threshold}`);
-    parts.push(`Active Alert Thresholds:\n${alertLines.join("\n")}`);
+    parts.push(`ACTIVE ALERT THRESHOLDS:\n${alertLines.join("\n")}`);
+  }
+
+  // Anomaly flags (unresolved)
+  const { data: anomalies } = await supabase
+    .from("anomaly_flags")
+    .select("parameter, value, expected_range_low, expected_range_high, flagged_at, vintages(year, blocks(name))")
+    .eq("org_id", orgId)
+    .eq("resolved", false)
+    .order("flagged_at", { ascending: false })
+    .limit(10);
+
+  if (anomalies?.length) {
+    const anomalyLines = anomalies.map((a: any) =>
+      `${a.flagged_at?.split("T")[0]} ${a.vintages?.year || ""} ${a.vintages?.blocks?.name || ""}: ${a.parameter}=${a.value} (expected ${a.expected_range_low ?? "—"}–${a.expected_range_high ?? "—"})`
+    );
+    parts.push(`UNRESOLVED ANOMALIES:\n${anomalyLines.join("\n")}`);
   }
 
   return parts.join("\n\n");
@@ -157,7 +267,10 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: { user }, error: authError } = await anonClient.auth.getUser();
-    if (authError || !user) throw new Error("Unauthorized");
+    if (authError || !user) {
+      console.error("Auth error:", authError);
+      throw new Error("Unauthorized");
+    }
 
     // Get user org
     const { data: profile } = await serviceClient
@@ -168,18 +281,28 @@ serve(async (req) => {
     if (!profile?.org_id) throw new Error("User has no organization");
 
     const { messages, conversationId } = await req.json();
+    console.log(`Ask Solera request: org=${profile.org_id}, messages=${messages?.length}, conv=${conversationId}`);
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not configured");
+    if (!ANTHROPIC_API_KEY) {
+      console.error("ANTHROPIC_API_KEY is not configured");
+      throw new Error("AI is not configured. Please add your Anthropic API key in Settings.");
+    }
 
     // Build winery context
     const wineryContext = await buildWineryContext(serviceClient, profile.org_id);
+    console.log(`Winery context built: ${wineryContext.length} chars`);
 
-    const systemPrompt = `You are Ask Solera, an expert AI winery assistant built into the Solera winery management platform. You have access to real-time data from this winery. Answer questions about harvest timing, lab results, vineyard conditions, cellar operations, and winery management. Always cite the specific data you are using in your answer. Be concise and practical — winemakers are busy. If you don't have enough data to answer confidently, say so and tell them what data would help.
+    const systemPrompt = `You are Ask Solera, an expert AI winery assistant built into the Solera winery management platform. You have access to real-time data from this winery.
+
+Answer questions about harvest timing, lab results, vineyard conditions, cellar operations, and winery management. Always cite the specific data you are using in your answer. Be concise and practical — winemakers are busy.
+
+If you don't have enough data to answer confidently, say so clearly and suggest where to log it in Solera.
 
 CURRENT WINERY DATA:
 ${wineryContext}`;
 
+    console.log("Calling Anthropic API...");
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -188,7 +311,7 @@ ${wineryContext}`;
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6-20250514",
+        model: "claude-sonnet-4-6",
         max_tokens: 4096,
         system: systemPrompt,
         messages,
@@ -196,24 +319,27 @@ ${wineryContext}`;
       }),
     });
 
+    console.log(`Anthropic response status: ${response.status}`);
+
     if (!response.ok) {
+      const t = await response.text();
+      console.error("Anthropic API error:", response.status, t);
+
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again shortly." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits required. Please add funds." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      if (response.status === 401) {
+        return new Response(JSON.stringify({ error: "Invalid API key. Please check your Anthropic API key in Settings." }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      throw new Error("AI request failed");
+      throw new Error(`AI request failed (${response.status}): ${t.slice(0, 200)}`);
     }
 
     return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
     });
   } catch (e) {
     console.error("ask-solera error:", e);
