@@ -21,6 +21,7 @@ type NavItem = { title: string; tKey?: string; url: string; icon: LucideIcon };
 
 interface NavGroupConfig {
   label: string;
+  tKey?: string;
   icon: LucideIcon;
   items: NavItem[];
   requiredTier?: TierName;
