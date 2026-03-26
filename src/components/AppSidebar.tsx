@@ -209,7 +209,7 @@ function SidebarNavGroup({ group, collapsed, currentPath }: { group: NavGroupCon
       <SidebarGroup>
         <CollapsibleTrigger asChild>
           <SidebarGroupLabel className="cursor-pointer hover:bg-sidebar-accent/30 rounded-md transition-colors flex items-center justify-between pr-2">
-            <span>{group.label}</span>
+            <span>{groupLabel}</span>
             <ChevronRight className="h-3.5 w-3.5 transition-transform group-data-[state=open]/collapsible:rotate-90" />
           </SidebarGroupLabel>
         </CollapsibleTrigger>
