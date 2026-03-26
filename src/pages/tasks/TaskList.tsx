@@ -144,13 +144,13 @@ export default function TaskList() {
         <Tabs defaultValue="upcoming">
           <TabsList className="w-full">
             <TabsTrigger value="upcoming" className="flex-1">
-              Upcoming {upcoming.length > 0 && `(${upcoming.length})`}
+              {t("tasks.upcoming")} {upcoming.length > 0 && `(${upcoming.length})`}
             </TabsTrigger>
             <TabsTrigger value="overdue" className="flex-1">
-              Overdue {overdue.length > 0 && `(${overdue.length})`}
+              {t("tasks.overdue")} {overdue.length > 0 && `(${overdue.length})`}
             </TabsTrigger>
             <TabsTrigger value="completed" className="flex-1">
-              Completed {completed.length > 0 && `(${completed.length})`}
+              {t("tasks.completed")} {completed.length > 0 && `(${completed.length})`}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="upcoming" className="mt-4">
