@@ -13,7 +13,7 @@ import { ArrowLeft, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { HarvestWindowCard } from "@/components/harvest/HarvestWindowCard";
-
+import { RipeningHistorySection } from "@/components/ripening/RipeningHistorySection";
 type LifecycleStage = Database["public"]["Enums"]["block_lifecycle_stage"];
 
 const LIFECYCLE_LABELS: Record<LifecycleStage, string> = {
