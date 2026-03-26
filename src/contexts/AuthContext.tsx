@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { setOrgTimezone } from "@/lib/timezone";
+import { setUnitSystem } from "@/lib/units";
+import i18n from "@/lib/i18n";
 
 interface Profile {
   id: string;
