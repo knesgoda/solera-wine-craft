@@ -118,6 +118,18 @@ export const HarvestWindowCard = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        {/* Clone/Rootstock info */}
+        {blockInfo && (blockInfo.clone || blockInfo.rootstock) && (
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            {blockInfo.clone && (
+              <span className="text-muted-foreground">Clone: <span className="font-medium text-foreground">{blockInfo.clone}</span></span>
+            )}
+            {blockInfo.rootstock && (
+              <span className="text-muted-foreground">Rootstock: <span className="font-medium text-foreground">{blockInfo.rootstock}</span></span>
+            )}
+          </div>
+        )}
+
         {/* Key metrics */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
