@@ -19,6 +19,7 @@ interface Organization {
   tier: string | null;
   enabled_modules: string[] | null;
   onboarding_completed: boolean;
+  timezone: string | null;
 }
 
 interface AuthContextType {
