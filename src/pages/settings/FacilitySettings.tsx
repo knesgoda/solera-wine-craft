@@ -7,12 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Building, Lock, MapPin } from "lucide-react";
+import { Plus, Building, Lock, MapPin, Globe, Locate } from "lucide-react";
+import { TIMEZONE_GROUPS, detectBrowserTimezone, setOrgTimezone } from "@/lib/timezone";
 
 const FACILITY_TYPES = [
   { value: "winery", label: "Winery" },
