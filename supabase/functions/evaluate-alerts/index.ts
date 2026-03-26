@@ -12,6 +12,8 @@ interface RuleMatch {
   threshold: number;
   channel: string;
   actualValue: number;
+  message: string;
+  linkUrl?: string;
 }
 
 function checkThreshold(op: string, value: number, threshold: number): boolean {
@@ -29,7 +31,127 @@ const PARAM_LABELS: Record<string, string> = {
   brix: "Brix", ph: "pH", ta: "TA", va: "VA",
   so2_free: "Free SO₂", so2_total: "Total SO₂",
   temp_f: "Temperature", gdd_cumulative: "GDD",
+  ripening_divergence: "Ripening Divergence",
 };
+
+async function checkDivergenceRules(
+  supabase: any,
+  orgId: string,
+  rules: any[],
+  record: any,
+  now: Date,
+  twentyFourHoursAgo: Date,
+): Promise<RuleMatch[]> {
+  const matches: RuleMatch[] = [];
+
+  // Get the vintage for this lab sample to find its block
+  const { data: vintage } = await supabase
+    .from("vintages")
+    .select("id, block_id, year, org_id")
+    .eq("id", record.vintage_id)
+    .single();
+
+  if (!vintage?.block_id) return matches;
+
+  // Get the block to find its variety
+  const { data: block } = await supabase
+    .from("blocks")
+    .select("id, variety, name, clone, rootstock, vineyard_id")
+    .eq("id", vintage.block_id)
+    .single();
+
+  if (!block?.variety) return matches;
+
+  // Check each ripening_divergence rule
+  for (const rule of rules) {
+    if (rule.last_triggered_at && new Date(rule.last_triggered_at) > twentyFourHoursAgo) continue;
+    if (rule.variety_filter && rule.variety_filter !== block.variety) continue;
+
+    const threshold = rule.brix_spread_threshold ?? 4.0;
+
+    // Get all blocks of this variety in this org
+    const { data: varietyBlocks } = await supabase
+      .from("blocks")
+      .select("id, name, clone, rootstock, vineyard_id, vineyards!inner(org_id)")
+      .eq("vineyards.org_id", orgId)
+      .eq("variety", block.variety)
+      .eq("status", "active");
+
+    if (!varietyBlocks || varietyBlocks.length < 2) continue;
+
+    const blockIds = varietyBlocks.map((b: any) => b.id);
+
+    // Get active vintages for these blocks
+    const { data: vintages } = await supabase
+      .from("vintages")
+      .select("id, block_id")
+      .in("block_id", blockIds)
+      .order("year", { ascending: false });
+
+    if (!vintages?.length) continue;
+
+    // Latest vintage per block
+    const vintageByBlock: Record<string, string> = {};
+    for (const v of vintages) {
+      if (v.block_id && !vintageByBlock[v.block_id]) {
+        vintageByBlock[v.block_id] = v.id;
+      }
+    }
+
+    const vintageIds = Object.values(vintageByBlock);
+
+    // Get latest Brix reading for each vintage
+    const blockBrix: { blockId: string; name: string; clone: string | null; rootstock: string | null; brix: number }[] = [];
+
+    for (const [bId, vId] of Object.entries(vintageByBlock)) {
+      const { data: latestSample } = await supabase
+        .from("lab_samples")
+        .select("brix")
+        .eq("vintage_id", vId)
+        .not("brix", "is", null)
+        .order("sampled_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (latestSample?.brix != null) {
+        const bInfo = varietyBlocks.find((b: any) => b.id === bId);
+        blockBrix.push({
+          blockId: bId,
+          name: bInfo?.name || bId,
+          clone: bInfo?.clone,
+          rootstock: bInfo?.rootstock,
+          brix: latestSample.brix,
+        });
+      }
+    }
+
+    if (blockBrix.length < 2) continue;
+
+    blockBrix.sort((a, b) => b.brix - a.brix);
+    const fastest = blockBrix[0];
+    const slowest = blockBrix[blockBrix.length - 1];
+    const spread = Math.round((fastest.brix - slowest.brix) * 10) / 10;
+
+    if (spread >= threshold) {
+      const fastDesc = `${fastest.name} (Clone ${fastest.clone || "—"} / Rootstock ${fastest.rootstock || "—"})`;
+      const slowDesc = `${slowest.name} (Clone ${slowest.clone || "—"} / Rootstock ${slowest.rootstock || "—"})`;
+      const message = `Ripening divergence alert: ${block.variety} blocks show ${spread}° Brix spread. ${fastDesc} at ${fastest.brix}° vs ${slowDesc} at ${slowest.brix}°. Review ripening tracker for details.`;
+
+      matches.push({
+        ruleId: rule.id,
+        parameter: "ripening_divergence",
+        operator: "gte",
+        threshold,
+        channel: rule.channel,
+        actualValue: spread,
+        message,
+        linkUrl: "https://solera.vin/ripening-comparison",
+      });
+    }
+  }
+
+  return matches;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -42,7 +164,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json();
-    const { type, record } = body; // type: "lab_sample" | "fermentation_log"
+    const { type, record } = body;
 
     if (!type || !record) {
       return new Response(JSON.stringify({ error: "Missing type or record" }), {
@@ -89,6 +211,10 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Separate standard rules and divergence rules
+    const standardRules = rules.filter((r: any) => r.parameter !== "ripening_divergence");
+    const divergenceRules = rules.filter((r: any) => r.parameter === "ripening_divergence");
+
     // Map parameter to record value
     const paramMap: Record<string, string> = {
       brix: "brix", ph: "ph", ta: "ta", va: "va",
@@ -100,11 +226,9 @@ Deno.serve(async (req) => {
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    for (const rule of rules) {
-      // Check cooldown
-      if (rule.last_triggered_at && new Date(rule.last_triggered_at) > twentyFourHoursAgo) {
-        continue;
-      }
+    // Standard threshold rules
+    for (const rule of standardRules) {
+      if (rule.last_triggered_at && new Date(rule.last_triggered_at) > twentyFourHoursAgo) continue;
 
       const fieldName = paramMap[rule.parameter];
       if (!fieldName) continue;
@@ -113,6 +237,8 @@ Deno.serve(async (req) => {
       if (value == null) continue;
 
       if (checkThreshold(rule.operator, value, rule.threshold)) {
+        const label = PARAM_LABELS[rule.parameter] || rule.parameter;
+        const op = OP_SYMBOLS[rule.operator] || rule.operator;
         matches.push({
           ruleId: rule.id,
           parameter: rule.parameter,
@@ -120,8 +246,17 @@ Deno.serve(async (req) => {
           threshold: rule.threshold,
           channel: rule.channel,
           actualValue: value,
+          message: `Alert: ${label} reading of ${value} has crossed threshold (${op} ${rule.threshold}).`,
         });
       }
+    }
+
+    // Divergence rules (only for lab_sample type)
+    if (type === "lab_sample" && divergenceRules.length > 0) {
+      const divergenceMatches = await checkDivergenceRules(
+        supabase, orgId, divergenceRules, record, now, twentyFourHoursAgo
+      );
+      matches.push(...divergenceMatches);
     }
 
     if (matches.length === 0) {
@@ -141,18 +276,15 @@ Deno.serve(async (req) => {
     const resendKey = Deno.env.get("RESEND_API_KEY");
 
     for (const match of matches) {
-      const label = PARAM_LABELS[match.parameter] || match.parameter;
-      const op = OP_SYMBOLS[match.operator] || match.operator;
-      const message = `Alert: ${label} reading of ${match.actualValue} has crossed threshold (${op} ${match.threshold}).`;
-
       // Write notification for each user
       const notifications = userIds.map((userId: string) => ({
         org_id: orgId,
         user_id: userId,
-        message,
+        message: match.message,
         type: "alert",
         channel: match.channel,
         read: false,
+        link_url: match.linkUrl || null,
       }));
 
       if (notifications.length > 0) {
@@ -168,28 +300,29 @@ Deno.serve(async (req) => {
       // Send emails for email/both channels
       if (match.channel === "email" || match.channel === "both") {
         if (resendKey) {
+          const label = PARAM_LABELS[match.parameter] || match.parameter;
+          const linkButton = match.linkUrl
+            ? `<a href="${match.linkUrl}" style="display: inline-block; background: #6B1B2A; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600;">View Ripening Tracker</a>`
+            : `<a href="https://solera.vin/dashboard" style="display: inline-block; background: #6B1B2A; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600;">View in Solera</a>`;
+
           const emailHtml = `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a1a;">
-              <h2 style="color: #6B1B2A; font-size: 20px; margin: 0 0 16px;">⚠️ Threshold Alert</h2>
-              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 8px; color: #333;">${message}</p>
-              <table style="margin: 16px 0 24px; font-size: 14px; color: #555;">
-                <tr><td style="padding: 4px 16px 4px 0; font-weight: 600;">Parameter</td><td>${label}</td></tr>
-                <tr><td style="padding: 4px 16px 4px 0; font-weight: 600;">Value</td><td>${match.actualValue}</td></tr>
-                <tr><td style="padding: 4px 16px 4px 0; font-weight: 600;">Threshold</td><td>${op} ${match.threshold}</td></tr>
-              </table>
-              <a href="https://solera.vin/dashboard" style="display: inline-block; background: #6B1B2A; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600;">View in Solera</a>
+              <h2 style="color: #6B1B2A; font-size: 20px; margin: 0 0 16px;">⚠️ ${label} Alert</h2>
+              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 24px; color: #333;">${match.message}</p>
+              ${linkButton}
               <p style="font-size: 12px; color: #999; margin: 32px 0 0;">Solera — Alert Notifications</p>
             </div>
           `;
+
           for (const p of orgUsers) {
             try {
               await fetch("https://api.resend.com/emails", {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  from: "Solera Alerts <alerts@solera.vin>",
+                  from: "Solera Alerts <notifications@solera.vin>",
                   to: [p.email],
-                  subject: `⚠️ Alert: ${label} ${op} ${match.threshold}`,
+                  subject: `⚠️ ${label} Alert`,
                   html: emailHtml,
                 }),
               });

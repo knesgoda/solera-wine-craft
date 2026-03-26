@@ -200,6 +200,7 @@ export type Database = {
       alert_rules: {
         Row: {
           active: boolean
+          brix_spread_threshold: number | null
           channel: Database["public"]["Enums"]["alert_channel"]
           created_at: string
           id: string
@@ -209,9 +210,11 @@ export type Database = {
           parameter: Database["public"]["Enums"]["alert_parameter"]
           threshold: number
           updated_at: string
+          variety_filter: string | null
         }
         Insert: {
           active?: boolean
+          brix_spread_threshold?: number | null
           channel?: Database["public"]["Enums"]["alert_channel"]
           created_at?: string
           id?: string
@@ -221,9 +224,11 @@ export type Database = {
           parameter: Database["public"]["Enums"]["alert_parameter"]
           threshold: number
           updated_at?: string
+          variety_filter?: string | null
         }
         Update: {
           active?: boolean
+          brix_spread_threshold?: number | null
           channel?: Database["public"]["Enums"]["alert_channel"]
           created_at?: string
           id?: string
@@ -233,6 +238,7 @@ export type Database = {
           parameter?: Database["public"]["Enums"]["alert_parameter"]
           threshold?: number
           updated_at?: string
+          variety_filter?: string | null
         }
         Relationships: [
           {
@@ -4587,6 +4593,7 @@ export type Database = {
         | "so2_total"
         | "temp_f"
         | "gdd_cumulative"
+        | "ripening_divergence"
       allocation_type:
         | "dtc"
         | "wine_club"
@@ -4860,6 +4867,7 @@ export const Constants = {
         "so2_total",
         "temp_f",
         "gdd_cumulative",
+        "ripening_divergence",
       ],
       allocation_type: [
         "dtc",
