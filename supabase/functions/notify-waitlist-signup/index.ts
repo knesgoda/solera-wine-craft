@@ -26,7 +26,7 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Solera Notifications <onboarding@resend.dev>",
+        from: "Solera Notifications <notifications@solera.vin>",
         to: ["kevin.nesgoda@gmail.com"],
         subject: `New Solera Waitlist Signup — ${first_name}`,
         html: `<p><strong>Name:</strong> ${first_name}</p>
