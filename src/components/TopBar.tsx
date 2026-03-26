@@ -11,6 +11,8 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useNavigate } from "react-router-dom";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { TimezoneIndicator } from "@/components/timezone";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useTranslation } from "react-i18next";
 
 export function TopBar() {
   const { organization, profile, signOut } = useAuth();
