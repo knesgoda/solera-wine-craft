@@ -17,7 +17,7 @@ import { useTierGate, type TierName } from "@/hooks/useTierGate";
 import soleraLogo from "@/assets/solera-logo.png";
 import { type LucideIcon } from "lucide-react";
 
-type NavItem = { title: string; url: string; icon: LucideIcon };
+type NavItem = { title: string; tKey?: string; url: string; icon: LucideIcon };
 
 interface NavGroupConfig {
   label: string;
