@@ -1,7 +1,10 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import {
   HarvestPrediction,
@@ -12,7 +15,7 @@ import {
 } from "@/hooks/useHarvestPrediction";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Grape, TrendingUp, TrendingDown, Minus, ThermometerSun, CalendarCheck } from "lucide-react";
+import { Grape, TrendingUp, TrendingDown, Minus, ThermometerSun, CalendarCheck, Info, ExternalLink } from "lucide-react";
 
 const TRAJECTORY_ICON = {
   rising: <TrendingUp className="h-4 w-4 text-green-600" />,
