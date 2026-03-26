@@ -195,7 +195,7 @@ function SidebarNavGroup({ group, collapsed, currentPath }: { group: NavGroupCon
           <TooltipTrigger asChild>
             <div className="flex items-center gap-2 px-3 py-2 opacity-40 cursor-not-allowed select-none">
               <Lock className="h-3.5 w-3.5" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">{group.label}</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">{groupLabel}</span>
             </div>
           </TooltipTrigger>
           <TooltipContent side="right">Upgrade to {tierCheck.requiredTierDisplay}</TooltipContent>
