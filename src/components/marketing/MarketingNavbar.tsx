@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import soleraLogo from "@/assets/solera-logo.png";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 const NAV_LINKS = [
   { label: "Features", to: "/features" },
