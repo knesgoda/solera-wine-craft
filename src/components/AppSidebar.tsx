@@ -140,8 +140,10 @@ const NAV_GROUPS: NavGroupConfig[] = [
 ];
 
 function SidebarNavGroup({ group, collapsed, currentPath }: { group: NavGroupConfig; collapsed: boolean; currentPath: string }) {
+  const { t } = useTranslation();
   const hasActiveItem = group.items.some((i) => currentPath === i.url || currentPath.startsWith(i.url + "/"));
   const defaultOpen = group.defaultOpen !== false || hasActiveItem;
+  const groupLabel = group.tKey ? t(group.tKey) : group.label;
 
   // Tier gating
   const tierCheck = useTierGate(group.requiredTier || "hobbyist");
