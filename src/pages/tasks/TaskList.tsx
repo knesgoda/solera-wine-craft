@@ -154,13 +154,13 @@ export default function TaskList() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="upcoming" className="mt-4">
-            {isLoading ? <p className="text-center py-12 text-muted-foreground">Loading…</p> : renderList(upcoming, "No upcoming tasks", "Create a task to track vineyard or cellar work.")}
+            {isLoading ? <p className="text-center py-12 text-muted-foreground">{t("common.loading")}</p> : renderList(upcoming, t("tasks.noUpcoming"), t("tasks.noTasks"))}
           </TabsContent>
           <TabsContent value="overdue" className="mt-4">
-            {renderList(overdue, "No overdue tasks 🎉", "All caught up — nothing overdue.")}
+            {renderList(overdue, t("tasks.noOverdue"), t("tasks.allCaughtUp"))}
           </TabsContent>
           <TabsContent value="completed" className="mt-4">
-            {renderList(completed, "No completed tasks yet", "Completed tasks will appear here as you check them off.")}
+            {renderList(completed, t("tasks.noCompleted"), t("tasks.completedDesc"))}
           </TabsContent>
         </Tabs>
       )}
