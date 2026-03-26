@@ -47,6 +47,21 @@ export const HarvestWindowCard = ({
   const { data: prediction, isLoading } = useHarvestPrediction(blockId, vineyardId);
   const [daysFromNow, setDaysFromNow] = useState(0);
 
+  // Get block info for clone/rootstock and compare link
+  const { data: blockInfo } = useQuery({
+    queryKey: ["block-info-harvest", blockId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blocks")
+        .select("variety, clone, rootstock")
+        .eq("id", blockId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!blockId,
+  });
+
   // Get average daily GDD for projection
   const { data: avgDailyGdd = 0 } = useQuery({
     queryKey: ["avg-daily-gdd", vineyardId],
