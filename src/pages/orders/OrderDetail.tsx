@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ArrowLeft, Truck, RefreshCcw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { FormattedDateTime } from "@/components/timezone";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "Pending", payment_failed: "Payment Failed", paid: "Paid",
