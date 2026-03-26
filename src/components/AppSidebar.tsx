@@ -226,7 +226,7 @@ function SidebarNavGroup({ group, collapsed, currentPath }: { group: NavGroupCon
                       activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
                     >
                       <item.icon className="mr-3 h-4 w-4 shrink-0" />
-                      <span className="text-sm">{item.title}</span>
+                      <span className="text-sm">{item.tKey ? t(item.tKey) : item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
