@@ -22,6 +22,7 @@ const moreGroups = [
     label: "Operations",
     items: [
       { title: "Vineyard Ops", url: "/operations", icon: Grape },
+      { title: "Ripening Tracker", url: "/ripening-comparison", icon: TrendingUp },
       { title: "Reports", url: "/reports", icon: FileText },
       { title: "Report Builder", url: "/reports/builder", icon: PenTool },
       { title: "Analog Explorer", url: "/analytics/analog", icon: TrendingUp },
