@@ -26,7 +26,7 @@ serve(async (req) => {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6-20250514",
+        model: "claude-sonnet-4-20250514",
         max_tokens: 300,
         system: "You are Ask Solera, an expert AI winery assistant. Provide concise, practical vintage analysis based on analog year comparisons. Always reference specific data points.",
         messages: [{ role: "user", content: prompt }],
