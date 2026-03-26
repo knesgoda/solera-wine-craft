@@ -18,6 +18,7 @@ export function TopBar() {
   const { organization, profile, signOut } = useAuth();
   const { facilities, selectedFacilityId, setSelectedFacilityId, isMultiFacility } = useFacility();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const initials = [profile?.first_name?.[0], profile?.last_name?.[0]].filter(Boolean).join("").toUpperCase() || "U";
 
