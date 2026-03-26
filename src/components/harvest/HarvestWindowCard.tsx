@@ -222,6 +222,19 @@ export const HarvestWindowCard = ({
             </div>
           </div>
         </div>
+
+        {/* Compare Similar Blocks link */}
+        {blockInfo?.variety && (
+          <div className="border-t border-border pt-4">
+            <Link to={`/ripening-comparison`}>
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                <TrendingUp className="h-4 w-4 mr-1.5" />
+                Compare all {blockInfo.variety} blocks
+                <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
