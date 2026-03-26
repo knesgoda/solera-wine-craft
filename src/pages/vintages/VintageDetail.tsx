@@ -362,7 +362,7 @@ export default function VintageDetail() {
                     <div key={s.id} className="border border-border rounded-lg p-3 relative">
                       <div className="flex items-start justify-between">
                         <p className="text-sm font-medium text-foreground mb-1">
-                          {format(parseISO(s.sampled_at), "MMM d, yyyy h:mm a")}
+                          <FormattedDateTime date={s.sampled_at} format="short" />
                         </p>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
