@@ -179,9 +179,16 @@ const AlertSettings = () => {
                   <SelectTrigger><SelectValue placeholder="Select parameter" /></SelectTrigger>
                   <SelectContent>
                     {PARAMETERS.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>
+                      <SelectItem
+                        key={p.value}
+                        value={p.value}
+                        disabled={p.value === "ripening_divergence" && !divergenceAllowed}
+                      >
                         {p.value === "ripening_divergence" && <TrendingUp className="h-3.5 w-3.5 mr-1.5 inline" />}
                         {p.label}
+                        {p.value === "ripening_divergence" && !divergenceAllowed && (
+                          <span className="text-xs text-muted-foreground ml-1">({requiredTierDisplay}+)</span>
+                        )}
                       </SelectItem>
                     ))}
                   </SelectContent>

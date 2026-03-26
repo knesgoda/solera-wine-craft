@@ -267,7 +267,8 @@ Deno.serve(async (req) => {
       const divergenceMatches = await checkDivergenceRules(
         supabase, orgId, divergenceRules, record, now, twentyFourHoursAgo
       );
-      matches.push(...divergenceMatches);
+        matches.push(...divergenceMatches);
+      }
     }
 
     if (matches.length === 0) {
