@@ -328,10 +328,22 @@ export default function VintageDetail() {
         </TabsList>
 
         <TabsContent value="lab">
-          {labSamples.length >= 2 && (
+          {labSamples.length >= 1 && (
             <Card className="mb-4">
               <CardHeader><CardTitle className="text-lg">Lab Trends</CardTitle></CardHeader>
-              <CardContent><LabChart samples={labSamples} /></CardContent>
+              <CardContent>
+                <LabChartWithComparison
+                  vintageId={vintageId!}
+                  blockId={vintage?.block_id || null}
+                  variety={vintage?.blocks?.name ? null : null}
+                  orgId={orgId || ""}
+                  currentSamples={labSamples}
+                />
+                {/* Fallback to original chart if comparison not applicable */}
+                {labSamples.length >= 2 && !vintage?.block_id && (
+                  <LabChart samples={labSamples} />
+                )}
+              </CardContent>
             </Card>
           )}
           <Card>
