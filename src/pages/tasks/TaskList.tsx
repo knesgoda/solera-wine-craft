@@ -116,7 +116,7 @@ export default function TaskList() {
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto pb-24 md:pb-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Tasks</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t("tasks.title")}</h1>
         <div className="flex items-center gap-2">
           <Button
             variant={viewMode === "list" ? "default" : "outline"}
