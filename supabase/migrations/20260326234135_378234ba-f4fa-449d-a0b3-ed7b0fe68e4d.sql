@@ -1,0 +1,1 @@
+ALTER TABLE public.organizations ADD COLUMN timezone text DEFAULT NULL;
