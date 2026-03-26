@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { setOrgTimezone } from "@/lib/timezone";
+import { setUnitSystem } from "@/lib/units";
+import i18n from "@/lib/i18n";
 
 interface Profile {
   id: string;
@@ -20,6 +22,7 @@ interface Organization {
   enabled_modules: string[] | null;
   onboarding_completed: boolean;
   timezone: string | null;
+  units_preference: string | null;
 }
 
 interface AuthContextType {
@@ -66,6 +69,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (profileData) {
       setProfile(profileData);
 
+      // Apply user's language preference
+      if (profileData.language && profileData.language !== i18n.language) {
+        i18n.changeLanguage(profileData.language);
+      }
+
       // Update last_active_at on every session restore / login
       supabase
         .from("profiles")
@@ -86,6 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setOrganization(orgData);
           setOrgTimezone(orgData.timezone ?? null);
+          setUnitSystem((orgData.units_preference as any) ?? "imperial");
         }
       }
     }

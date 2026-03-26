@@ -2996,6 +2996,7 @@ export type Database = {
           timezone: string | null
           trial_ends_at: string | null
           type: string | null
+          units_preference: string | null
           updated_at: string
         }
         Insert: {
@@ -3016,6 +3017,7 @@ export type Database = {
           timezone?: string | null
           trial_ends_at?: string | null
           type?: string | null
+          units_preference?: string | null
           updated_at?: string
         }
         Update: {
@@ -3036,6 +3038,7 @@ export type Database = {
           timezone?: string | null
           trial_ends_at?: string | null
           type?: string | null
+          units_preference?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -3047,6 +3050,7 @@ export type Database = {
           email: string | null
           first_name: string | null
           id: string
+          language: string | null
           last_active_at: string | null
           last_name: string | null
           org_id: string | null
@@ -3060,6 +3064,7 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id: string
+          language?: string | null
           last_active_at?: string | null
           last_name?: string | null
           org_id?: string | null
@@ -3073,6 +3078,7 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id?: string
+          language?: string | null
           last_active_at?: string | null
           last_name?: string | null
           org_id?: string | null

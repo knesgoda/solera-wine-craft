@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { NewTaskDialog } from "@/components/tasks/NewTaskDialog";
 import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
 import { FormattedDate } from "@/components/timezone";
+import { useTranslation } from "react-i18next";
 
 type TaskRow = {
   id: string;
@@ -37,6 +38,7 @@ export default function TaskList() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const { t } = useTranslation();
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ["tasks", organization?.id],
@@ -114,7 +116,7 @@ export default function TaskList() {
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto pb-24 md:pb-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Tasks</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t("tasks.title")}</h1>
         <div className="flex items-center gap-2">
           <Button
             variant={viewMode === "list" ? "default" : "outline"}
@@ -131,7 +133,7 @@ export default function TaskList() {
             <CalendarIcon className="h-4 w-4" />
           </Button>
           <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" /> New Task
+            <Plus className="h-4 w-4 mr-2" /> {t("tasks.newTask")}
           </Button>
         </div>
       </div>
@@ -142,23 +144,23 @@ export default function TaskList() {
         <Tabs defaultValue="upcoming">
           <TabsList className="w-full">
             <TabsTrigger value="upcoming" className="flex-1">
-              Upcoming {upcoming.length > 0 && `(${upcoming.length})`}
+              {t("tasks.upcoming")} {upcoming.length > 0 && `(${upcoming.length})`}
             </TabsTrigger>
             <TabsTrigger value="overdue" className="flex-1">
-              Overdue {overdue.length > 0 && `(${overdue.length})`}
+              {t("tasks.overdue")} {overdue.length > 0 && `(${overdue.length})`}
             </TabsTrigger>
             <TabsTrigger value="completed" className="flex-1">
-              Completed {completed.length > 0 && `(${completed.length})`}
+              {t("tasks.completed")} {completed.length > 0 && `(${completed.length})`}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="upcoming" className="mt-4">
-            {isLoading ? <p className="text-center py-12 text-muted-foreground">Loading…</p> : renderList(upcoming, "No upcoming tasks", "Create a task to track vineyard or cellar work.")}
+            {isLoading ? <p className="text-center py-12 text-muted-foreground">{t("common.loading")}</p> : renderList(upcoming, t("tasks.noUpcoming"), t("tasks.noTasks"))}
           </TabsContent>
           <TabsContent value="overdue" className="mt-4">
-            {renderList(overdue, "No overdue tasks 🎉", "All caught up — nothing overdue.")}
+            {renderList(overdue, t("tasks.noOverdue"), t("tasks.allCaughtUp"))}
           </TabsContent>
           <TabsContent value="completed" className="mt-4">
-            {renderList(completed, "No completed tasks yet", "Completed tasks will appear here as you check them off.")}
+            {renderList(completed, t("tasks.noCompleted"), t("tasks.completedDesc"))}
           </TabsContent>
         </Tabs>
       )}

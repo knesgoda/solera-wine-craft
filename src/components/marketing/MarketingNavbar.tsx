@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import soleraLogo from "@/assets/solera-logo.png";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 const NAV_LINKS = [
   { label: "Features", to: "/features" },
@@ -57,6 +58,7 @@ export function MarketingNavbar() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-3">
+          <LanguageSelector compact />
           <Button variant="ghost" className={`${textClass} ${solid ? "hover:bg-primary-foreground/10" : "hover:bg-foreground/10"}`} asChild>
             <Link to="/login">Log In</Link>
           </Button>

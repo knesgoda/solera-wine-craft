@@ -11,11 +11,14 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useNavigate } from "react-router-dom";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { TimezoneIndicator } from "@/components/timezone";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useTranslation } from "react-i18next";
 
 export function TopBar() {
   const { organization, profile, signOut } = useAuth();
   const { facilities, selectedFacilityId, setSelectedFacilityId, isMultiFacility } = useFacility();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const initials = [profile?.first_name?.[0], profile?.last_name?.[0]].filter(Boolean).join("").toUpperCase() || "U";
 
@@ -38,7 +41,7 @@ export function TopBar() {
               <SelectValue placeholder="All Facilities" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Facilities</SelectItem>
+              <SelectItem value="all">{t("settings.facilities")}</SelectItem>
               {facilities.map((f) => (
                 <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
               ))}
@@ -46,8 +49,9 @@ export function TopBar() {
           </Select>
         )}
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <TimezoneIndicator />
+        <LanguageSelector compact />
         <NotificationBell />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -59,7 +63,7 @@ export function TopBar() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={handleSignOut}>
-              <LogOut className="mr-2 h-4 w-4" /> Sign Out
+              <LogOut className="mr-2 h-4 w-4" /> {t("auth.signOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
