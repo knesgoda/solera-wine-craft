@@ -69,6 +69,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (profileData) {
       setProfile(profileData);
 
+      // Apply user's language preference
+      if (profileData.language && profileData.language !== i18n.language) {
+        i18n.changeLanguage(profileData.language);
+      }
+
       // Update last_active_at on every session restore / login
       supabase
         .from("profiles")
