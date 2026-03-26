@@ -38,6 +38,7 @@ export default function TaskList() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const { t } = useTranslation();
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ["tasks", organization?.id],
