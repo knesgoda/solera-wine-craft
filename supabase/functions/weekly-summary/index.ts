@@ -18,7 +18,6 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Determine if this is a manual trigger for specific org or scheduled for all
     let targetOrgIds: string[] = [];
     try {
       const body = await req.json();
@@ -37,19 +36,16 @@ serve(async (req) => {
 
     for (const orgId of targetOrgIds) {
       try {
-        // Get org info
         const { data: org } = await supabase
           .from("organizations").select("name, type").eq("id", orgId).single();
         if (!org) continue;
 
-        // Anomalies from past 7 days
         const { data: anomalies } = await supabase
           .from("anomaly_flags")
           .select("parameter, value, expected_range_low, expected_range_high, flagged_at, resolved, vintages(year, blocks(name))")
           .eq("org_id", orgId)
           .gte("flagged_at", sevenDaysAgo.toISOString());
 
-        // Lab samples from past 7 days
         const { data: labs } = await supabase
           .from("lab_samples")
           .select("sampled_at, brix, ph, ta, va, so2_free, alcohol, vintages!inner(org_id, year, blocks(name))")
@@ -58,7 +54,6 @@ serve(async (req) => {
           .order("sampled_at", { ascending: false })
           .limit(20);
 
-        // Tasks completed and overdue
         const { data: tasksCompleted } = await supabase
           .from("tasks")
           .select("title, status, due_date")
@@ -73,7 +68,6 @@ serve(async (req) => {
           .eq("status", "pending")
           .lt("due_date", now.toISOString().split("T")[0]);
 
-        // Weather summary
         const { data: weather } = await supabase
           .from("weather_readings")
           .select("temp_max_f, temp_min_f, precip_inches, gdd_daily")
@@ -89,7 +83,6 @@ serve(async (req) => {
           weatherSummary = `Avg high: ${avgHigh}°F, Avg low: ${avgLow}°F, Total precip: ${totalPrecip}", GDD accumulated: ${gdd}`;
         }
 
-        // Build context for AI
         const context = `
 Winery: ${org.name}
 Week: ${weekStart} to ${now.toISOString().split("T")[0]}
@@ -108,9 +101,8 @@ ${tasksOverdue?.map(t => `- ${t.title} (due ${t.due_date})`).join("\n") || "None
 
 Weather: ${weatherSummary}`;
 
-        const prompt = `Generate a concise weekly winery operations summary for ${org.name}. Include: (1) Harvest window status for each active block, (2) Any anomalies detected this week with brief explanation, (3) Lab data highlights, (4) Weather summary, (5) Tasks completed and overdue. Format as a clean report with section headers. Keep each section to 2–3 sentences. End with 3 recommended actions for this week.`;
+        const prompt = `Generate a concise weekly winery operations summary for ${org.name}. Include: (1) Any lab anomalies detected this week with brief explanation, (2) Harvest window status — which blocks are approaching or in prime window based on Brix trajectory and GDD, (3) Lab data highlights, (4) Weather summary, (5) Tasks completed and overdue, (6) One actionable recommendation based on the data. Format as a clean report with section headers. Keep it under 300 words. Be specific — cite actual numbers from the data.`;
 
-        // Call AI with retry
         let aiContent = "";
         let retries = 0;
         while (retries < 2) {
@@ -123,23 +115,17 @@ Weather: ${weatherSummary}`;
                 "content-type": "application/json",
               },
               body: JSON.stringify({
-                model: "claude-sonnet-4-6-20250514",
+                model: "claude-sonnet-4-6",
                 max_tokens: 1500,
                 system: `You are a winery operations analyst. Here is this week's data:\n${context}`,
-                messages: [
-                  { role: "user", content: prompt },
-                ],
+                messages: [{ role: "user", content: prompt }],
               }),
             });
 
             if (!response.ok) {
               const t = await response.text();
               console.error(`AI error (attempt ${retries + 1}):`, response.status, t);
-              if (retries === 0) {
-                retries++;
-                await new Promise(r => setTimeout(r, 3000));
-                continue;
-              }
+              if (retries === 0) { retries++; await new Promise(r => setTimeout(r, 3000)); continue; }
               throw new Error(`AI failed after retry: ${response.status}`);
             }
 
@@ -147,11 +133,7 @@ Weather: ${weatherSummary}`;
             aiContent = data.content?.[0]?.text || "";
             break;
           } catch (e) {
-            if (retries === 0) {
-              retries++;
-              await new Promise(r => setTimeout(r, 3000));
-              continue;
-            }
+            if (retries === 0) { retries++; await new Promise(r => setTimeout(r, 3000)); continue; }
             console.error(`Weekly summary AI failed for org ${orgId}:`, e);
             break;
           }
@@ -162,7 +144,6 @@ Weather: ${weatherSummary}`;
           continue;
         }
 
-        // Store summary
         const { error: insertError } = await supabase.from("weekly_summaries").insert({
           org_id: orgId,
           week_starting: weekStart,
@@ -170,21 +151,52 @@ Weather: ${weatherSummary}`;
         });
         if (insertError) console.error("Failed to store summary:", insertError);
 
-        // Notify org users
+        // Send email via Resend
+        const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("id")
+          .select("id, email")
           .eq("org_id", orgId);
 
         if (profiles) {
+          // Check alert preferences - notify all users
           for (const p of profiles) {
             await supabase.from("notifications").insert({
               org_id: orgId,
               user_id: p.id,
-              message: `📊 Your weekly winery summary for the week of ${weekStart} is ready. View it in Reports.`,
+              message: `📊 Your weekly winery summary for the week of ${weekStart} is ready. View it in Ask Solera > Summaries.`,
               type: "system",
               channel: "both",
             });
+
+            // Send email if Resend is configured
+            if (RESEND_API_KEY && p.email) {
+              try {
+                await fetch("https://api.resend.com/emails", {
+                  method: "POST",
+                  headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    from: `Solera <notifications@solera.vin>`,
+                    to: [p.email],
+                    subject: `Weekly Winery Summary — ${weekStart}`,
+                    html: `<div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:24px">
+                      <div style="background:#6B1B2A;color:white;padding:16px 24px;border-radius:8px 8px 0 0">
+                        <h1 style="margin:0;font-size:18px">📊 Weekly Summary</h1>
+                        <p style="margin:4px 0 0;font-size:13px;opacity:0.8">Week of ${weekStart}</p>
+                      </div>
+                      <div style="border:1px solid #e5e7eb;border-top:none;padding:24px;border-radius:0 0 8px 8px">
+                        <pre style="white-space:pre-wrap;font-family:system-ui,sans-serif;font-size:14px;line-height:1.6;color:#374151">${aiContent}</pre>
+                        <div style="margin-top:24px;text-align:center">
+                          <a href="https://solera.vin/ask-solera" style="display:inline-block;padding:10px 24px;background:#6B1B2A;color:white;text-decoration:none;border-radius:6px;font-size:14px">View in Solera</a>
+                        </div>
+                      </div>
+                    </div>`,
+                  }),
+                });
+              } catch (emailErr) {
+                console.error(`Failed to send email to ${p.email}:`, emailErr);
+              }
+            }
           }
         }
 

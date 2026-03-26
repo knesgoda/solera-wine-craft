@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bot, Send, Plus, Trash2, ArrowLeft, MessageSquare, Sparkles } from "lucide-react";
+import { Bot, Send, Plus, Trash2, ArrowLeft, MessageSquare, Sparkles, AlertTriangle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,8 @@ const SUGGESTED_QUESTIONS = [
   "How does this vintage compare to last year?",
 ];
 
+const STREAM_TIMEOUT_MS = 30_000;
+
 const AskSolera = () => {
   const { user, organization } = useAuth();
   const orgId = organization?.id;
@@ -30,12 +32,15 @@ const AskSolera = () => {
   const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<(Msg & { id?: string; created_at?: string })[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [streamError, setStreamError] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(!isMobile);
+  const [activeTab, setActiveTab] = useState<"chat" | "summaries">("chat");
 
   // Fetch conversations
   const { data: conversations = [] } = useQuery({
@@ -45,6 +50,21 @@ const AskSolera = () => {
         .from("ai_conversations")
         .select("*")
         .order("updated_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!orgId,
+  });
+
+  // Fetch weekly summaries
+  const { data: weeklySummaries = [] } = useQuery({
+    queryKey: ["weekly-summaries", orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("weekly_summaries")
+        .select("*")
+        .order("week_starting", { ascending: false })
+        .limit(4);
       if (error) throw error;
       return data;
     },
@@ -111,6 +131,7 @@ const AskSolera = () => {
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || isStreaming || !orgId || !user) return;
+    setStreamError(null);
 
     let convId = activeConversationId;
 
@@ -146,8 +167,16 @@ const AskSolera = () => {
     setIsStreaming(true);
     let assistantContent = "";
 
+    // Set up abort controller for timeout
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, STREAM_TIMEOUT_MS);
+
     try {
-      const allMessages = [...messages, userMsg].map((m) => ({ role: m.role, content: m.content }));
+      // Send last 10 messages for context
+      const recentMessages = [...messages, userMsg].slice(-10).map((m) => ({ role: m.role, content: m.content }));
 
       const { data: { session } } = await supabase.auth.getSession();
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ask-solera`, {
@@ -156,7 +185,8 @@ const AskSolera = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ messages: allMessages, conversationId: convId }),
+        body: JSON.stringify({ messages: recentMessages, conversationId: convId }),
+        signal: controller.signal,
       });
 
       if (!resp.ok) {
@@ -245,13 +275,18 @@ const AskSolera = () => {
           role: "assistant",
           content: assistantContent,
         });
-        // Update conversation updated_at
         await supabase.from("ai_conversations").update({ updated_at: new Date().toISOString() }).eq("id", convId);
         queryClient.invalidateQueries({ queryKey: ["ai-conversations"] });
       }
     } catch (e: any) {
       console.error("Streaming error:", e);
-      toast({ title: "Error", description: e.message || "Failed to get response", variant: "destructive" });
+      if (e.name === "AbortError") {
+        setStreamError("Ask Solera is taking longer than usual. Try again or rephrase your question.");
+      } else if (e.message?.includes("API key")) {
+        setStreamError("Something went wrong. Check that your Anthropic API key is configured in Settings.");
+      } else {
+        setStreamError(e.message || "Failed to get response. Please try again.");
+      }
       // Remove the streaming assistant message if it was empty
       setMessages((prev) => {
         const last = prev[prev.length - 1];
@@ -259,6 +294,8 @@ const AskSolera = () => {
         return prev;
       });
     } finally {
+      clearTimeout(timeoutId);
+      abortRef.current = null;
       setIsStreaming(false);
     }
   }, [activeConversationId, messages, orgId, user, isStreaming, toast, queryClient, isMobile]);
@@ -274,6 +311,7 @@ const AskSolera = () => {
     setActiveConversationId(null);
     setMessages([]);
     setInput("");
+    setStreamError(null);
     if (isMobile) setShowSidebar(false);
   };
 
@@ -296,6 +334,7 @@ const AskSolera = () => {
               }`}
               onClick={() => {
                 setActiveConversationId(conv.id);
+                setStreamError(null);
                 if (isMobile) setShowSidebar(false);
               }}
             >
@@ -359,112 +398,172 @@ const AskSolera = () => {
               <p className="text-[10px] text-muted-foreground">AI-powered winery assistant</p>
             </div>
           </div>
-          <Badge variant="outline" className="ml-auto text-[10px] gap-1">
-            <Sparkles className="h-3 w-3" /> AI
-          </Badge>
+          <div className="ml-auto flex items-center gap-2">
+            <div className="flex border border-border rounded-lg overflow-hidden">
+              <button
+                onClick={() => setActiveTab("chat")}
+                className={`px-3 py-1 text-xs font-medium transition-colors ${activeTab === "chat" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Chat
+              </button>
+              <button
+                onClick={() => setActiveTab("summaries")}
+                className={`px-3 py-1 text-xs font-medium transition-colors ${activeTab === "summaries" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Summaries
+              </button>
+            </div>
+            <Badge variant="outline" className="text-[10px] gap-1">
+              <Sparkles className="h-3 w-3" /> AI
+            </Badge>
+          </div>
         </div>
 
-        {/* Messages */}
-        <ScrollArea className="flex-1 px-4">
-          <div className="max-w-3xl mx-auto py-4 space-y-4">
-            {messages.length === 0 && !activeConversationId && (
-              <div className="flex flex-col items-center justify-center py-12 space-y-6">
-                <div className="p-4 rounded-2xl bg-primary/10">
-                  <Bot className="h-10 w-10 text-primary" />
-                </div>
-                <div className="text-center space-y-2">
-                  <h3 className="font-display text-xl font-bold text-foreground">Ask Solera</h3>
-                  <p className="text-sm text-muted-foreground max-w-md">
-                    Your AI winery assistant. Ask about harvest timing, lab results, vineyard conditions, and more.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
-                  {SUGGESTED_QUESTIONS.map((q) => (
-                    <Card
-                      key={q}
-                      className="p-3 cursor-pointer hover:bg-muted/50 transition-colors border-dashed text-sm text-foreground/80"
-                      onClick={() => sendMessage(q)}
-                    >
-                      {q}
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-br-md"
-                      : "bg-muted rounded-bl-md"
-                  }`}
-                >
-                  {msg.role === "assistant" && (
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <Badge variant="outline" className="text-[9px] py-0 px-1.5 gap-0.5 border-primary/30">
-                        <Sparkles className="h-2.5 w-2.5" /> AI
+        {activeTab === "summaries" ? (
+          <ScrollArea className="flex-1 px-4">
+            <div className="max-w-3xl mx-auto py-6 space-y-4">
+              <h3 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" /> Recent Weekly Summaries
+              </h3>
+              {weeklySummaries.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">
+                  No weekly summaries yet. Summaries are generated every Monday.
+                </p>
+              ) : (
+                weeklySummaries.map((summary: any) => (
+                  <Card key={summary.id} className="p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="text-xs">
+                        Week of {summary.week_starting}
                       </Badge>
-                      {msg.created_at && (
-                        <span className="text-[10px] text-muted-foreground">
-                          {format(new Date(msg.created_at), "h:mm a")}
-                        </span>
-                      )}
+                      <span className="text-[10px] text-muted-foreground">
+                        {format(new Date(summary.created_at), "MMM d, yyyy h:mm a")}
+                      </span>
                     </div>
-                  )}
-                  <div className={`text-sm prose prose-sm max-w-none ${
-                    msg.role === "user" ? "prose-invert" : ""
-                  }`}>
-                    {msg.role === "assistant" ? (
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    ) : (
-                      <p className="whitespace-pre-wrap m-0">{msg.content}</p>
-                    )}
+                    <div className="prose prose-sm max-w-none text-sm">
+                      <ReactMarkdown>{summary.content}</ReactMarkdown>
+                    </div>
+                  </Card>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        ) : (
+          <>
+            {/* Messages */}
+            <ScrollArea className="flex-1 px-4">
+              <div className="max-w-3xl mx-auto py-4 space-y-4">
+                {messages.length === 0 && !activeConversationId && (
+                  <div className="flex flex-col items-center justify-center py-12 space-y-6">
+                    <div className="p-4 rounded-2xl bg-primary/10">
+                      <Bot className="h-10 w-10 text-primary" />
+                    </div>
+                    <div className="text-center space-y-2">
+                      <h3 className="font-display text-xl font-bold text-foreground">Ask Solera</h3>
+                      <p className="text-sm text-muted-foreground max-w-md">
+                        Your AI winery assistant. Ask about harvest timing, lab results, vineyard conditions, and more.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
+                      {SUGGESTED_QUESTIONS.map((q) => (
+                        <Card
+                          key={q}
+                          className="p-3 cursor-pointer hover:bg-muted/50 transition-colors border-dashed text-sm text-foreground/80"
+                          onClick={() => sendMessage(q)}
+                        >
+                          {q}
+                        </Card>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                )}
 
-            {isStreaming && messages[messages.length - 1]?.role !== "assistant" && (
-              <div className="flex justify-start">
-                <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
-                  <div className="flex gap-1.5">
-                    <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                {messages.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                        msg.role === "user"
+                          ? "bg-primary text-primary-foreground rounded-br-md"
+                          : "bg-muted rounded-bl-md"
+                      }`}
+                    >
+                      {msg.role === "assistant" && (
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Badge variant="outline" className="text-[9px] py-0 px-1.5 gap-0.5 border-primary/30">
+                            <Sparkles className="h-2.5 w-2.5" /> AI
+                          </Badge>
+                          {msg.created_at && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {format(new Date(msg.created_at), "h:mm a")}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <div className={`text-sm prose prose-sm max-w-none ${
+                        msg.role === "user" ? "prose-invert" : ""
+                      }`}>
+                        {msg.role === "assistant" ? (
+                          <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        ) : (
+                          <p className="whitespace-pre-wrap m-0">{msg.content}</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
+
+                {/* Typing indicator */}
+                {isStreaming && messages[messages.length - 1]?.role !== "assistant" && (
+                  <div className="flex justify-start">
+                    <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
+                      <div className="flex gap-1.5">
+                        <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error message */}
+                {streamError && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] bg-destructive/10 border border-destructive/20 text-destructive rounded-2xl rounded-bl-md px-4 py-3 flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                      <p className="text-sm">{streamError}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div ref={messagesEndRef} />
               </div>
-            )}
+            </ScrollArea>
 
-            <div ref={messagesEndRef} />
-          </div>
-        </ScrollArea>
-
-        {/* Input */}
-        <div className="border-t border-border p-3 shrink-0">
-          <div className="max-w-3xl mx-auto flex gap-2">
-            <Textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask about your vineyard, vintages, or operations..."
-              className="min-h-[44px] max-h-32 resize-none"
-              rows={1}
-              disabled={isStreaming}
-            />
-            <Button
-              onClick={() => sendMessage(input)}
-              disabled={!input.trim() || isStreaming}
-              size="icon"
-              className="shrink-0 h-[44px] w-[44px]"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+            {/* Input */}
+            <div className="border-t border-border p-3 shrink-0">
+              <div className="max-w-3xl mx-auto flex gap-2">
+                <Textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask about your vineyard, vintages, or operations..."
+                  className="min-h-[44px] max-h-32 resize-none"
+                  rows={1}
+                  disabled={isStreaming}
+                />
+                <Button
+                  onClick={() => sendMessage(input)}
+                  disabled={!input.trim() || isStreaming}
+                  size="icon"
+                  className="shrink-0 h-[44px] w-[44px]"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
