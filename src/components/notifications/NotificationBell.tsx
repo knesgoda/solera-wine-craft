@@ -4,10 +4,10 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 import { useNotifications } from "@/hooks/useNotifications";
-import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { RelativeTime } from "@/components/timezone";
 
 const TYPE_COLORS: Record<string, string> = {
   alert: "bg-destructive/10 text-destructive",
