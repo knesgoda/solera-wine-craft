@@ -66,7 +66,7 @@ export default function VintageDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vintages")
-        .select("*, blocks(name, vineyard_id, vineyards(name))")
+        .select("*, blocks(id, name, variety, vineyard_id, vineyards(name))")
         .eq("id", vintageId!)
         .single();
       if (error) throw error;
