@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Bell, ShieldAlert } from "lucide-react";
+import { Plus, Trash2, Bell, ShieldAlert, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -23,6 +23,7 @@ const PARAMETERS = [
   { value: "so2_total", label: "Total SO₂" },
   { value: "temp_f", label: "Temperature (°F)" },
   { value: "gdd_cumulative", label: "GDD Cumulative" },
+  { value: "ripening_divergence", label: "Ripening Divergence" },
 ];
 
 const OPERATORS = [
@@ -40,11 +41,20 @@ const CHANNELS = [
 const OP_SYMBOLS: Record<string, string> = { gte: "≥", lte: "≤", eq: "=" };
 
 const AlertSettings = () => {
-  const { organization } = useAuth();
+  const { profile, organization } = useAuth();
   const orgId = organization?.id;
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ parameter: "", operator: "", threshold: "", channel: "both" });
+  const [form, setForm] = useState({
+    parameter: "",
+    operator: "",
+    threshold: "",
+    channel: "both",
+    variety_filter: "",
+    brix_spread_threshold: "4.0",
+  });
+
+  const isDivergence = form.parameter === "ripening_divergence";
 
   const { data: rules = [], isLoading } = useQuery({
     queryKey: ["alert-rules", orgId],
@@ -60,21 +70,50 @@ const AlertSettings = () => {
     enabled: !!orgId,
   });
 
+  // Get varieties for the divergence rule dropdown
+  const { data: varieties = [] } = useQuery({
+    queryKey: ["block-varieties", orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blocks")
+        .select("variety, vineyards!inner(org_id)")
+        .eq("vineyards.org_id", orgId!)
+        .not("variety", "is", null);
+      if (error) throw error;
+      const unique = [...new Set((data || []).map((b: any) => b.variety).filter(Boolean))] as string[];
+      return unique.sort();
+    },
+    enabled: !!orgId,
+  });
+
   const createRule = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("alert_rules").insert({
-        org_id: orgId!,
-        parameter: form.parameter as any,
-        operator: form.operator as any,
-        threshold: parseFloat(form.threshold),
-        channel: form.channel as any,
-      });
-      if (error) throw error;
+      if (isDivergence) {
+        const { error } = await supabase.from("alert_rules").insert({
+          org_id: orgId!,
+          parameter: "ripening_divergence" as any,
+          operator: "gte" as any,
+          threshold: parseFloat(form.brix_spread_threshold) || 4.0,
+          channel: form.channel as any,
+          variety_filter: form.variety_filter || null,
+          brix_spread_threshold: parseFloat(form.brix_spread_threshold) || 4.0,
+        } as any);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("alert_rules").insert({
+          org_id: orgId!,
+          parameter: form.parameter as any,
+          operator: form.operator as any,
+          threshold: parseFloat(form.threshold),
+          channel: form.channel as any,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["alert-rules", orgId] });
       setOpen(false);
-      setForm({ parameter: "", operator: "", threshold: "", channel: "both" });
+      setForm({ parameter: "", operator: "", threshold: "", channel: "both", variety_filter: "", brix_spread_threshold: "4.0" });
       toast.success("Alert rule created");
     },
     onError: (e: any) => toast.error(e.message),
@@ -103,6 +142,19 @@ const AlertSettings = () => {
   const paramLabel = (val: string) => PARAMETERS.find((p) => p.value === val)?.label || val;
   const channelLabel = (val: string) => CHANNELS.find((c) => c.value === val)?.label || val;
 
+  const formatRuleDescription = (rule: any) => {
+    if (rule.parameter === "ripening_divergence") {
+      const variety = (rule as any).variety_filter || "All varieties";
+      const spread = (rule as any).brix_spread_threshold ?? 4.0;
+      return `Ripening Divergence: ${variety} — ${spread}° Brix spread`;
+    }
+    return `${paramLabel(rule.parameter)} ${OP_SYMBOLS[rule.operator]} ${rule.threshold}`;
+  };
+
+  const canSubmit = isDivergence
+    ? !!form.brix_spread_threshold
+    : !!form.parameter && !!form.operator && !!form.threshold;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -124,25 +176,61 @@ const AlertSettings = () => {
                 <Select value={form.parameter} onValueChange={(v) => setForm({ ...form, parameter: v })}>
                   <SelectTrigger><SelectValue placeholder="Select parameter" /></SelectTrigger>
                   <SelectContent>
-                    {PARAMETERS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                    {PARAMETERS.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.value === "ripening_divergence" && <TrendingUp className="h-3.5 w-3.5 mr-1.5 inline" />}
+                        {p.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Operator</Label>
-                  <Select value={form.operator} onValueChange={(v) => setForm({ ...form, operator: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      {OPERATORS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+
+              {isDivergence ? (
+                <>
+                  <div className="space-y-2">
+                    <Label>Variety to Monitor</Label>
+                    <Select value={form.variety_filter} onValueChange={(v) => setForm({ ...form, variety_filter: v })}>
+                      <SelectTrigger><SelectValue placeholder="All varieties" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All varieties</SelectItem>
+                        {varieties.map((v) => (
+                          <SelectItem key={v} value={v}>{v}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Leave blank to monitor all varieties</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Brix Spread Threshold</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={form.brix_spread_threshold}
+                      onChange={(e) => setForm({ ...form, brix_spread_threshold: e.target.value })}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">Alert fires when the spread between fastest and slowest blocks exceeds this value</p>
+                  </div>
+                </>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Operator</Label>
+                    <Select value={form.operator} onValueChange={(v) => setForm({ ...form, operator: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>
+                        {OPERATORS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Threshold</Label>
+                    <Input type="number" step="0.01" value={form.threshold} onChange={(e) => setForm({ ...form, threshold: e.target.value })} required />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Threshold</Label>
-                  <Input type="number" step="0.01" value={form.threshold} onChange={(e) => setForm({ ...form, threshold: e.target.value })} required />
-                </div>
-              </div>
+              )}
+
               <div className="space-y-2">
                 <Label>Notification Channel</Label>
                 <Select value={form.channel} onValueChange={(v) => setForm({ ...form, channel: v })}>
@@ -152,7 +240,7 @@ const AlertSettings = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" className="w-full" disabled={createRule.isPending || !form.parameter || !form.operator || !form.threshold}>
+              <Button type="submit" className="w-full" disabled={createRule.isPending || !canSubmit}>
                 {createRule.isPending ? "Creating..." : "Create Rule"}
               </Button>
             </form>
@@ -184,8 +272,11 @@ const AlertSettings = () => {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
+                        {rule.parameter === "ripening_divergence" && (
+                          <TrendingUp className="h-4 w-4 text-primary shrink-0" />
+                        )}
                         <span className="font-medium text-foreground">
-                          {paramLabel(rule.parameter)} {OP_SYMBOLS[rule.operator]} {rule.threshold}
+                          {formatRuleDescription(rule)}
                         </span>
                         <Badge variant="outline" className="text-[10px]">
                           {channelLabel(rule.channel)}
