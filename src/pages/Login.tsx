@@ -13,6 +13,7 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 
 const Login = () => {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
