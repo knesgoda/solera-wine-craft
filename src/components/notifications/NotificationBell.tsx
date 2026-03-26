@@ -71,9 +71,7 @@ export function NotificationBell() {
                         {!n.read && <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />}
                       </div>
                       <p className="text-sm text-foreground leading-snug">{n.message}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                      </p>
+                      <RelativeTime date={n.created_at} className="text-xs text-muted-foreground mt-1 block" />
                     </div>
                   </div>
                 </div>

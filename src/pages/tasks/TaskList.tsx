@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Calendar as CalendarIcon, List, MapPin, Clock, CheckCircle2 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
-import { format, isPast, isToday, parseISO } from "date-fns";
+import { isPast, isToday, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { NewTaskDialog } from "@/components/tasks/NewTaskDialog";
 import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
+import { FormattedDate } from "@/components/timezone";
 
 type TaskRow = {
   id: string;
