@@ -33,6 +33,7 @@ const NAV_GROUPS: NavGroupConfig[] = [
     items: [
       { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
       { title: "Vineyard Ops", url: "/operations", icon: Grape },
+      { title: "Ripening Tracker", url: "/ripening-comparison", icon: TrendingUp },
       { title: "Tasks", url: "/tasks", icon: ClipboardList },
       { title: "Vintages", url: "/vintages", icon: Wine },
     ],
