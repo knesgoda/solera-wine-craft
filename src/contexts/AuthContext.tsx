@@ -22,6 +22,7 @@ interface Organization {
   enabled_modules: string[] | null;
   onboarding_completed: boolean;
   timezone: string | null;
+  units_preference: string | null;
 }
 
 interface AuthContextType {
