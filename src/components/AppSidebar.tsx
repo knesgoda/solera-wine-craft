@@ -180,7 +180,7 @@ function SidebarNavGroup({ group, collapsed, currentPath }: { group: NavGroupCon
               <TooltipTrigger asChild>
                 <GroupIcon className="h-5 w-5 shrink-0" />
               </TooltipTrigger>
-              <TooltipContent side="right">{group.label}</TooltipContent>
+              <TooltipContent side="right">{groupLabel}</TooltipContent>
             </Tooltip>
           </NavLink>
         </SidebarMenuButton>
