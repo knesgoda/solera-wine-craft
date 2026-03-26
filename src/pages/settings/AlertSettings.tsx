@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Bell, ShieldAlert, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { useTierGate } from "@/hooks/useTierGate";
 
 const PARAMETERS = [
   { value: "brix", label: "Brix" },
