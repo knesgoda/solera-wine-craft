@@ -24,12 +24,14 @@ const FACILITY_TYPES = [
 ] as const;
 
 export default function FacilitySettings() {
-  const { profile, organization } = useAuth();
+  const { profile, organization, refreshProfile } = useAuth();
   const [facilities, setFacilities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", address: "", region: "", facility_type: "winery" });
+  const [timezone, setTimezone] = useState(organization?.timezone || "");
+  const [savingTz, setSavingTz] = useState(false);
 
   const isEnterprise = organization?.tier === "enterprise";
 
