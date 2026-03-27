@@ -77,7 +77,7 @@ export default function Homepage() {
                 </Button>
               </div>
               <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                {["Free for hobbyists", "Real-time COGS tracking", "AI-powered", "No transaction fees"].map((t) => (
+                {["Free for hobbyists", "Ripening intelligence", "Multi-language", "Free data export", "No transaction fees"].map((t) => (
                   <span key={t} className="flex items-center gap-1.5">
                     <Check className="h-4 w-4 text-green-600" /> {t}
                   </span>

@@ -143,6 +143,25 @@ export default function ComingSoon() {
             when we go live — plus an exclusive early-access offer.
           </p>
 
+          {/* Feature highlights for SEO */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-10 max-w-lg mx-auto text-left">
+            {[
+              "Vineyard & block management",
+              "Ripening intelligence",
+              "Cellar & fermentation",
+              "Production cost tracking",
+              "Multi-language & timezone",
+              "Free data export & backup",
+              "AI-powered analytics",
+              "DTC sales & wine clubs",
+            ].map(f => (
+              <div key={f} className="flex items-start gap-1.5 text-xs" style={{ fontFamily: "'Source Sans 3', sans-serif", color: "#444" }}>
+                <span style={{ color: "#C8902A" }}>✓</span>
+                <span>{f}</span>
+              </div>
+            ))}
+          </div>
+
           {/* Form card */}
           <div
             className="rounded-2xl shadow-lg p-6 md:p-8 mx-auto"

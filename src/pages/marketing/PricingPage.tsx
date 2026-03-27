@@ -87,10 +87,13 @@ const TIERS = [
 
 type ComparisonCell = true | string | false;
 
-const COMPARISON_ROWS: { feature: string; hobbyist: ComparisonCell; pro: ComparisonCell; growth: ComparisonCell; enterprise: ComparisonCell }[] = [
+const COMPARISON_ROWS: { feature: string; hobbyist: ComparisonCell; pro: ComparisonCell; growth: ComparisonCell; enterprise: ComparisonCell; group?: string }[] = [
   { feature: "Vineyards & blocks", hobbyist: "1 / 2", pro: "Unlimited", growth: "Unlimited", enterprise: "Unlimited" },
   { feature: "Vintage & lab tracking", hobbyist: true, pro: true, growth: true, enterprise: true },
   { feature: "Weather & GDD", hobbyist: true, pro: true, growth: true, enterprise: true },
+  { feature: "Ripening comparison dashboard", hobbyist: true, pro: true, growth: true, enterprise: true },
+  { feature: "Ripening divergence alerts", hobbyist: false, pro: true, growth: true, enterprise: true },
+  { feature: "Cross-block lab overlay", hobbyist: false, pro: true, growth: true, enterprise: true },
   { feature: "Data import (CSV/XLSX)", hobbyist: true, pro: true, growth: true, enterprise: true },
   { feature: "Mobile PWA with offline", hobbyist: true, pro: true, growth: true, enterprise: true },
   { feature: "Cellar & fermentation", hobbyist: false, pro: true, growth: true, enterprise: true },
@@ -108,6 +111,12 @@ const COMPARISON_ROWS: { feature: string; hobbyist: ComparisonCell; pro: Compari
   { feature: "SSO / SAML 2.0", hobbyist: false, pro: false, growth: false, enterprise: true },
   { feature: "Audit logging", hobbyist: false, pro: false, growth: false, enterprise: true },
   { feature: "Webhooks & API", hobbyist: false, pro: false, growth: true, enterprise: true },
+  // Platform & Infrastructure
+  { feature: "Multi-language support", hobbyist: true, pro: true, growth: true, enterprise: true, group: "Platform" },
+  { feature: "Timezone & unit customization", hobbyist: true, pro: true, growth: true, enterprise: true },
+  { feature: "On-demand data export (CSV/Excel)", hobbyist: true, pro: true, growth: true, enterprise: true },
+  { feature: "Scheduled automatic backups", hobbyist: true, pro: true, growth: true, enterprise: true },
+  { feature: "Cancellation auto-export with 90-day retention", hobbyist: true, pro: true, growth: true, enterprise: true },
   { feature: "Support", hobbyist: "Community", pro: "Email", growth: "Priority", enterprise: "Dedicated concierge" },
 ];
 

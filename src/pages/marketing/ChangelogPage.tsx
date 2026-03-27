@@ -32,6 +32,20 @@ export default function ChangelogPage() {
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") === "roadmap" ? "roadmap" : "changelog";
 
+  const HARDCODED_V25 = {
+    id: "v2.5-hardcoded",
+    version: "2.5",
+    released_at: "2026-03-26",
+    entries_json: [
+      { tag: "New", title: "Clone & Rootstock Ripening Tracker", items: ["Ripening comparison dashboard — overlay Brix, pH, and TA curves for up to 10 blocks", "Automatic divergence alerts when same-variety blocks drift apart (Pro+)", "Block ripening history sparklines on block detail pages", "Cross-block lab overlay on vintage detail charts (Pro+)"] },
+      { tag: "New", title: "Global Timezone Support", items: ["Org-level timezone setting with automatic browser detection", "Timezone-aware display across all modules", "Correct midnight boundary handling for international users"] },
+      { tag: "New", title: "Multi-Language Infrastructure", items: ["Internationalization (i18n) framework with per-user language preference", "French translation — first of seven planned languages", "Locale-aware number and date formatting"] },
+      { tag: "New", title: "Metric / Imperial Unit Toggle", items: ["Per-org unit preference: liters or gallons, kilograms or pounds", "Automatic conversion across all modules"] },
+      { tag: "New", title: "Data Backup & Export", items: ["On-demand CSV or Excel export of all winery data", "SHA-256 integrity checksums on every export", "Scheduled automatic backups — weekly or monthly", "Auto-export on account cancellation with 90-day download window", "Available on every tier — no paywall"] },
+      { tag: "Improved", title: "Admin Notification System", items: ["Real-time notifications for new signups and activation milestones", "Subscription lifecycle alerts for payment events"] },
+    ],
+  };
+
   const { data: changelogs } = useQuery({
     queryKey: ["changelogs"],
     queryFn: async () => {
@@ -39,7 +53,7 @@ export default function ChangelogPage() {
         .from("changelogs")
         .select("*")
         .order("released_at", { ascending: false });
-      return data || [];
+      return [HARDCODED_V25, ...(data || [])];
     },
   });
 
