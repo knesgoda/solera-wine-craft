@@ -295,10 +295,15 @@ Questions? Contact support@solera.vin
       });
     if (uploadErr) throw new Error(`Storage upload failed: ${uploadErr.message}`);
 
-    // Generate signed URL (7 days)
+    // Determine expiry based on triggered_by
+    const triggeredBy = job.triggered_by || "manual";
+    const expiryDays = triggeredBy === "cancellation" ? 90 : triggeredBy === "scheduled" ? 30 : 7;
+    const expirySeconds = expiryDays * 24 * 60 * 60;
+
+    // Generate signed URL
     const { data: signedUrl } = await supabase.storage
       .from("backups")
-      .createSignedUrl(storagePath, 7 * 24 * 60 * 60); // 7 days
+      .createSignedUrl(storagePath, expirySeconds);
 
     // Update job as completed
     await supabase.from("backup_jobs").update({
@@ -307,7 +312,7 @@ Questions? Contact support@solera.vin
       file_size_bytes: fileContent.length,
       manifest_json: manifest,
       completed_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      expires_at: new Date(Date.now() + expirySeconds * 1000).toISOString(),
     } as any).eq("id", jobId);
 
     // Format file size for notification
