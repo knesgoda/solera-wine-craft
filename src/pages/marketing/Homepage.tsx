@@ -4,18 +4,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SEOHead, HOMEPAGE_SCHEMA } from "@/components/SEOHead";
 import {
   Grape, FlaskConical, Wine, Bot, Upload, ShoppingCart, Users, FileCheck,
-  Check, X, ChevronRight, BarChart3, Thermometer, Calendar, Bell, DollarSign, Wheat
+  Check, X, ChevronRight, BarChart3, Thermometer, Calendar, Bell, DollarSign, Wheat,
+  LineChart, Globe, Download
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const MODULES: { icon: any; name: string; desc: string; tier?: string }[] = [
   { icon: Grape, name: "Vineyard Operations", desc: "GDD tracking, block management, task scheduling, and weather-driven harvest predictions." },
+  { icon: LineChart, name: "Ripening Intelligence", desc: "Track clone and rootstock ripening divergence across blocks with automatic alerts when fruit drifts apart." },
   { icon: FlaskConical, name: "Vintage & Lab Tracking", desc: "Record lab samples, track additions, detect anomalies with AI, and monitor every vintage's lifecycle." },
   { icon: Wine, name: "Cellar & Fermentation", desc: "Manage vessels, barrels, fermentation logs, and run blending trials with confidence." },
   { icon: DollarSign, name: "Production Cost Tracking", desc: "Real-time COGS per gallon, barrel, and case. Costs follow wine through blends automatically.", tier: "Growth+" },
   { icon: Wheat, name: "Grower Contracts", desc: "Manage grape purchase agreements with auto-pricing grading scales at harvest intake.", tier: "Enterprise" },
   { icon: Bot, name: "Ask Solera AI", desc: "Ask anything about your operation in plain English and get answers grounded in your actual data." },
+  { icon: Globe, name: "Global-Ready", desc: "Multi-language, timezone-aware, metric or imperial — built for wineries from Napa to Bordeaux to Barossa." },
   { icon: Upload, name: "Data Import & Migration", desc: "AI-assisted import from Innovint, VinNow, or any CSV/XLSX. Your history migrates in minutes." },
+  { icon: Download, name: "Data Export & Backup", desc: "Your data, always yours — free CSV/Excel export and automatic backups on every tier." },
   { icon: ShoppingCart, name: "Sales & DTC Storefront", desc: "Public wine store, inventory management, order fulfillment, and wine club shipments." },
   { icon: Users, name: "Custom Crush Portal", desc: "Give your custom crush clients their own portal with vintage visibility, messaging, and documents." },
   { icon: FileCheck, name: "TTB Compliance", desc: "Generate OW-1 reports, Certificates of Analysis, and stay compliant with ShipCompliant integration." },
@@ -42,7 +46,7 @@ export default function Homepage() {
     <>
       <SEOHead
         title="Solera — Winery Management Software | Vineyard Ops, COGS Tracking, DTC Sales"
-        description="The all-in-one winery management platform. Vineyard operations, cellar management, production cost tracking, grower contracts, AI analytics, DTC sales, and TTB compliance. From vine to bottle to doorstep. Free tier available."
+        description="Solera — winery management from vine to bottle to doorstep. Vineyard ops, lab tracking, cellar management, DTC sales, AI-powered insights, clone & rootstock ripening intelligence, multi-language support, free data export on every tier. Start free."
         jsonLd={HOMEPAGE_SCHEMA}
       />
 
@@ -73,7 +77,7 @@ export default function Homepage() {
                 </Button>
               </div>
               <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                {["Free for hobbyists", "Real-time COGS tracking", "AI-powered", "No transaction fees"].map((t) => (
+                {["Free for hobbyists", "Ripening intelligence", "Multi-language", "Free data export", "No transaction fees"].map((t) => (
                   <span key={t} className="flex items-center gap-1.5">
                     <Check className="h-4 w-4 text-green-600" /> {t}
                   </span>

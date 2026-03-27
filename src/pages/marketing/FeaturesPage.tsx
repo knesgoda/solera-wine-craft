@@ -5,7 +5,8 @@ import {
   Grape, FlaskConical, Wine, Bot, Upload, ShoppingCart, Users, FileCheck,
   MapPin, Thermometer, Calendar, BarChart3, TestTube, AlertTriangle, Bell,
   Database, FileSpreadsheet, Layers, CreditCard, Package, Truck, UserPlus,
-  FileText, Shield, Check, DollarSign, Wheat, Scale, TrendingUp
+  FileText, Shield, Check, DollarSign, Wheat, Scale, TrendingUp, Globe,
+  Download, LineChart, ShieldCheck
 } from "lucide-react";
 
 const FEATURES = [
@@ -37,6 +38,49 @@ const FEATURES = [
         </div>
         <div className="h-2 rounded-full bg-muted"><div className="h-full w-3/4 rounded-full bg-secondary" /></div>
         <p className="text-[10px] text-muted-foreground">Harvest readiness: 75%</p>
+      </div>
+    ),
+  },
+  {
+    id: "ripening",
+    name: "Clone & Rootstock Ripening Tracker",
+    icon: LineChart,
+    desc: "See which blocks are pulling ahead before you lose fruit.",
+    tier: "All tiers (Alerts: Pro+)",
+    longDesc: "Compare ripening curves across clone and rootstock combinations with interactive Brix, pH, and TA overlay charts. Automatic divergence alerts warn you when blocks of the same variety drift apart — so you can stagger pick crews instead of scrambling. Built on your existing block and lab data, no extra setup required.",
+    bullets: [
+      "Side-by-side ripening curves for up to 10 blocks at once",
+      "Interactive Brix, pH, and TA overlay charts with clone and rootstock labels",
+      "Automatic divergence alerts when same-variety blocks drift apart",
+      "Block ripening history sparklines on every block detail page",
+      "Cross-block overlay on vintage lab charts for at-a-glance comparison",
+      "Stagger pick crews based on data, not gut feel",
+    ],
+    mockup: (
+      <div className="bg-card rounded-lg border p-4 space-y-3">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <LineChart className="h-4 w-4 text-primary" /> Ripening Comparison
+        </div>
+        <div className="space-y-2">
+          {[
+            { block: "Block A — 115 / 3309C", brix: "23.8°", trend: "w-[85%]", color: "bg-primary" },
+            { block: "Block B — 777 / 101-14", brix: "22.1°", trend: "w-[72%]", color: "bg-secondary" },
+            { block: "Block C — 667 / SO4", brix: "20.4°", trend: "w-[62%]", color: "bg-accent" },
+          ].map(b => (
+            <div key={b.block} className="space-y-1">
+              <div className="flex justify-between text-[10px]">
+                <span className="text-muted-foreground">{b.block}</span>
+                <span className="font-semibold text-foreground">{b.brix}</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-muted">
+                <div className={`h-full rounded-full ${b.color} ${b.trend}`} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 text-[10px] text-secondary">
+          <AlertTriangle className="h-3 w-3" /> Brix spread 3.4° — divergence alert at 4.0°
+        </div>
       </div>
     ),
   },
@@ -336,8 +380,8 @@ export default function FeaturesPage() {
   return (
     <>
       <SEOHead
-        title="Features | Solera — Winery Management, COGS Tracking, Grower Contracts & DTC Sales"
-        description="Solera manages your entire winery operation: vineyard ops, cellar management, production cost tracking (COGS per gallon), grower contracts with grading scales, AI analytics, DTC sales, and TTB compliance. One platform from vine to bottle to doorstep."
+        title="Features | Solera — Winery Management, Ripening Tracker, COGS, DTC Sales"
+        description="Solera manages your entire winery: vineyard ops, clone & rootstock ripening tracker, cellar management, production cost tracking, grower contracts, AI analytics, DTC sales, multi-language support, free data export, and TTB compliance. One platform from vine to bottle to doorstep."
         breadcrumbs={[
           { name: "Home", url: "https://solera.vin" },
           { name: "Features", url: "https://solera.vin/features" },
@@ -348,7 +392,7 @@ export default function FeaturesPage() {
       <section className="pt-28 pb-16 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 lg:px-8 text-center">
           <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">Everything your winery needs.</h1>
-          <p className="text-xl text-primary-foreground/80 mb-4">Ten fully integrated modules — from vineyard ops and cellar management to production costing, grower contracts, and DTC sales.</p>
+          <p className="text-xl text-primary-foreground/80 mb-4">Thirteen fully integrated modules — from vineyard ops and ripening intelligence to production costing, grower contracts, and DTC sales.</p>
           <p className="text-sm text-primary-foreground/60">One monthly price. No onboarding fees. No transaction markups.</p>
         </div>
       </section>
@@ -391,6 +435,125 @@ export default function FeaturesPage() {
           </div>
         </section>
       ))}
+
+      {/* GLOBAL WINERY SUPPORT */}
+      <section id="global" className="py-20 bg-background">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <Globe className="h-8 w-8 text-primary" />
+                <h2 className="font-display text-3xl font-bold text-foreground">Built for Wineries Worldwide</h2>
+                <span className="text-xs font-semibold bg-secondary/20 text-secondary px-2 py-0.5 rounded-full">All tiers</span>
+              </div>
+              <p className="text-lg text-muted-foreground mb-2">Your timezone. Your language. Your units.</p>
+              <p className="text-sm text-muted-foreground mb-6">Solera speaks your language — starting with English and French, with Spanish, Italian, Portuguese, German, and Georgian coming soon. Automatic timezone detection ensures lab samples logged at 11 PM in Adelaide show up on the right date. Toggle between metric and imperial units across the entire platform. Because wine is global, your software should be too.</p>
+              <ul className="space-y-3">
+                {[
+                  "Multi-language support — English and French today, seven languages coming",
+                  "Automatic timezone detection with org-level override",
+                  "Metric and imperial unit toggle across every module",
+                  "Locale-aware number and date formatting",
+                  "Built for wineries from Napa to Bordeaux to Barossa",
+                ].map(b => (
+                  <li key={b} className="flex items-start gap-3 text-foreground">
+                    <Check className="h-4 w-4 text-secondary shrink-0 mt-1" />
+                    <span className="text-sm">{b}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <div className="bg-card rounded-lg border p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Globe className="h-4 w-4 text-primary" /> Organization Settings
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[{ l: "Language", v: "Français" }, { l: "Timezone", v: "Australia/Adelaide" }, { l: "Units", v: "Metric (L, kg)" }, { l: "Date Format", v: "DD/MM/YYYY" }].map(s => (
+                    <div key={s.l} className="bg-muted rounded p-2 flex justify-between">
+                      <span className="text-[10px] text-muted-foreground">{s.l}</span>
+                      <span className="text-xs font-semibold text-foreground">{s.v}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {["EN", "FR", "ES", "IT", "PT", "DE", "KA"].map(lang => (
+                    <span key={lang} className={`text-[10px] px-2 py-0.5 rounded-full ${lang === "EN" || lang === "FR" ? "bg-secondary/20 text-secondary font-semibold" : "bg-muted text-muted-foreground"}`}>{lang}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* DATA BACKUP & EXPORT — Trust section */}
+      <section id="data-export" className="py-20 bg-muted/50">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="lg:order-2">
+              <div className="flex items-center gap-3 mb-4">
+                <ShieldCheck className="h-8 w-8 text-primary" />
+                <h2 className="font-display text-3xl font-bold text-foreground">Your Data Is Always Yours</h2>
+                <span className="text-xs font-semibold bg-secondary/20 text-secondary px-2 py-0.5 rounded-full">All tiers — free</span>
+              </div>
+              <p className="text-lg text-muted-foreground mb-2">Export everything, anytime, on every tier.</p>
+              <p className="text-sm text-muted-foreground mb-6">Download a complete backup of all your winery data in CSV or Excel format — vineyards, lab samples, fermentation logs, compliance records, everything. Every export includes SHA-256 integrity checksums so you know nothing was lost or corrupted. Set up automatic weekly or monthly backups. If you ever cancel, we auto-generate a final export and email it to your whole team. No paywall. No support ticket. No waiting.</p>
+              <ul className="space-y-3">
+                {[
+                  "On-demand export to CSV or Excel — all your data in one download",
+                  "SHA-256 integrity checksums verify nothing was lost or corrupted",
+                  "Automatic weekly or monthly scheduled backups",
+                  "Cancellation auto-export with 90-day download window",
+                  "Available on every tier — data portability is a right, not a feature",
+                ].map(b => (
+                  <li key={b} className="flex items-start gap-3 text-foreground">
+                    <Check className="h-4 w-4 text-secondary shrink-0 mt-1" />
+                    <span className="text-sm">{b}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="lg:order-1">
+              <div className="bg-card rounded-lg border p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Download className="h-4 w-4 text-primary" /> Data Backup
+                </div>
+                <div className="bg-muted rounded p-3 space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Format</span>
+                    <span className="font-medium text-foreground">CSV (ZIP)</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Tables exported</span>
+                    <span className="font-medium text-foreground">24</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Total rows</span>
+                    <span className="font-medium text-foreground">4,218</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Integrity</span>
+                    <span className="font-medium text-green-600">✓ SHA-256 verified</span>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  {[
+                    { name: "vineyards.csv", rows: "3 rows", size: "1.4 KB" },
+                    { name: "lab_samples.csv", rows: "312 rows", size: "48 KB" },
+                    { name: "fermentation_logs.csv", rows: "1,847 rows", size: "210 KB" },
+                  ].map(f => (
+                    <div key={f.name} className="flex justify-between text-[10px] bg-muted rounded px-2 py-1">
+                      <span className="text-foreground font-medium">{f.name}</span>
+                      <span className="text-muted-foreground">{f.rows} • {f.size}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* CTA */}
       <section className="py-20 bg-primary text-primary-foreground text-center">
