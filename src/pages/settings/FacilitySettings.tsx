@@ -172,6 +172,7 @@ export default function FacilitySettings() {
   return (
     <div className="space-y-6">
       <TimezoneCard />
+      <DataBackupSection />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Facilities</h1>
