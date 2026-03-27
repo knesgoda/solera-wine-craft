@@ -5,7 +5,8 @@ import {
   Grape, FlaskConical, Wine, Bot, Upload, ShoppingCart, Users, FileCheck,
   MapPin, Thermometer, Calendar, BarChart3, TestTube, AlertTriangle, Bell,
   Database, FileSpreadsheet, Layers, CreditCard, Package, Truck, UserPlus,
-  FileText, Shield, Check, DollarSign, Wheat, Scale, TrendingUp
+  FileText, Shield, Check, DollarSign, Wheat, Scale, TrendingUp, Globe,
+  Download, LineChart, ShieldCheck
 } from "lucide-react";
 
 const FEATURES = [
