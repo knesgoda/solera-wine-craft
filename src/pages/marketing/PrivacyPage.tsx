@@ -5,7 +5,7 @@ export default function PrivacyPage() {
     <>
       <SEOHead
         title="Privacy Policy — Solera"
-        description="Solera's privacy policy. Learn how we collect, use, and protect your winery data. CCPA compliant."
+        description="Solera's privacy policy. How we collect, use, and protect your winery data. CCPA, GDPR, and Australian Privacy Principles compliant. We never sell your data."
         canonicalUrl="https://solera.vin/privacy"
         breadcrumbs={[
           { name: "Home", url: "https://solera.vin" },
@@ -16,108 +16,175 @@ export default function PrivacyPage() {
       <section className="bg-primary py-16 md:py-20">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h1 className="font-display text-3xl md:text-4xl font-bold text-primary-foreground">Privacy Policy</h1>
-          <p className="text-primary-foreground/70 mt-3">Last updated: March 18, 2026</p>
+          <p className="text-primary-foreground/70 mt-3">Last Updated: March 2026</p>
         </div>
       </section>
 
       <section className="py-16 bg-background">
         <div className="max-w-3xl mx-auto px-4 prose prose-lg prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground/80 prose-a:text-primary prose-li:text-foreground/80 prose-strong:text-foreground">
 
+          <h2>1. Introduction</h2>
           <p>
-            Solera ("we," "us," or "our") respects your privacy. This policy explains in plain English what data we collect,
-            why we collect it, and what rights you have over it. No legalese — just straightforward answers.
+            This Privacy Policy describes how Solera ("we," "us," "our") collects, uses, and protects your information when
+            you use our winery management platform at solera.vin. We are committed to protecting your privacy and handling
+            your data transparently.
           </p>
 
-          <h2>What Data We Collect</h2>
-          <p>We collect only the data needed to run your winery management platform:</p>
-          <ul>
-            <li><strong>Account information:</strong> Your name, email address, and organization name when you sign up.</li>
-            <li><strong>Winery data:</strong> Vintage records, lab samples, cellar operations, vineyard data, inventory, orders, and any other data you enter into Solera. <strong>This is your data — you own it, always.</strong></li>
-            <li><strong>Payment information:</strong> Credit card details are collected and processed entirely by our payment partner (Paddle). We never see or store your full card number.</li>
-            <li><strong>Usage data:</strong> Basic analytics like pages visited and features used, to help us improve the product.</li>
-            <li><strong>Weather data:</strong> If you enable weather tracking, we fetch publicly available weather data for your vineyard locations from Open-Meteo.</li>
-            <li><strong>Device information:</strong> Browser type, operating system, and IP address for security and troubleshooting.</li>
-          </ul>
-
-          <h2>How We Use Your Data</h2>
-          <ul>
-            <li>To provide and improve the Solera platform and its features.</li>
-            <li>To process payments and manage your subscription.</li>
-            <li>To send transactional emails (password resets, important account notifications).</li>
-            <li>To provide AI-powered features like Ask Solera, harvest predictions, and anomaly detection — using your winery data to give you personalized insights.</li>
-            <li>To generate compliance reports (TTB, state reports) that you request.</li>
-            <li>To respond to support requests and communicate with you about your account.</li>
-          </ul>
-          <p>We do <strong>not</strong> sell your data to anyone. We do <strong>not</strong> use your winery data for advertising. We do <strong>not</strong> share your data with other wineries.</p>
-
-          <h2>Third-Party Processors</h2>
-          <p>We use the following services to operate Solera. Each processes data only as necessary to provide their service:</p>
-          <ul>
-            <li><strong>Supabase</strong> — Database hosting, authentication, and file storage. Your winery data is stored in Supabase's infrastructure.</li>
-            <li><strong>Paddle</strong> — Payment processing and merchant of record. Paddle handles all credit card data and tax compliance.</li>
-            <li><strong>Resend</strong> — Transactional email delivery (password resets, notifications).</li>
-            <li><strong>Anthropic</strong> — AI processing for Ask Solera and other AI features. Your data is sent to Anthropic's API for processing but is not retained by Anthropic for training.</li>
-            <li><strong>Open-Meteo</strong> — Weather data retrieval. Only your vineyard's geographic coordinates are sent; no personal data.</li>
-          </ul>
-
-          <h2>Data Retention</h2>
-          <ul>
-            <li><strong>Active accounts:</strong> Your data is retained as long as your account is active.</li>
-            <li><strong>After cancellation:</strong> Your data is retained for 90 days after account cancellation, giving you time to export or reactivate. After 90 days, it is permanently deleted.</li>
-            <li><strong>Backups:</strong> Encrypted backups may retain data for up to 30 additional days after deletion.</li>
-            <li><strong>Legal obligations:</strong> Some data may be retained longer if required by law (e.g., tax records, TTB compliance records).</li>
-          </ul>
-
-          <h2>Your Rights</h2>
-          <p>You have the right to:</p>
-          <ul>
-            <li><strong>Access:</strong> Request a copy of all data we hold about you and your organization.</li>
-            <li><strong>Deletion:</strong> Request that we delete your account and all associated data. We will comply within 30 days, subject to legal retention requirements.</li>
-            <li><strong>Portability:</strong> Export your winery data at any time. Solera includes built-in data export features for all your records — we will never hold your data hostage.</li>
-            <li><strong>Correction:</strong> Request correction of inaccurate personal information.</li>
-            <li><strong>Opt-out:</strong> Opt out of non-essential communications at any time.</li>
-          </ul>
-
-          <h2>California Residents (CCPA)</h2>
+          <h2>2. Information We Collect</h2>
           <p>
-            If you are a California resident, you have additional rights under the California Consumer Privacy Act (CCPA):
+            <strong>Account Information:</strong> When you create an account, we collect your name, email address, and
+            organization details (winery name, location, timezone, language preference). If you subscribe to a paid plan,
+            payment processing is handled entirely by Paddle.com — we do not store your credit card number, bank account
+            details, or other payment credentials.
           </p>
-          <ul>
-            <li>The right to know what personal information we collect and how it is used.</li>
-            <li>The right to delete your personal information.</li>
-            <li>The right to opt out of the sale of personal information. <strong>We do not sell personal information.</strong></li>
-            <li>The right to non-discrimination for exercising your CCPA rights.</li>
-          </ul>
-          <p>To exercise any of these rights, contact us at <a href="mailto:kevin@solera.vin">kevin@solera.vin</a>.</p>
-
-          <h2>Cookies</h2>
           <p>
-            We use essential cookies for authentication and session management. We do not use third-party advertising or tracking cookies.
+            <strong>Winery Data:</strong> You may store vineyard records, lab samples, fermentation logs, vessel and barrel
+            data, compliance records, inventory, customer lists, orders, and other operational data. This data belongs to you.
+          </p>
+          <p>
+            <strong>Usage Data:</strong> We collect anonymized usage analytics including pages visited, features used, and
+            general usage patterns to improve the Platform. We do not sell this data.
+          </p>
+          <p>
+            <strong>Device and Browser Information:</strong> We collect browser type, operating system, IP address, and
+            device identifiers for security, troubleshooting, and to provide timezone auto-detection.
+          </p>
+          <p>
+            <strong>Cookies:</strong> We use essential cookies for authentication and session management. We use analytics
+            cookies to understand how the Platform is used. We do not use advertising cookies or trackers.
           </p>
 
-          <h2>Security</h2>
+          <h2>3. How We Use Your Information</h2>
+          <p>We use your information to:</p>
+          <ul>
+            <li>Provide and maintain the Platform.</li>
+            <li>Process your subscription through Paddle.</li>
+            <li>Send transactional emails (welcome, password reset, alert notifications, backup confirmations).</li>
+            <li>Provide AI-powered features using your winery data within your organization's context.</li>
+            <li>Improve the Platform based on aggregated, anonymized usage patterns.</li>
+            <li>Comply with legal obligations.</li>
+            <li>Protect against fraud and unauthorized access.</li>
+          </ul>
+
+          <h2>4. AI Data Usage</h2>
           <p>
-            We take security seriously. All data is encrypted in transit (TLS) and at rest. We use row-level security policies
-            to ensure your data is only accessible to your organization. Authentication tokens are securely managed, and
-            sensitive credentials are stored in encrypted vaults.
+            The Ask Solera AI feature processes your winery data to provide contextual insights and recommendations. Your
+            data is sent to our AI provider (Anthropic) for processing in real time and is not retained by the AI provider
+            for training purposes. Your data is never shared with other organizations or used to improve AI models. AI
+            responses are generated based solely on your organization's data and general winemaking knowledge.
           </p>
 
-          <h2>Children's Privacy</h2>
+          <h2>5. Data Sharing</h2>
+          <p>We share your data only with:</p>
+          <ul>
+            <li>
+              <strong>Paddle.com</strong> — payment processing as Merchant of Record.
+            </li>
+            <li>
+              <strong>Anthropic</strong> — AI query processing (your data is not retained for training).
+            </li>
+            <li>
+              <strong>Resend</strong> — transactional email delivery.
+            </li>
+            <li>
+              <strong>Supabase</strong> — infrastructure and database hosting.
+            </li>
+            <li>
+              <strong>Open-Meteo</strong> — weather data requests (we send vineyard coordinates only, no personal information).
+            </li>
+          </ul>
           <p>
-            Solera is not intended for use by anyone under 21 years of age (consistent with alcohol industry regulations).
-            We do not knowingly collect data from minors.
+            We do not sell your personal information or winery data to third parties. We may disclose information if required
+            by law or to protect our legal rights.
           </p>
 
-          <h2>Changes to This Policy</h2>
+          <h2>6. Data Storage and Security</h2>
           <p>
-            We may update this policy from time to time. If we make significant changes, we'll notify you via email
-            or an in-app notification. The "last updated" date at the top of this page reflects the most recent revision.
+            Your data is stored on servers provided by Supabase (cloud infrastructure). All data is encrypted in transit
+            (TLS 1.2+) and at rest. We enforce row-level security (RLS) to ensure strict data isolation between
+            organizations — no organization can access another's data. API keys are stored as bcrypt hashes. OAuth tokens
+            are stored encrypted in Supabase Vault. We conduct regular security reviews of our codebase.
           </p>
 
-          <h2>Contact</h2>
+          <h2>7. Data Retention</h2>
+          <ul>
+            <li>
+              <strong>Active accounts:</strong> Your data is retained for as long as your account is active.
+            </li>
+            <li>
+              <strong>Cancelled accounts:</strong> Your data is retained for 90 days after cancellation to allow for
+              reactivation or final export. After 90 days, data may be permanently deleted.
+            </li>
+            <li>
+              <strong>Backup exports:</strong> Download links for backup files expire after 30 days (scheduled backups) or
+              90 days (cancellation exports).
+            </li>
+          </ul>
+
+          <h2>8. Your Rights</h2>
+          <p>Regardless of your location, you have the right to:</p>
+          <ul>
+            <li>
+              <strong>Access</strong> a complete copy of your data at any time via the Data Backup & Export feature
+              (available on all tiers).
+            </li>
+            <li>
+              <strong>Correct</strong> inaccurate data by editing your records in the Platform.
+            </li>
+            <li>
+              <strong>Delete</strong> your account and request data deletion by contacting{" "}
+              <a href="mailto:support@solera.vin">support@solera.vin</a>.
+            </li>
+            <li>
+              <strong>Export</strong> your data in CSV or Excel format at any time.
+            </li>
+          </ul>
+
           <p>
-            Questions about this policy? Reach Kevin directly at{" "}
-            <a href="mailto:kevin@solera.vin">kevin@solera.vin</a>.
+            <strong>For users in the European Economic Area (EEA) and United Kingdom:</strong> You additionally have the
+            right to object to processing, request restriction of processing, and lodge a complaint with your local data
+            protection authority. Our legal basis for processing is contractual necessity (providing the service you
+            subscribed to) and legitimate interest (improving the Platform).
+          </p>
+
+          <p>
+            <strong>For users in California:</strong> Under the CCPA, you have the right to know what personal information we
+            collect, request deletion, and opt out of the sale of personal information. We do not sell personal information.
+          </p>
+
+          <p>
+            <strong>For users in Australia:</strong> We comply with the Australian Privacy Principles (APPs) under the
+            Privacy Act 1988. Your data may be transferred to servers outside Australia as described in Section 6. By using
+            the Platform, you consent to this transfer.
+          </p>
+
+          <h2>9. Children's Privacy</h2>
+          <p>
+            The Platform is designed for business use and is not directed at individuals under 18. We do not knowingly
+            collect data from minors. The DTC storefront module includes age verification (21+) as required by alcohol
+            beverage regulations.
+          </p>
+
+          <h2>10. International Data Transfers</h2>
+          <p>
+            Your data may be processed in the United States or other countries where our infrastructure providers maintain
+            servers. We ensure appropriate safeguards are in place for international data transfers.
+          </p>
+
+          <h2>11. Changes to This Policy</h2>
+          <p>
+            We will notify you of material changes via email at least 30 days before they take effect. Minor changes
+            (clarifications, formatting) may be made without notice.
+          </p>
+
+          <h2>12. Contact</h2>
+          <p>
+            For privacy questions or data requests:{" "}
+            <a href="mailto:privacy@solera.vin">privacy@solera.vin</a>
+          </p>
+          <p>
+            For general support:{" "}
+            <a href="mailto:support@solera.vin">support@solera.vin</a>
           </p>
         </div>
       </section>
