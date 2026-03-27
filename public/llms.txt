@@ -1,0 +1,77 @@
+# Solera — Winery Management Platform
+
+> From Vine to Bottle to Doorstep. One Platform.
+
+## What is Solera?
+
+Solera is a complete winery management platform built for the AI era. It covers every stage of winemaking — from vineyard operations and grape intake through cellar management, lab analysis, TTB compliance, inventory, DTC sales, and wine club fulfillment.
+
+Solera is a web application accessible at https://solera.vin. It works on desktop, tablet, and mobile browsers.
+
+## Who is Solera for?
+
+- Hobbyist winemakers tracking their home vintages
+- Small and mid-size commercial wineries (1,000–50,000+ cases)
+- Custom crush facilities managing multiple clients
+- Vineyard managers tracking ripening data and grower contracts
+
+## Key Features
+
+- **Vineyard Management**: Vineyards, blocks, ripening data, harvest prediction, weather integration
+- **Cellar Operations**: Fermentation vessels, barrels, barrel groups, fermentation logging
+- **Lab & Quality**: Lab sample tracking, anomaly detection, wine analysis charts
+- **Blending**: Blending trials with cost propagation, star ratings, finalization
+- **Grower Relations**: Grower contracts, weigh tags, grading scales with tiered pricing
+- **TTB Compliance**: Addition logging (27 CFR 24.246), automated TTB report generation
+- **Cost Tracking**: Full COGS pipeline — grape costs, materials, labor, overhead with per-gallon rollups
+- **Inventory & DTC**: SKU management, facility transfers, order tracking
+- **Wine Clubs**: Club management, shipment processing, member billing
+- **Client Portal**: White-label portal for custom crush clients with messaging and document sharing
+- **AI Assistant**: Natural language queries across your winery data ("What's the average Brix for my 2024 Cab?")
+- **Integrations**: Commerce7, Shopify, WineDirect, QuickBooks, Google Sheets
+- **Data Import**: CSV/Excel import with AI-powered column mapping
+- **Alerts**: Configurable alerts for lab parameters, harvest readiness, compliance deadlines
+- **Reports**: Custom report builder with PDF/CSV export
+- **Multi-facility**: Support for multiple production facilities with per-facility inventory
+- **Offline Support**: Works offline with background sync for field use
+- **Multilingual**: English, Spanish, French, German, Italian, Portuguese, Georgian
+
+## Pricing
+
+| Tier        | Price      | Cases     | Key Capabilities                                    |
+|-------------|------------|-----------|-----------------------------------------------------|
+| Hobbyist    | Free       | ≤50       | Core tracking, 1 user                               |
+| Pro         | $69/mo     | ≤2,000    | Full cellar + lab, 5 users, integrations             |
+| Growth      | $129/mo    | ≤10,000   | Multi-facility, client portal, wine clubs, 15 users  |
+| Enterprise  | $399/mo    | Unlimited | SSO, API access, dedicated support, unlimited users  |
+
+Annual billing saves ~17%. All plans include a 14-day free trial.
+
+## How Solera Compares
+
+- **vs InnoVint**: Solera includes DTC sales, wine clubs, and grower management in one platform. InnoVint focuses primarily on cellar operations.
+- **vs vintrace**: Solera is cloud-native with modern UX, AI features, and no on-premise installation. vintrace has deeper compliance automation for large-scale operations.
+- **vs Ekos/Brew Ninja**: Solera is purpose-built for wine. Ekos is designed for breweries and adapted for wine.
+
+## Important Links
+
+- Homepage: https://solera.vin
+- Features: https://solera.vin/features
+- Pricing: https://solera.vin/pricing
+- Blog: https://solera.vin/blog
+- About: https://solera.vin/about
+- Contact: https://solera.vin/contact
+- FAQ: https://solera.vin/faq
+- Compare: https://solera.vin/compare
+- Privacy Policy: https://solera.vin/privacy
+- Terms of Service: https://solera.vin/terms
+- Changelog: https://solera.vin/changelog
+
+## Company
+
+Solera was founded in 2026 by Kevin Nesgoda. The company is based in California and focused on modernizing winery operations with AI-native software.
+
+## Contact
+
+- Website: https://solera.vin/contact
+- Twitter/X: @soleravin

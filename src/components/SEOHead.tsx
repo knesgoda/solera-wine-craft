@@ -140,22 +140,34 @@ export function SEOHead({
 
 // Pre-built JSON-LD schemas
 
-export const HOMEPAGE_SCHEMA = {
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  name: "Solera",
-  applicationCategory: "BusinessApplication",
-  operatingSystem: "Web, iOS, Android",
-  description: "Complete winery management platform from vineyard to DTC sales",
-  url: "https://solera.vin",
-  offers: [
-    { "@type": "Offer", name: "Hobbyist", price: "0", priceCurrency: "USD" },
-    { "@type": "Offer", name: "Pro", price: "69", priceCurrency: "USD", billingPeriod: "P1M" },
-    { "@type": "Offer", name: "Growth", price: "129", priceCurrency: "USD", billingPeriod: "P1M" },
-    { "@type": "Offer", name: "Enterprise", price: "399", priceCurrency: "USD", billingPeriod: "P1M" },
-  ],
-  
-};
+export const HOMEPAGE_SCHEMA = [
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Solera",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web, iOS, Android",
+    description: "Complete winery management platform from vineyard to DTC sales",
+    url: "https://solera.vin",
+    offers: [
+      { "@type": "Offer", name: "Hobbyist", price: "0", priceCurrency: "USD" },
+      { "@type": "Offer", name: "Pro", price: "69", priceCurrency: "USD", billingPeriod: "P1M" },
+      { "@type": "Offer", name: "Growth", price: "129", priceCurrency: "USD", billingPeriod: "P1M" },
+      { "@type": "Offer", name: "Enterprise", price: "399", priceCurrency: "USD", billingPeriod: "P1M" },
+    ],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Solera",
+    url: "https://solera.vin",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: "https://solera.vin/blog?q={search_term_string}",
+      "query-input": "required name=search_term_string",
+    },
+  },
+];
 
 export function buildFaqSchema(faqs: { question: string; answer: string }[]) {
   return {
