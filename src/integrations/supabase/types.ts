@@ -462,6 +462,7 @@ export type Database = {
           manifest_json: Json | null
           org_id: string
           status: Database["public"]["Enums"]["backup_status"]
+          triggered_by: string
         }
         Insert: {
           completed_at?: string | null
@@ -476,6 +477,7 @@ export type Database = {
           manifest_json?: Json | null
           org_id: string
           status?: Database["public"]["Enums"]["backup_status"]
+          triggered_by?: string
         }
         Update: {
           completed_at?: string | null
@@ -490,12 +492,57 @@ export type Database = {
           manifest_json?: Json | null
           org_id?: string
           status?: Database["public"]["Enums"]["backup_status"]
+          triggered_by?: string
         }
         Relationships: [
           {
             foreignKeyName: "backup_jobs_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      backup_schedules: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          format: string
+          frequency: string
+          id: string
+          last_run_at: string | null
+          next_run_at: string | null
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          format?: string
+          frequency?: string
+          id?: string
+          last_run_at?: string | null
+          next_run_at?: string | null
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          format?: string
+          frequency?: string
+          id?: string
+          last_run_at?: string | null
+          next_run_at?: string | null
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backup_schedules_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -3032,6 +3079,7 @@ export type Database = {
       }
       organizations: {
         Row: {
+          cancelled_at: string | null
           created_at: string
           enabled_modules: string[] | null
           first_lab_sample_notified: boolean | null
@@ -3054,6 +3102,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cancelled_at?: string | null
           created_at?: string
           enabled_modules?: string[] | null
           first_lab_sample_notified?: boolean | null
@@ -3076,6 +3125,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cancelled_at?: string | null
           created_at?: string
           enabled_modules?: string[] | null
           first_lab_sample_notified?: boolean | null
