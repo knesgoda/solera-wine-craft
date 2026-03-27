@@ -42,6 +42,49 @@ const FEATURES = [
     ),
   },
   {
+    id: "ripening",
+    name: "Clone & Rootstock Ripening Tracker",
+    icon: LineChart,
+    desc: "See which blocks are pulling ahead before you lose fruit.",
+    tier: "All tiers (Alerts: Pro+)",
+    longDesc: "Compare ripening curves across clone and rootstock combinations with interactive Brix, pH, and TA overlay charts. Automatic divergence alerts warn you when blocks of the same variety drift apart — so you can stagger pick crews instead of scrambling. Built on your existing block and lab data, no extra setup required.",
+    bullets: [
+      "Side-by-side ripening curves for up to 10 blocks at once",
+      "Interactive Brix, pH, and TA overlay charts with clone and rootstock labels",
+      "Automatic divergence alerts when same-variety blocks drift apart",
+      "Block ripening history sparklines on every block detail page",
+      "Cross-block overlay on vintage lab charts for at-a-glance comparison",
+      "Stagger pick crews based on data, not gut feel",
+    ],
+    mockup: (
+      <div className="bg-card rounded-lg border p-4 space-y-3">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <LineChart className="h-4 w-4 text-primary" /> Ripening Comparison
+        </div>
+        <div className="space-y-2">
+          {[
+            { block: "Block A — 115 / 3309C", brix: "23.8°", trend: "w-[85%]", color: "bg-primary" },
+            { block: "Block B — 777 / 101-14", brix: "22.1°", trend: "w-[72%]", color: "bg-secondary" },
+            { block: "Block C — 667 / SO4", brix: "20.4°", trend: "w-[62%]", color: "bg-accent" },
+          ].map(b => (
+            <div key={b.block} className="space-y-1">
+              <div className="flex justify-between text-[10px]">
+                <span className="text-muted-foreground">{b.block}</span>
+                <span className="font-semibold text-foreground">{b.brix}</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-muted">
+                <div className={`h-full rounded-full ${b.color} ${b.trend}`} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 text-[10px] text-secondary">
+          <AlertTriangle className="h-3 w-3" /> Brix spread 3.4° — divergence alert at 4.0°
+        </div>
+      </div>
+    ),
+  },
+  {
     id: "vintage",
     name: "Vintage & Lab Tracking",
     icon: FlaskConical,
