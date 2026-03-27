@@ -132,6 +132,7 @@ export default function FacilitySettings() {
       <div className="space-y-6">
         <h1 className="text-2xl font-display font-bold text-foreground">Organization Settings</h1>
         <TimezoneCard />
+        <DataBackupSection />
         <Card className="border-2 border-dashed border-muted">
           <CardContent className="pt-6 text-center space-y-4">
             <Lock className="h-12 w-12 mx-auto text-muted-foreground" />
