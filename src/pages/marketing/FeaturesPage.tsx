@@ -380,8 +380,8 @@ export default function FeaturesPage() {
   return (
     <>
       <SEOHead
-        title="Features | Solera — Winery Management, COGS Tracking, Grower Contracts & DTC Sales"
-        description="Solera manages your entire winery operation: vineyard ops, cellar management, production cost tracking (COGS per gallon), grower contracts with grading scales, AI analytics, DTC sales, and TTB compliance. One platform from vine to bottle to doorstep."
+        title="Features | Solera — Winery Management, Ripening Tracker, COGS, DTC Sales"
+        description="Solera manages your entire winery: vineyard ops, clone & rootstock ripening tracker, cellar management, production cost tracking, grower contracts, AI analytics, DTC sales, multi-language support, free data export, and TTB compliance. One platform from vine to bottle to doorstep."
         breadcrumbs={[
           { name: "Home", url: "https://solera.vin" },
           { name: "Features", url: "https://solera.vin/features" },
@@ -392,7 +392,7 @@ export default function FeaturesPage() {
       <section className="pt-28 pb-16 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 lg:px-8 text-center">
           <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">Everything your winery needs.</h1>
-          <p className="text-xl text-primary-foreground/80 mb-4">Ten fully integrated modules — from vineyard ops and cellar management to production costing, grower contracts, and DTC sales.</p>
+          <p className="text-xl text-primary-foreground/80 mb-4">Thirteen fully integrated modules — from vineyard ops and ripening intelligence to production costing, grower contracts, and DTC sales.</p>
           <p className="text-sm text-primary-foreground/60">One monthly price. No onboarding fees. No transaction markups.</p>
         </div>
       </section>
