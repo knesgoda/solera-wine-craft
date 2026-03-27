@@ -206,7 +206,7 @@ export default function DataBackupSection() {
                       <TableCell className="text-sm text-muted-foreground">{formatBytes(job.file_size_bytes)}</TableCell>
                       <TableCell>
                         {job.status === "completed" && (
-                          <Badge variant="default" className="bg-green-600 text-xs">
+                          <Badge className="bg-primary/90 text-primary-foreground text-xs">
                             <CheckCircle2 className="h-3 w-3 mr-1" /> Completed
                           </Badge>
                         )}
