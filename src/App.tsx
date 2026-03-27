@@ -132,6 +132,7 @@ const AppInner = () => {
 };
 
 const App = () => (
+  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
