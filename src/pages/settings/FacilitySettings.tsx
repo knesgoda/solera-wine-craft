@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import DataBackupSection from "@/components/settings/DataBackupSection";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
