@@ -448,6 +448,59 @@ export type Database = {
           },
         ]
       }
+      backup_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          expires_at: string | null
+          file_size_bytes: number | null
+          file_url: string | null
+          format: Database["public"]["Enums"]["backup_format"]
+          id: string
+          manifest_json: Json | null
+          org_id: string
+          status: Database["public"]["Enums"]["backup_status"]
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          expires_at?: string | null
+          file_size_bytes?: number | null
+          file_url?: string | null
+          format?: Database["public"]["Enums"]["backup_format"]
+          id?: string
+          manifest_json?: Json | null
+          org_id: string
+          status?: Database["public"]["Enums"]["backup_status"]
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          expires_at?: string | null
+          file_size_bytes?: number | null
+          file_url?: string | null
+          format?: Database["public"]["Enums"]["backup_format"]
+          id?: string
+          manifest_json?: Json | null
+          org_id?: string
+          status?: Database["public"]["Enums"]["backup_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backup_jobs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       barrel_groups: {
         Row: {
           created_at: string
@@ -4625,6 +4678,8 @@ export type Database = {
         | "write:tasks"
         | "read:analytics"
       app_role: "owner" | "admin" | "member" | "manager" | "cellar" | "field"
+      backup_format: "csv" | "xlsx"
+      backup_status: "pending" | "processing" | "completed" | "failed"
       block_lifecycle_stage:
         | "planting"
         | "establishment"
@@ -4902,6 +4957,8 @@ export const Constants = {
         "read:analytics",
       ],
       app_role: ["owner", "admin", "member", "manager", "cellar", "field"],
+      backup_format: ["csv", "xlsx"],
+      backup_status: ["pending", "processing", "completed", "failed"],
       block_lifecycle_stage: [
         "planting",
         "establishment",

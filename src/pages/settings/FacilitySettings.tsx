@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import DataBackupSection from "@/components/settings/DataBackupSection";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,6 +132,7 @@ export default function FacilitySettings() {
       <div className="space-y-6">
         <h1 className="text-2xl font-display font-bold text-foreground">Organization Settings</h1>
         <TimezoneCard />
+        <DataBackupSection />
         <Card className="border-2 border-dashed border-muted">
           <CardContent className="pt-6 text-center space-y-4">
             <Lock className="h-12 w-12 mx-auto text-muted-foreground" />
@@ -170,6 +172,7 @@ export default function FacilitySettings() {
   return (
     <div className="space-y-6">
       <TimezoneCard />
+      <DataBackupSection />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Facilities</h1>
