@@ -68,13 +68,11 @@ const UserManagement = () => {
 
   const updateRole = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      const { error } = await supabase.from("profiles").update({ role }).eq("id", userId);
-      if (error) throw error;
-      // Also update user_roles table
-      await supabase.from("user_roles").upsert(
-        { user_id: userId, role: role as any },
-        { onConflict: "user_id,role" }
-      );
+      // Delete existing roles then insert the new one (atomic role change)
+      const { error: delError } = await supabase.from("user_roles").delete().eq("user_id", userId);
+      if (delError) throw delError;
+      const { error: insError } = await supabase.from("user_roles").insert({ user_id: userId, role: role as any });
+      if (insError) throw insError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["org-users"] });

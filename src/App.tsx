@@ -94,6 +94,7 @@ import { OfflineBanner } from "./components/OfflineBanner";
 import { PushPrompt } from "./components/PushPrompt";
 import { useOfflineSync } from "./hooks/useOfflineSync";
 import { ImpersonationProvider } from "./contexts/ImpersonationContext";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { MarketingLayout } from "./components/marketing/MarketingLayout";
 import Homepage from "./pages/marketing/Homepage";
 import FeaturesPage from "./pages/marketing/FeaturesPage";
@@ -110,7 +111,15 @@ import BlogAdmin from "./pages/admin/BlogAdmin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ContactPage from "./pages/marketing/ContactPage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000,
+      retry: 2,
+      refetchOnWindowFocus: true,
+    },
+  },
+});
 
 const AppInner = () => {
   const { isOnline, pendingCount } = useOfflineSync();
@@ -123,6 +132,7 @@ const AppInner = () => {
 };
 
 const App = () => (
+  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -246,6 +256,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
