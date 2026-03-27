@@ -31,13 +31,14 @@ Deno.serve(async (req) => {
       { loc: "/features", priority: "0.9", changefreq: "monthly" },
       { loc: "/pricing", priority: "0.9", changefreq: "monthly" },
       { loc: "/compare", priority: "0.8", changefreq: "monthly" },
+      { loc: "/blog", priority: "0.8", changefreq: "weekly" },
       { loc: "/about", priority: "0.7", changefreq: "monthly" },
       { loc: "/faq", priority: "0.7", changefreq: "monthly" },
       { loc: "/changelog", priority: "0.6", changefreq: "weekly" },
-      { loc: "/privacy", priority: "0.3", changefreq: "yearly" },
-      { loc: "/terms", priority: "0.3", changefreq: "yearly" },
-      { loc: "/blog", priority: "0.8", changefreq: "weekly" },
       { loc: "/contact", priority: "0.6", changefreq: "monthly" },
+      { loc: "/developers", priority: "0.5", changefreq: "monthly" },
+      { loc: "/terms", priority: "0.3", changefreq: "yearly" },
+      { loc: "/privacy", priority: "0.3", changefreq: "yearly" },
     ];
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
