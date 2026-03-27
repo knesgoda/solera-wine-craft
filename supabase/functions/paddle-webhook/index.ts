@@ -126,6 +126,7 @@ Deno.serve(async (req) => {
           subscription_status: status,
           next_billed_at: nextBilledAt,
           trial_ends_at: status === "trialing" ? (currentBillingPeriod.ends_at || null) : null,
+          cancelled_at: null, // Clear cancelled_at on reactivation
         } as any).eq("id", orgId);
 
         // Admin notification
