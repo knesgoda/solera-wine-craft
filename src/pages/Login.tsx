@@ -63,7 +63,7 @@ const Login = () => {
             </Button>
             <div className="flex justify-between w-full text-sm">
               <Link to="/forgot-password" className="text-secondary hover:underline">{t("auth.forgotPassword")}</Link>
-              <Link to="/coming-soon" className="text-secondary hover:underline">{t("auth.createAccount")}</Link>
+              <Link to="/signup" className="text-secondary hover:underline">{t("auth.createAccount")}</Link>
             </div>
           </CardFooter>
         </form>
