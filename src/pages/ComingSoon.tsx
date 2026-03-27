@@ -78,7 +78,7 @@ export default function ComingSoon() {
     <>
       <SEOHead
         title="Solera — Winery Management Software | Vineyard Ops, COGS Tracking, AI Analytics, DTC Sales"
-        description="The all-in-one winery management platform. Vineyard operations, cellar management, production cost tracking, grower contracts, AI analytics, DTC sales, and TTB compliance. Free tier available. Join the waitlist for early access."
+        description="Solera — winery management from vine to bottle to doorstep. Vineyard ops, lab tracking, cellar management, DTC sales, AI-powered insights, clone & rootstock ripening intelligence, multi-language support, free data export on every tier. Start free."
       />
       <div
         className="min-h-screen flex items-center justify-center px-4 py-12"
