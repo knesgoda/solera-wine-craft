@@ -110,7 +110,15 @@ import BlogAdmin from "./pages/admin/BlogAdmin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ContactPage from "./pages/marketing/ContactPage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000,
+      retry: 2,
+      refetchOnWindowFocus: true,
+    },
+  },
+});
 
 const AppInner = () => {
   const { isOnline, pendingCount } = useOfflineSync();
