@@ -94,6 +94,7 @@ import { OfflineBanner } from "./components/OfflineBanner";
 import { PushPrompt } from "./components/PushPrompt";
 import { useOfflineSync } from "./hooks/useOfflineSync";
 import { ImpersonationProvider } from "./contexts/ImpersonationContext";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { MarketingLayout } from "./components/marketing/MarketingLayout";
 import Homepage from "./pages/marketing/Homepage";
 import FeaturesPage from "./pages/marketing/FeaturesPage";
