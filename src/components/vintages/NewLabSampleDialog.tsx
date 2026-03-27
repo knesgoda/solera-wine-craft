@@ -100,6 +100,11 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSampl
         supabase.functions.invoke("detect-anomalies", {
           body: { type: "lab_sample", record },
         }).catch((e) => console.error("Anomaly detection failed:", e));
+
+        // Check if this is the org's first lab sample (activation milestone)
+        supabase.functions.invoke("check-first-lab-sample", {
+          body: { vintage_id: vintageId },
+        }).catch((e) => console.error("First lab sample check failed:", e));
       }
     },
     onSuccess: () => {
