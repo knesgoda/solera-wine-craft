@@ -1,96 +1,105 @@
 
 
-# Backend Readiness Audit — Findings & Fix Plan
+# Full System Review — Findings & Fix Plan
 
 ## Summary
 
-The backend is **mostly solid** — auth flow, RLS, Paddle billing, Resend emails, and the core data pipeline are all wired correctly. However, there are **6 issues** that need fixing before customers start using the product.
+The application is well-built overall. Auth, routing, data pipeline, edge functions, and the core UI are all functional. However, there are **8 issues** to fix before daily production use — 2 are **critical security issues**, 3 are **functional bugs**, and 3 are **resilience improvements**.
 
 ---
 
-## Issues Found
+## Critical Issues
 
-### 1. Invalid Anthropic model IDs (will cause 404 errors)
+### 1. CRITICAL: user_roles RLS allows privilege escalation
 
-Three edge functions use `claude-sonnet-4-6-20250514` — a model ID that does not exist on Anthropic's API. The working `ask-solera` function uses `claude-sonnet-4-20250514`, which is correct.
+The `user_roles` table has an INSERT policy `(user_id = auth.uid())` — any logged-in user can insert `{user_id: their_id, role: 'owner'}` and grant themselves full access.
 
-**Affected files:**
-- `supabase/functions/analog-insight/index.ts` — line 29
-- `supabase/functions/suggest-mapping/index.ts` — line 55
-- `supabase/functions/weekly-summary/index.ts` — line 118 (uses `claude-sonnet-4-6`, also invalid)
+Additionally, there's no DELETE or UPDATE policy, so the `updateRole` mutation in UserManagement (which upserts for other users) will silently fail via RLS.
 
-**Fix:** Change all three to `claude-sonnet-4-20250514`.
+**Fix:** Replace current RLS policies with:
+- SELECT: users can read their own roles
+- INSERT/UPDATE/DELETE: restricted to owners/admins via `has_role()` function
+- Remove the self-insert policy entirely (roles are assigned by `handle_new_user` trigger using SECURITY DEFINER)
 
----
+### 2. CRITICAL: UserManagement role update is broken
 
-### 2. Waitlist notification uses Resend sandbox sender
+`updateRole` does `supabase.from("user_roles").upsert()` but:
+- The upsert won't delete old roles — users accumulate multiple roles
+- It also updates a `role` column on `profiles` (legacy), which creates inconsistency
 
-`supabase/functions/notify-waitlist-signup/index.ts` sends from `onboarding@resend.dev` (Resend's test domain) instead of a `@solera.vin` address. Resend's sandbox domain will be rejected or land in spam for real recipients.
-
-**Fix:** Change `from` to `Solera Notifications <notifications@solera.vin>`.
-
----
-
-### 3. CORS headers inconsistent across 15+ edge functions
-
-Many client-facing edge functions (e.g. `check-compliance`, `fetch-weather`, `generate-ttb-report`, `club-subscribe`, `sync-commerce7`, `complete-client-signup`, `invite-client`, `send-client-message`, etc.) use the **short** CORS header list:
-
-```
-authorization, x-client-info, apikey, content-type
-```
-
-The Supabase JS client now sends additional platform headers (`x-supabase-client-platform`, etc.). While these short headers *usually* work (browsers only enforce CORS for non-simple headers), some edge cases can cause preflight failures.
-
-**Fix:** Standardize all 15 client-called functions to the full CORS header set:
-
-```
-authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version
-```
-
-**Affected functions:** `check-compliance`, `check-harvest-alerts`, `club-subscribe`, `complete-client-signup`, `evaluate-alerts`, `fetch-weather`, `generate-billing-report`, `generate-coa`, `generate-ttb-report`, `invite-client`, `og-image`, `process-club-shipment`, `send-client-message`, `sync-commerce7`, `sync-google-sheet`, `sync-quickbooks`, `sync-shopify`, `sync-winedirect`, `webhook-dispatch`, `api-v1`
+**Fix:** Change the mutation to: delete all existing roles for the user, then insert the new role. Remove the `profiles.role` update (or keep it as a display-only cache, but never use it for access control).
 
 ---
 
-### 4. `evaluate-alerts` CORS headers also missing platform headers
+## Functional Issues
 
-Same issue as #3 but this one is particularly important — it's called reactively when lab data is saved.
+### 3. CORS headers missing on 4 client-called edge functions
 
-(Covered in fix #3 above.)
+`activate-invite`, `update-order`, `process-backup`, and `sitemap` still use the short CORS header list. `activate-invite` and `update-order` are called from the browser and could fail with preflight errors.
+
+**Fix:** Update all 4 to include the full `x-supabase-client-platform` header set.
+
+### 4. No React Error Boundary
+
+There's no error boundary in the app. An unhandled error in any component (e.g., bad API response, undefined data) will crash the entire app with a white screen.
+
+**Fix:** Add a top-level `ErrorBoundary` component wrapping the app routes that shows a friendly error screen with a "Reload" button.
+
+### 5. QueryClient has no default options
+
+The `QueryClient` is initialized with no `staleTime`, `retry`, or `refetchOnWindowFocus` settings. For a production app used "multiple times a day":
+- Every tab switch triggers refetches on all queries
+- Failed requests aren't retried by default (react-query v5 defaults to 3, but explicit is better)
+
+**Fix:** Configure `QueryClient` with sensible defaults:
+- `staleTime: 2 * 60 * 1000` (2 min)
+- `retry: 2`
+- `refetchOnWindowFocus: true` (keep, but with staleTime it won't hammer the API)
 
 ---
 
-### 5. No issues found (confirmed good)
+## Resilience Improvements
 
-These areas were audited and are **working correctly**:
-- **Auth flow**: Signup → `handle_new_user` trigger → org creation → profile → owner role assignment. Solid.
-- **Onboarding**: Proper retry logic for race condition with DB trigger.
-- **RLS**: All edge functions use `service_role_key` server-side; client queries are RLS-scoped via `org_id`.
-- **Paddle webhook**: Signature verification with timing-safe compare. Tier mapping correct.
-- **Resend email branding**: All other functions use `@solera.vin` domain correctly.
-- **URL references**: No remaining `lovable.app` or `solera.app` references.
-- **Ask Solera**: Streaming, winery context, conversation history — all properly wired.
-- **Anomaly detection**: Reactive + scheduled modes, deduplication, email digest.
-- **Weekly summary**: Context gathering, AI generation, notification + email delivery.
-- **Client portal**: Invite flow, token validation, signup completion, messaging.
-- **Contact form**: Input validation, HTML escaping, Resend delivery.
-- **Coming soon redirects**: All marketing signup links point to `/coming-soon` as intended.
+### 6. `ProtectedRoute` doesn't handle onboarding edge case for missing org
+
+If `organization` is null (profile exists but org_id doesn't resolve), the user gets through to the dashboard with no data. The `handle_new_user` trigger creates the org, but there's a race condition window.
+
+**Fix:** Add a check: if `!organization && profile?.org_id` → show loading spinner (org is loading). If `!organization && !profile?.org_id` → redirect to onboarding.
+
+### 7. Login "Create Account" link goes to `/coming-soon`
+
+The login page's "Create Account" link sends users to `/coming-soon` (the waitlist page) instead of `/signup`. If you're ready for daily users, this should go to `/signup`.
+
+**Fix:** Change the link from `/coming-soon` to `/signup`.
+
+### 8. `profiles.role` column is a security smell
+
+The `profiles` table has a `role` column that's writable by users (via the "Users can update their own profile" UPDATE policy). While `useRoleAccess` correctly reads from `user_roles`, the presence of this column invites future bugs where someone checks `profile.role` instead of `user_roles`.
+
+**Fix:** Either drop the column via migration, or add a database-level trigger that prevents user-initiated changes to it. Lower priority than #1-2 but should be addressed.
 
 ---
 
-## Implementation Plan
+## Implementation Order
 
-### Step 1: Fix Anthropic model IDs
-Update `analog-insight`, `suggest-mapping`, and `weekly-summary` to use `claude-sonnet-4-20250514`.
-
-### Step 2: Fix waitlist notification sender
-Update `notify-waitlist-signup` from address from `onboarding@resend.dev` to `notifications@solera.vin`.
-
-### Step 3: Standardize CORS headers
-Update all 20 edge functions with short CORS headers to include the full platform header set. This is a mechanical find-and-replace across each file's `corsHeaders` constant.
+1. Fix user_roles RLS policies (migration) — **security critical**
+2. Fix UserManagement role update logic — **broken feature**
+3. Add Error Boundary — **crash prevention**
+4. Update 4 edge functions with full CORS headers
+5. Configure QueryClient defaults
+6. Fix ProtectedRoute org-loading edge case
+7. Change "Create Account" link to `/signup`
+8. Address `profiles.role` column (optional, lower priority)
 
 ---
 
 ## Technical Details
 
-All changes are in `supabase/functions/*/index.ts` files only — no database migrations, no frontend changes, no RLS policy changes needed. Edge functions auto-deploy on save.
+- **Step 1** requires a database migration to drop existing `user_roles` policies and create new ones using `has_role()` 
+- **Step 2** is a code change in `src/pages/settings/UserManagement.tsx`
+- **Step 3** is a new `src/components/ErrorBoundary.tsx` + wrapping in `App.tsx`
+- **Step 4** is a mechanical CORS header update in 4 edge function files
+- **Steps 5-7** are small code changes in existing files
+
+No new tables or major architectural changes needed. All fixes are backward-compatible.
 
