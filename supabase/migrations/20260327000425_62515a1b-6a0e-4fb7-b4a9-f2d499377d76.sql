@@ -1,0 +1,1 @@
+ALTER TABLE public.organizations ADD COLUMN IF NOT EXISTS first_lab_sample_notified boolean DEFAULT false;

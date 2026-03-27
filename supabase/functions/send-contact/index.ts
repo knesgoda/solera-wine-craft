@@ -1,3 +1,5 @@
+import { sendAdminNotification } from "../_shared/admin-notify.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -42,48 +44,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Send email via Resend
-    const resendKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendKey) {
-      // Fallback: log the contact submission if Resend isn't configured
-      console.log("Contact form submission (Resend not configured):", { name, email, subject, message });
-      return new Response(
-        JSON.stringify({ success: true, note: "Message logged (email delivery not configured)" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const resendResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${resendKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "Solera Contact <contact@solera.vin>",
-        to: ["kevin@solera.vin"],
-        reply_to: email,
-        subject: `[Solera Contact] ${subject} — from ${name}`,
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px;">
-            <h2 style="color: #6B1B2A;">New Contact Form Submission</h2>
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr><td style="padding: 8px 0; font-weight: bold; color: #666;">Name</td><td style="padding: 8px 0;">${escapeHtml(name)}</td></tr>
-              <tr><td style="padding: 8px 0; font-weight: bold; color: #666;">Email</td><td style="padding: 8px 0;"><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></td></tr>
-              <tr><td style="padding: 8px 0; font-weight: bold; color: #666;">Subject</td><td style="padding: 8px 0;">${escapeHtml(subject)}</td></tr>
-            </table>
-            <hr style="margin: 16px 0; border: none; border-top: 1px solid #eee;" />
-            <div style="white-space: pre-wrap; color: #333;">${escapeHtml(message)}</div>
-          </div>
-        `,
-      }),
-    });
-
-    if (!resendResponse.ok) {
-      const errText = await resendResponse.text();
-      console.error("Resend error:", errText);
-      throw new Error("Email delivery failed");
-    }
+    // Send admin notification via shared utility (fire-and-forget)
+    sendAdminNotification(
+      `Support request from ${name} (${email}): ${subject}`,
+      `Name: ${name}\nEmail: ${email}\nSubject: ${subject}\n\nMessage:\n${message}`,
+      email
+    ).catch(() => {});
 
     return new Response(
       JSON.stringify({ success: true }),
@@ -97,12 +63,3 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendAdminNotification } from "../_shared/admin-notify.ts";
 
 const PRICE_TO_TIER: Record<string, string> = {
   'pri_01kmdwyrebec33s3kkrv4akap2': 'hobbyist',
@@ -8,6 +9,13 @@ const PRICE_TO_TIER: Record<string, string> = {
   'pri_01kmdxeyq34dvq3mxex2xdyfwm': 'mid_size',
   'pri_01kmdxkejxc2bssknbrm9phj48': 'enterprise',
   'pri_01kmdxmnh6v670ng8dtz5skec8': 'enterprise',
+};
+
+const TIER_LABELS: Record<string, string> = {
+  hobbyist: "Hobbyist",
+  small_boutique: "Pro",
+  mid_size: "Growth",
+  enterprise: "Enterprise",
 };
 
 function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
@@ -20,7 +28,6 @@ function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
 }
 
 async function verifyPaddleSignature(rawBody: string, signature: string, secret: string): Promise<boolean> {
-  // Paddle signature format: ts=TIMESTAMP;h1=HASH
   const parts: Record<string, string> = {};
   for (const part of signature.split(";")) {
     const [k, v] = part.split("=");
@@ -45,6 +52,20 @@ async function verifyPaddleSignature(rawBody: string, signature: string, secret:
 
   const encoder2 = new TextEncoder();
   return timingSafeEqual(encoder2.encode(expectedHex), encoder2.encode(h1));
+}
+
+async function getOrgInfo(supabase: any, orgId?: string, subId?: string, customerId?: string) {
+  let query;
+  if (orgId) {
+    query = supabase.from("organizations").select("name, tier").eq("id", orgId).single();
+  } else if (subId) {
+    query = supabase.from("organizations").select("name, tier").eq("paddle_subscription_id", subId).single();
+  } else if (customerId) {
+    query = supabase.from("organizations").select("name, tier").eq("paddle_customer_id", customerId).single();
+  }
+  if (!query) return { name: "Unknown", tier: "unknown" };
+  const { data } = await query;
+  return data || { name: "Unknown", tier: "unknown" };
 }
 
 Deno.serve(async (req) => {
@@ -106,10 +127,21 @@ Deno.serve(async (req) => {
           next_billed_at: nextBilledAt,
           trial_ends_at: status === "trialing" ? (currentBillingPeriod.ends_at || null) : null,
         } as any).eq("id", orgId);
+
+        // Admin notification
+        const orgInfo = await getOrgInfo(supabase, orgId);
+        sendAdminNotification(
+          `New subscription: ${orgInfo.name} → ${TIER_LABELS[tier] || tier}`,
+          `Organization: ${orgInfo.name}\nNew Tier: ${TIER_LABELS[tier] || tier}\nStatus: ${status}`
+        ).catch(() => {});
         break;
       }
 
       case "subscription.updated": {
+        // Get old tier before update
+        const oldOrg = await getOrgInfo(supabase, orgId, subId);
+        const oldTier = oldOrg.tier;
+
         const updateData: any = {
           tier,
           subscription_status: status,
@@ -121,10 +153,20 @@ Deno.serve(async (req) => {
         } else {
           await supabase.from("organizations").update(updateData).eq("paddle_subscription_id", subId);
         }
+
+        // Admin notification if tier changed
+        if (oldTier !== tier) {
+          sendAdminNotification(
+            `Subscription updated: ${oldOrg.name} changed from ${TIER_LABELS[oldTier] || oldTier} to ${TIER_LABELS[tier] || tier}`,
+            `Organization: ${oldOrg.name}\nPrevious Tier: ${TIER_LABELS[oldTier] || oldTier}\nNew Tier: ${TIER_LABELS[tier] || tier}\nStatus: ${status}`
+          ).catch(() => {});
+        }
         break;
       }
 
       case "subscription.canceled": {
+        const cancelOrg = await getOrgInfo(supabase, undefined, subId);
+        
         await supabase.from("organizations").update({
           tier: "hobbyist",
           subscription_status: "canceled",
@@ -132,6 +174,11 @@ Deno.serve(async (req) => {
           next_billed_at: null,
           scheduled_change: null,
         } as any).eq("paddle_subscription_id", subId);
+
+        sendAdminNotification(
+          `Subscription cancelled: ${cancelOrg.name} (${TIER_LABELS[cancelOrg.tier] || cancelOrg.tier})`,
+          `Organization: ${cancelOrg.name}\nPrevious Tier: ${TIER_LABELS[cancelOrg.tier] || cancelOrg.tier}\nReason: ${data.cancellation_reason || "Not provided"}`
+        ).catch(() => {});
         break;
       }
 
@@ -157,6 +204,14 @@ Deno.serve(async (req) => {
             subscription_status: "past_due",
           } as any).eq("paddle_customer_id", customerId);
         }
+
+        // Admin notification for payment failure
+        const failOrg = await getOrgInfo(supabase, undefined, undefined, customerId);
+        const errorDetail = data.payments?.[0]?.error_code || data.status || "Unknown error";
+        sendAdminNotification(
+          `Payment failed: ${failOrg.name}`,
+          `Organization: ${failOrg.name}\nError: ${errorDetail}\nCustomer ID: ${customerId}`
+        ).catch(() => {});
         break;
       }
 

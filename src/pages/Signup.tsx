@@ -55,6 +55,19 @@ const Signup = () => {
         }
       }
 
+      // Admin notification (fire-and-forget)
+      supabase.functions.invoke("notify-admin", {
+        body: {
+          event: "user_signup",
+          data: {
+            name: `${firstName} ${lastName}`,
+            email,
+            orgName: wineryName,
+            tier: "hobbyist",
+          },
+        },
+      }).catch(() => {});
+
       toast.success("Account created! Let's set up your winery.");
       navigate("/onboarding");
     } catch (error: any) {

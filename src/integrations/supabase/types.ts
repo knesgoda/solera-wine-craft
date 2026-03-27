@@ -2981,6 +2981,7 @@ export type Database = {
         Row: {
           created_at: string
           enabled_modules: string[] | null
+          first_lab_sample_notified: boolean | null
           id: string
           name: string
           needs_onboarding_call: boolean
@@ -3002,6 +3003,7 @@ export type Database = {
         Insert: {
           created_at?: string
           enabled_modules?: string[] | null
+          first_lab_sample_notified?: boolean | null
           id?: string
           name: string
           needs_onboarding_call?: boolean
@@ -3023,6 +3025,7 @@ export type Database = {
         Update: {
           created_at?: string
           enabled_modules?: string[] | null
+          first_lab_sample_notified?: boolean | null
           id?: string
           name?: string
           needs_onboarding_call?: boolean
