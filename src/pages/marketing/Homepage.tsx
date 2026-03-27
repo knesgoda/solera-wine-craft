@@ -46,7 +46,7 @@ export default function Homepage() {
     <>
       <SEOHead
         title="Solera — Winery Management Software | Vineyard Ops, COGS Tracking, DTC Sales"
-        description="The all-in-one winery management platform. Vineyard operations, cellar management, production cost tracking, grower contracts, AI analytics, DTC sales, and TTB compliance. From vine to bottle to doorstep. Free tier available."
+        description="Solera — winery management from vine to bottle to doorstep. Vineyard ops, lab tracking, cellar management, DTC sales, AI-powered insights, clone & rootstock ripening intelligence, multi-language support, free data export on every tier. Start free."
         jsonLd={HOMEPAGE_SCHEMA}
       />
 
