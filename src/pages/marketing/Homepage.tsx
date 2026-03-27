@@ -4,18 +4,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SEOHead, HOMEPAGE_SCHEMA } from "@/components/SEOHead";
 import {
   Grape, FlaskConical, Wine, Bot, Upload, ShoppingCart, Users, FileCheck,
-  Check, X, ChevronRight, BarChart3, Thermometer, Calendar, Bell, DollarSign, Wheat
+  Check, X, ChevronRight, BarChart3, Thermometer, Calendar, Bell, DollarSign, Wheat,
+  LineChart, Globe, Download
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const MODULES: { icon: any; name: string; desc: string; tier?: string }[] = [
   { icon: Grape, name: "Vineyard Operations", desc: "GDD tracking, block management, task scheduling, and weather-driven harvest predictions." },
+  { icon: LineChart, name: "Ripening Intelligence", desc: "Track clone and rootstock ripening divergence across blocks with automatic alerts when fruit drifts apart." },
   { icon: FlaskConical, name: "Vintage & Lab Tracking", desc: "Record lab samples, track additions, detect anomalies with AI, and monitor every vintage's lifecycle." },
   { icon: Wine, name: "Cellar & Fermentation", desc: "Manage vessels, barrels, fermentation logs, and run blending trials with confidence." },
   { icon: DollarSign, name: "Production Cost Tracking", desc: "Real-time COGS per gallon, barrel, and case. Costs follow wine through blends automatically.", tier: "Growth+" },
   { icon: Wheat, name: "Grower Contracts", desc: "Manage grape purchase agreements with auto-pricing grading scales at harvest intake.", tier: "Enterprise" },
   { icon: Bot, name: "Ask Solera AI", desc: "Ask anything about your operation in plain English and get answers grounded in your actual data." },
+  { icon: Globe, name: "Global-Ready", desc: "Multi-language, timezone-aware, metric or imperial — built for wineries from Napa to Bordeaux to Barossa." },
   { icon: Upload, name: "Data Import & Migration", desc: "AI-assisted import from Innovint, VinNow, or any CSV/XLSX. Your history migrates in minutes." },
+  { icon: Download, name: "Data Export & Backup", desc: "Your data, always yours — free CSV/Excel export and automatic backups on every tier." },
   { icon: ShoppingCart, name: "Sales & DTC Storefront", desc: "Public wine store, inventory management, order fulfillment, and wine club shipments." },
   { icon: Users, name: "Custom Crush Portal", desc: "Give your custom crush clients their own portal with vintage visibility, messaging, and documents." },
   { icon: FileCheck, name: "TTB Compliance", desc: "Generate OW-1 reports, Certificates of Analysis, and stay compliant with ShipCompliant integration." },
