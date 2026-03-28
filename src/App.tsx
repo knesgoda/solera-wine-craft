@@ -90,9 +90,6 @@ import MaterialPrices from "./pages/costs/MaterialPrices";
 import CostCategorySettings from "./pages/costs/CostCategorySettings";
 import CogsDashboard from "./pages/costs/CogsDashboard";
 import LotCostDetail from "./pages/costs/LotCostDetail";
-import { OfflineBanner } from "./components/OfflineBanner";
-import { PushPrompt } from "./components/PushPrompt";
-import { useOfflineSync } from "./hooks/useOfflineSync";
 import { ImpersonationProvider } from "./contexts/ImpersonationContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { MarketingLayout } from "./components/marketing/MarketingLayout";
@@ -121,16 +118,6 @@ const queryClient = new QueryClient({
   },
 });
 
-const AppInner = () => {
-  const { isOnline, pendingCount } = useOfflineSync();
-  return (
-    <>
-      <OfflineBanner isOnline={isOnline} pendingCount={pendingCount} />
-      <PushPrompt />
-    </>
-  );
-};
-
 const App = () => (
   <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
@@ -140,7 +127,6 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <ImpersonationProvider>
-          <AppInner />
           <Routes>
             {/* Coming soon / waitlist - public */}
             <Route path="/coming-soon" element={<ComingSoonPage />} />
