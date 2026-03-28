@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
           cancelled_at: new Date().toISOString(),
         } as any).eq("id", cancelOrgRow?.id);
 
-        // Trigger cancellation auto-export
+        // Trigger cancellation auto-export (fire-and-forget)
         if (cancelOrgRow?.id) {
           try {
             const { data: cancelJob, error: cancelJobErr } = await supabase
@@ -199,104 +199,17 @@ Deno.serve(async (req) => {
               .single();
 
             if (!cancelJobErr && cancelJob) {
-              // Fire process-backup (fire-and-forget with retry logic)
-              const processUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/process-backup`;
-              const processRes = await fetch(processUrl, {
+              // Fire process-backup — it will handle email sending on completion
+              fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/process-backup`, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
                   Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
                 },
                 body: JSON.stringify({ job_id: cancelJob.id }),
+              }).catch((err) => {
+                console.error("Fire process-backup error:", err);
               });
-
-              // Wait for job completion (poll up to 3 min)
-              let cancelCompletedJob: any = null;
-              for (let i = 0; i < 36; i++) {
-                await new Promise(r => setTimeout(r, 5000));
-                const { data: jd } = await supabase.from("backup_jobs").select("*").eq("id", cancelJob.id).single();
-                if (jd && (jd.status === "completed" || jd.status === "failed")) {
-                  cancelCompletedJob = jd;
-                  break;
-                }
-              }
-
-              if (cancelCompletedJob?.status === "completed" && cancelCompletedJob.file_url) {
-                // Email ALL users in the org
-                const { data: allUsers } = await supabase
-                  .from("profiles")
-                  .select("email, first_name")
-                  .eq("org_id", cancelOrgRow.id);
-
-                if (allUsers && allUsers.length > 0) {
-                  const allEmails = allUsers.map((u: any) => u.email).filter(Boolean);
-                  const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-                  if (RESEND_API_KEY) {
-                    await fetch("https://api.resend.com/emails", {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${RESEND_API_KEY}`,
-                      },
-                      body: JSON.stringify({
-                        from: "Solera Notifications <notifications@solera.vin>",
-                        to: allEmails,
-                        reply_to: "support@solera.vin",
-                        subject: "Your Solera data is ready to download",
-                        html: `<div style="max-width:600px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#1A1A1A;line-height:1.5;">
-  <div style="border-bottom:2px solid #C8902A;padding:20px 0 16px;">
-    <span style="font-family:Georgia,serif;font-size:24px;font-weight:bold;color:#6B1B2A;">SOLERA</span>
-  </div>
-  <div style="padding:24px 0;">
-    <p style="font-size:16px;">Hi ${allUsers[0]?.first_name || "there"},</p>
-    <p style="font-size:16px;">We're sorry to see you go. We've prepared a complete backup of all your winery data for <strong>${cancelOrgRow.name}</strong>.</p>
-    <div style="margin:24px 0;">
-      <a href="${cancelCompletedJob.file_url}" style="display:inline-block;background:#6B1B2A;color:#fff;font-size:16px;font-weight:600;padding:12px 32px;border-radius:6px;text-decoration:none;">Download Your Data</a>
-    </div>
-    <p style="font-size:14px;color:#555;">This link is available for 90 days. After that, your data will be permanently deleted.</p>
-    <p style="font-size:14px;color:#555;">If you change your mind, you can reactivate your account anytime within the 90-day window by signing back in and choosing a plan.</p>
-    <p style="font-size:14px;color:#555;">We'd love to know what we could have done better — just reply to this email.</p>
-    <p style="font-size:16px;">Cheers,<br>The Solera Team</p>
-  </div>
-  <div style="background:#F5F0E8;padding:16px;border-radius:0 0 6px 6px;font-size:12px;color:#888;">
-    Solera — From vine to bottle to doorstep<br>
-    <a href="https://solera.vin" style="color:#6B1B2A;">Website</a> · <a href="https://solera.vin/privacy" style="color:#6B1B2A;">Privacy Policy</a><br>
-    You're receiving this because you have a Solera account at solera.vin.
-  </div>
-</div>`,
-                      }),
-                    });
-                  }
-                }
-              } else if (!cancelCompletedJob || cancelCompletedJob.status === "failed") {
-                // Retry once
-                const { data: retryJob } = await supabase
-                  .from("backup_jobs")
-                  .insert({
-                    org_id: cancelOrgRow.id,
-                    format: "csv",
-                    status: "pending",
-                    triggered_by: "cancellation",
-                  })
-                  .select("id")
-                  .single();
-
-                if (retryJob) {
-                  fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/process-backup`, {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-                    },
-                    body: JSON.stringify({ job_id: retryJob.id }),
-                  }).catch(() => {});
-                }
-
-                sendAdminNotification(
-                  `Cancellation backup failed: ${cancelOrgRow.name} — retrying`,
-                  `Org: ${cancelOrgRow.name}\nOrg ID: ${cancelOrgRow.id}\nError: ${cancelCompletedJob?.error_message || "timeout"}`,
-                ).catch(() => {});
-              }
             }
           } catch (backupErr) {
             console.error("Cancellation backup error:", backupErr);
