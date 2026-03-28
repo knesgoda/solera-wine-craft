@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { addDays, differenceInDays, format, parseISO } from "date-fns";
+import { linearSlope } from "@/lib/math";
 
 export interface PrimeWindowBlock {
   blockId: string;
@@ -10,18 +11,6 @@ export interface PrimeWindowBlock {
   vineyardId: string;
   predictedDate: Date;
   currentBrix: number;
-}
-
-function linearSlope(points: { x: number; y: number }[]): number {
-  const n = points.length;
-  if (n < 2) return 0;
-  const sumX = points.reduce((s, p) => s + p.x, 0);
-  const sumY = points.reduce((s, p) => s + p.y, 0);
-  const sumXY = points.reduce((s, p) => s + p.x * p.y, 0);
-  const sumX2 = points.reduce((s, p) => s + p.x * p.x, 0);
-  const denom = n * sumX2 - sumX * sumX;
-  if (denom === 0) return 0;
-  return (n * sumXY - sumX * sumY) / denom;
 }
 
 export function usePrimeWindowBlocks() {
