@@ -25,4 +25,5 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+Sitemap: https://solera.vin/sitemap.xml
 Sitemap: https://vibdxsntxwrepnkrlbdw.supabase.co/functions/v1/sitemap
