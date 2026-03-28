@@ -317,8 +317,65 @@ Questions? Contact support@solera.vin
 
     // Format file size for notification
     const sizeMB = (fileContent.length / (1024 * 1024)).toFixed(2);
-
     console.log(`Backup completed for org ${orgName}: ${fileName} (${sizeMB} MB, ${totalRows} rows)`);
+
+    // If this backup was triggered by a cancellation, email all org users with the download link
+    if (triggeredBy === "cancellation" && signedUrl?.signedUrl) {
+      try {
+        const { data: allUsers } = await supabase
+          .from("profiles")
+          .select("email, first_name")
+          .eq("org_id", orgId);
+
+        if (allUsers && allUsers.length > 0) {
+          const allEmails = allUsers.map((u: any) => u.email).filter(Boolean);
+          const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+          if (RESEND_API_KEY) {
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${RESEND_API_KEY}`,
+              },
+              body: JSON.stringify({
+                from: "Solera Notifications <notifications@solera.vin>",
+                to: allEmails,
+                reply_to: "support@solera.vin",
+                subject: "Your Solera data is ready to download",
+                html: `<div style="max-width:600px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#1A1A1A;line-height:1.5;">
+  <div style="border-bottom:2px solid #C8902A;padding:20px 0 16px;">
+    <span style="font-family:Georgia,serif;font-size:24px;font-weight:bold;color:#6B1B2A;">SOLERA</span>
+  </div>
+  <div style="padding:24px 0;">
+    <p style="font-size:16px;">Hi ${allUsers[0]?.first_name || "there"},</p>
+    <p style="font-size:16px;">We're sorry to see you go. We've prepared a complete backup of all your winery data for <strong>${orgName}</strong>.</p>
+    <div style="margin:24px 0;">
+      <a href="${signedUrl.signedUrl}" style="display:inline-block;background:#6B1B2A;color:#fff;font-size:16px;font-weight:600;padding:12px 32px;border-radius:6px;text-decoration:none;">Download Your Data</a>
+    </div>
+    <p style="font-size:14px;color:#555;">This link is available for 90 days. After that, your data will be permanently deleted.</p>
+    <p style="font-size:14px;color:#555;">If you change your mind, you can reactivate your account anytime within the 90-day window by signing back in and choosing a plan.</p>
+    <p style="font-size:14px;color:#555;">We'd love to know what we could have done better — just reply to this email.</p>
+    <p style="font-size:16px;">Cheers,<br>The Solera Team</p>
+  </div>
+  <div style="background:#F5F0E8;padding:16px;border-radius:0 0 6px 6px;font-size:12px;color:#888;">
+    Solera — From vine to bottle to doorstep<br>
+    <a href="https://solera.vin" style="color:#6B1B2A;">Website</a> · <a href="https://solera.vin/privacy" style="color:#6B1B2A;">Privacy Policy</a><br>
+    You're receiving this because you have a Solera account at solera.vin.
+  </div>
+</div>`,
+              }),
+            });
+            console.log(`Cancellation data export email sent to ${allEmails.length} user(s) for org ${orgName}`);
+          }
+        }
+      } catch (emailErr) {
+        console.error("Cancellation email send error:", emailErr);
+        sendAdminNotification(
+          `Cancellation email failed for ${orgName}`,
+          `Org ID: ${orgId}\nError: ${(emailErr as Error).message}`,
+        ).catch(() => {});
+      }
+    }
 
     return new Response(JSON.stringify({ ok: true }), {
       headers: { "Content-Type": "application/json" },
