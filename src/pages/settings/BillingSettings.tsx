@@ -124,7 +124,6 @@ const BillingSettings = () => {
         // No subscription — open Paddle checkout
         const priceId = (PADDLE_PRICES as any)[tier]?.monthly;
         if (!priceId) return;
-        if (!priceId) return;
 
         const paddle = await getPaddle();
         if (!paddle) {
