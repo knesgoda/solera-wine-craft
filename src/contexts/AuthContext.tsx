@@ -13,6 +13,7 @@ interface Profile {
   email: string | null;
   avatar_url: string | null;
   push_subscription: any | null;
+  language: string | null;
 }
 
 interface Organization {
