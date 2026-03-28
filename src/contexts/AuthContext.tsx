@@ -74,14 +74,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         i18n.changeLanguage(profileData.language);
       }
 
-      // Update last_active_at on every session restore / login
-      supabase
-        .from("profiles")
-        .update({ last_active_at: new Date().toISOString() })
-        .eq("id", userId)
-        .then(({ error }) => {
-          if (error) console.error("last_active_at update error:", error.message);
-        });
 
       if (profileData.org_id) {
         const { data: orgData, error: orgError } = await supabase
