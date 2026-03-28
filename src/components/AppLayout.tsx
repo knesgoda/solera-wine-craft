@@ -34,6 +34,8 @@ export function AppLayout() {
 
   return (
     <SidebarProvider>
+      <OfflineBanner isOnline={isOnline} pendingCount={pendingCount} />
+      <PushPrompt />
       <FacilityProvider>
         <SEOHead noIndex />
         <div className="min-h-screen flex w-full">
