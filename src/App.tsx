@@ -194,12 +194,12 @@ const App = () => (
               <Route path="/cellar/barrels" element={<BarrelInventory />} />
               <Route path="/cellar/blending" element={<BlendingTrials />} />
               <Route path="/cellar/blending/:trialId" element={<TrialDetail />} />
-              <Route path="/ask-solera" element={<AskSolera />} />
+              <Route path="/ask-solera" element={<GrowthTierGate><AskSolera /></GrowthTierGate>} />
               <Route path="/sales" element={<Navigate to="/inventory" replace />} />
               <Route path="/reports" element={<Reports />} />
-              <Route path="/reports/builder" element={<ReportsBuilder />} />
+              <Route path="/reports/builder" element={<GrowthTierGate><ReportsBuilder /></GrowthTierGate>} />
               <Route path="/data-import" element={<DataImport />} />
-              <Route path="/analytics/analog" element={<AnalogExplorer />} />
+              <Route path="/analytics/analog" element={<GrowthTierGate><AnalogExplorer /></GrowthTierGate>} />
               <Route path="/costs" element={<GrowthTierGate><CostOverview /></GrowthTierGate>} />
               <Route path="/costs/dashboard" element={<GrowthTierGate><CogsDashboard /></GrowthTierGate>} />
               <Route path="/costs/lot/:vintageId" element={<GrowthTierGate><LotCostDetail /></GrowthTierGate>} />
