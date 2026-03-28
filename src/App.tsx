@@ -118,16 +118,6 @@ const queryClient = new QueryClient({
   },
 });
 
-const AppInner = () => {
-  const { isOnline, pendingCount } = useOfflineSync();
-  return (
-    <>
-      <OfflineBanner isOnline={isOnline} pendingCount={pendingCount} />
-      <PushPrompt />
-    </>
-  );
-};
-
 const App = () => (
   <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
@@ -137,7 +127,6 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <ImpersonationProvider>
-          <AppInner />
           <Routes>
             {/* Coming soon / waitlist - public */}
             <Route path="/coming-soon" element={<ComingSoonPage />} />
