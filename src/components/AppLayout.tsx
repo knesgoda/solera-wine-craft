@@ -10,10 +10,14 @@ import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { ImpersonationGuard } from "@/components/ImpersonationGuard";
 import { SEOHead } from "@/components/SEOHead";
 import { supabase } from "@/integrations/supabase/client";
+import { OfflineBanner } from "@/components/OfflineBanner";
+import { PushPrompt } from "@/components/PushPrompt";
+import { useOfflineSync } from "@/hooks/useOfflineSync";
 
 export function AppLayout() {
   const { user } = useAuth();
   const { active: isImpersonating } = useImpersonation();
+  const { isOnline, pendingCount } = useOfflineSync();
 
   // Keep last_active_at current on every app mount
   useEffect(() => {
