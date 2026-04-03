@@ -163,7 +163,8 @@ export default function FacilitySettings() {
   };
 
   const toggleActive = async (id: string, active: boolean) => {
-    await supabase.from("facilities").update({ active }).eq("id", id);
+    const { error } = await supabase.from("facilities").update({ active }).eq("id", id);
+    if (error) toast.error("Failed to update facility status.");
     fetchFacilities();
   };
 

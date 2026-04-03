@@ -123,7 +123,10 @@ const BillingSettings = () => {
       } else {
         // No subscription — open Paddle checkout
         const priceId = (PADDLE_PRICES as any)[tier]?.monthly;
-        if (!priceId) return;
+        if (!priceId) {
+          toast({ title: "Error", description: "Unable to start checkout. Please contact support.", variant: "destructive" });
+          return;
+        }
 
         const paddle = await getPaddle();
         if (!paddle) {

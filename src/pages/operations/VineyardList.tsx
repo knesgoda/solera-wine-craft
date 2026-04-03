@@ -83,7 +83,7 @@ const VineyardList = () => {
                 <Label htmlFor="v-acres">Acres</Label>
                 <Input id="v-acres" type="number" step="0.01" value={form.acres} onChange={(e) => setForm({ ...form, acres: e.target.value })} />
               </div>
-              <Button type="submit" className="w-full" disabled={createMutation.isPending}>
+              <Button type="submit" className="w-full" disabled={!form.name.trim() || createMutation.isPending}>
                 {createMutation.isPending ? "Adding..." : "Add Vineyard"}
               </Button>
             </form>
