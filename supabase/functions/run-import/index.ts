@@ -52,7 +52,7 @@ serve(async (req) => {
           if (Object.keys(data).length === 0) continue;
 
           // Add org_id for tables that need it
-          const tablesWithOrg = ["vintages", "blocks", "barrels", "fermentation_vessels", "ttb_additions", "inventory_skus"];
+          const tablesWithOrg = ["vintages", "barrels", "fermentation_vessels", "ttb_additions", "inventory_skus"];
           if (tablesWithOrg.includes(table)) {
             data.org_id = orgId;
           }
