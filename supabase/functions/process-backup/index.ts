@@ -389,7 +389,7 @@ Questions? Contact support@solera.vin
         status: "failed",
         error_message: (err as Error).message,
         completed_at: new Date().toISOString(),
-      } as any).eq("id", jobId).catch(() => {});
+      } as any).eq("id", jobId).then(() => {}).catch(() => {});
     }
 
     // Alert admin
