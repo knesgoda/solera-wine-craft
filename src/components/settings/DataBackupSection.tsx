@@ -313,7 +313,9 @@ export default function DataBackupSection() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="daily">Daily</SelectItem>
                     <SelectItem value="weekly">Weekly (every Monday)</SelectItem>
+                    <SelectItem value="biweekly">Every Two Weeks</SelectItem>
                     <SelectItem value="monthly">Monthly (1st of each month)</SelectItem>
                   </SelectContent>
                 </Select>
@@ -433,11 +435,23 @@ export default function DataBackupSection() {
 
 function calcNextRun(frequency: string): string {
   const now = new Date();
+  if (frequency === "daily") {
+    const next = new Date(now);
+    next.setUTCDate(now.getUTCDate() + 1);
+    next.setUTCHours(2, 0, 0, 0);
+    return next.toISOString();
+  }
   if (frequency === "weekly") {
     const day = now.getUTCDay();
     const daysUntilMonday = day === 0 ? 1 : (8 - day);
     const next = new Date(now);
     next.setUTCDate(now.getUTCDate() + daysUntilMonday);
+    next.setUTCHours(2, 0, 0, 0);
+    return next.toISOString();
+  }
+  if (frequency === "biweekly") {
+    const next = new Date(now);
+    next.setUTCDate(now.getUTCDate() + 14);
     next.setUTCHours(2, 0, 0, 0);
     return next.toISOString();
   }

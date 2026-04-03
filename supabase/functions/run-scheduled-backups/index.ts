@@ -34,12 +34,26 @@ function formatBytes(bytes: number): string {
 
 function calcNextRun(frequency: string): string {
   const now = new Date();
+  if (frequency === "daily") {
+    // Next day at 02:00 UTC
+    const next = new Date(now);
+    next.setUTCDate(now.getUTCDate() + 1);
+    next.setUTCHours(2, 0, 0, 0);
+    return next.toISOString();
+  }
   if (frequency === "weekly") {
     // Next Monday at 02:00 UTC
     const day = now.getUTCDay();
     const daysUntilMonday = day === 0 ? 1 : (8 - day);
     const next = new Date(now);
     next.setUTCDate(now.getUTCDate() + daysUntilMonday);
+    next.setUTCHours(2, 0, 0, 0);
+    return next.toISOString();
+  }
+  if (frequency === "biweekly") {
+    // 14 days from now at 02:00 UTC
+    const next = new Date(now);
+    next.setUTCDate(now.getUTCDate() + 14);
     next.setUTCHours(2, 0, 0, 0);
     return next.toISOString();
   }
