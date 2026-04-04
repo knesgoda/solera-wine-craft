@@ -23,7 +23,7 @@ export default function CellarDashboard() {
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const { data: vessels = [], isLoading } = useQuery({
+  const { data: vessels = [], isLoading, isError: vesselsError } = useQuery({
     queryKey: ["vessels", organization?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -131,6 +131,8 @@ export default function CellarDashboard() {
       </Card>
     );
   };
+
+  if (vesselsError) return <div className="py-12 text-center text-destructive">Failed to load cellar data. Please refresh the page.</div>;
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto pb-24 md:pb-6">

@@ -31,7 +31,7 @@ export default function GrowerList() {
   const [page, setPage] = useState(0);
   const pageSize = 25;
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError: growersError } = useQuery({
     queryKey: ["growers", organization?.id, statusFilter, search, page],
     queryFn: async () => {
       let query = supabase
@@ -61,6 +61,8 @@ export default function GrowerList() {
 
   const getActiveContractCount = (grower: any) =>
     (grower.grower_contracts || []).filter((c: any) => c.status === "active").length;
+
+  if (growersError) return <div className="py-12 text-center text-destructive">Failed to load growers. Please refresh the page.</div>;
 
   return (
     <div className="space-y-6">

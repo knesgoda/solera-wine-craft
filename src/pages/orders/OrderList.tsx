@@ -34,7 +34,7 @@ const OrderList = () => {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const { data: orders = [] } = useQuery({
+  const { data: orders = [], isError: ordersError } = useQuery({
     queryKey: ["orders", orgId, filterStatus, dateFrom, dateTo],
     queryFn: async () => {
       let q = supabase
@@ -56,6 +56,8 @@ const OrderList = () => {
 
   const totalRevenue = orders.filter((o: any) => o.status === "paid" || o.status === "processing" || o.status === "shipped" || o.status === "delivered")
     .reduce((s: number, o: any) => s + Number(o.total), 0);
+
+  if (ordersError) return <div className="py-12 text-center text-destructive">Failed to load orders. Please refresh the page.</div>;
 
   return (
     <div className="space-y-6">
