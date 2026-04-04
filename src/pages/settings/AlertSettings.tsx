@@ -47,6 +47,7 @@ const AlertSettings = () => {
   const orgId = organization?.id;
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [deletingRuleId, setDeletingRuleId] = useState<string | null>(null);
   const [form, setForm] = useState({
     parameter: "",
     operator: "",
