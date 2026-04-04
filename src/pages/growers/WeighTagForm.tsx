@@ -71,6 +71,7 @@ export default function WeighTagForm() {
   const [recordAnother, setRecordAnother] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const [duplicateConfirmed, setDuplicateConfirmed] = useState(false);
 
   const { data: activeContracts = [] } = useQuery({
