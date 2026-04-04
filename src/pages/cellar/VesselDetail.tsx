@@ -164,7 +164,7 @@ export default function VesselDetail() {
     setLogTempF(log.temp_f != null ? String(log.temp_f) : "");
     setLogBrix(log.brix != null ? String(log.brix) : "");
     setLogNotes(log.notes || "");
-    setLoggedAt(parseISO(log.logged_at).toISOString().slice(0, 16));
+    setLoggedAt(safeParse(log.logged_at).toISOString().slice(0, 16));
     setShowLogForm(true);
   };
 
