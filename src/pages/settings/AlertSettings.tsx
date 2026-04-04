@@ -308,7 +308,7 @@ const AlertSettings = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => { if (confirm("Delete this rule?")) deleteRule.mutate(rule.id); }}
+                    onClick={() => setDeletingRuleId(rule.id)}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
