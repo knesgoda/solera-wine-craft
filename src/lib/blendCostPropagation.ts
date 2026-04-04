@@ -252,7 +252,7 @@ export async function reverseBlendCosts(
   const { error: updateError } = await supabase
     .from("cost_entries")
     .update({
-      status: "voided" as any,
+      status: "voided",
       voided_at: new Date().toISOString(),
       voided_by: userId,
       void_reason: "Blend cost reversal",
