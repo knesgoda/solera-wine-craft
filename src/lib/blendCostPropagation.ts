@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+type CostEntryStatus = Database["public"]["Enums"]["cost_entry_status"];
 
 interface PropagationResult {
   success: boolean;
@@ -101,7 +103,7 @@ export async function propagateBlendCosts(
       .from("cost_entries")
       .select("*")
       .eq("vintage_id", comp.vintage_id)
-      .eq("status", "active" as any)
+      .eq("status", "active" as CostEntryStatus)
       .eq("org_id", orgId);
     if (costError) throw costError;
     if (!sourceCosts || sourceCosts.length === 0) continue;
@@ -207,7 +209,7 @@ export async function previewBlendCosts(
       .from("cost_entries")
       .select("total_amount")
       .eq("vintage_id", comp.vintage_id)
-      .eq("status", "active" as any)
+      .eq("status", "active" as CostEntryStatus)
       .eq("org_id", orgId);
 
     const totalCost = (costs || []).reduce((s: number, c: any) => s + Number(c.total_amount), 0);
@@ -241,7 +243,7 @@ export async function reverseBlendCosts(
     .select("id, total_amount")
     .eq("blend_trial_id", blendTrialId)
     .eq("vintage_id", targetVintageId)
-    .eq("status", "active" as any);
+    .eq("status", "active" as CostEntryStatus);
 
   if (error) throw error;
   if (!entries || entries.length === 0) return { voidedCount: 0, voidedAmount: 0 };
@@ -252,7 +254,7 @@ export async function reverseBlendCosts(
   const { error: updateError } = await supabase
     .from("cost_entries")
     .update({
-      status: "voided" as any,
+      status: "voided" as CostEntryStatus,
       voided_at: new Date().toISOString(),
       voided_by: userId,
       void_reason: "Blend cost reversal",

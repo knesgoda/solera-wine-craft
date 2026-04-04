@@ -1,4 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
+import type { Database } from "@/integrations/supabase/types";
+type FermentationLogInsert = Database["public"]["Tables"]["fermentation_logs"]["Insert"];
+type FermentationLogUpdate = Database["public"]["Tables"]["fermentation_logs"]["Update"];
+type VesselUpdate = Database["public"]["Tables"]["fermentation_vessels"]["Update"];
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,11 +100,11 @@ export default function VesselDetail() {
       if (editingLogId) {
         const { error } = await supabase
           .from("fermentation_logs")
-          .update(record as any)
+          .update(record as FermentationLogUpdate)
           .eq("id", editingLogId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("fermentation_logs").insert(record as any);
+        const { error } = await supabase.from("fermentation_logs").insert(record as FermentationLogInsert);
         if (error) throw error;
 
         // Evaluate alert rules asynchronously
@@ -136,7 +140,7 @@ export default function VesselDetail() {
     mutationFn: async (vintageId: string) => {
       const { error } = await supabase
         .from("fermentation_vessels")
-        .update({ vintage_id: vintageId === "none" ? null : vintageId } as any)
+        .update({ vintage_id: vintageId === "none" ? null : vintageId } as VesselUpdate)
         .eq("id", vesselId!);
       if (error) throw error;
     },

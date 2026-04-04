@@ -1,4 +1,8 @@
 import { useState } from "react";
+import type { Database } from "@/integrations/supabase/types";
+type AlertParameter = Database["public"]["Enums"]["alert_parameter"];
+type AlertOperator = Database["public"]["Enums"]["alert_operator"];
+type AlertChannel = Database["public"]["Enums"]["alert_channel"];
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -95,21 +99,21 @@ const AlertSettings = () => {
       if (isDivergence) {
         const { error } = await supabase.from("alert_rules").insert({
           org_id: orgId!,
-          parameter: "ripening_divergence" as any,
-          operator: "gte" as any,
+          parameter: "ripening_divergence" as AlertParameter,
+          operator: "gte" as AlertOperator,
           threshold: parseFloat(form.brix_spread_threshold) || 4.0,
-          channel: form.channel as any,
+          channel: form.channel as AlertChannel,
           variety_filter: form.variety_filter || null,
           brix_spread_threshold: parseFloat(form.brix_spread_threshold) || 4.0,
-        } as any);
+        });
         if (error) throw error;
       } else {
         const { error } = await supabase.from("alert_rules").insert({
           org_id: orgId!,
-          parameter: form.parameter as any,
-          operator: form.operator as any,
+          parameter: form.parameter as AlertParameter,
+          operator: form.operator as AlertOperator,
           threshold: parseFloat(form.threshold),
-          channel: form.channel as any,
+          channel: form.channel as AlertChannel,
         });
         if (error) throw error;
       }
@@ -148,8 +152,8 @@ const AlertSettings = () => {
 
   const formatRuleDescription = (rule: any) => {
     if (rule.parameter === "ripening_divergence") {
-      const variety = (rule as any).variety_filter || "All varieties";
-      const spread = (rule as any).brix_spread_threshold ?? 4.0;
+      const variety = rule.variety_filter || "All varieties";
+      const spread = rule.brix_spread_threshold ?? 4.0;
       return `Ripening Divergence: ${variety} — ${spread}° Brix spread`;
     }
     return `${paramLabel(rule.parameter)} ${OP_SYMBOLS[rule.operator]} ${rule.threshold}`;

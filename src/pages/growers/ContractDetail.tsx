@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import type { Database } from "@/integrations/supabase/types";
+type ContractStatus = Database["public"]["Enums"]["contract_status"];
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -110,7 +112,7 @@ export default function ContractDetail() {
     if (contract && contract.status === "active" && contract.delivery_end_date) {
       const endDate = new Date(contract.delivery_end_date);
       if (endDate < new Date()) {
-        supabase.from("grower_contracts").update({ status: "expired" as any, updated_at: new Date().toISOString() }).eq("id", id!).then(() => {
+        supabase.from("grower_contracts").update({ status: "expired" as ContractStatus, updated_at: new Date().toISOString() }).eq("id", id!).then(() => {
           queryClient.invalidateQueries({ queryKey: ["contract-detail", id] });
         });
       }
@@ -119,7 +121,7 @@ export default function ContractDetail() {
 
   const statusMutation = useMutation({
     mutationFn: async (newStatus: string) => {
-      const { error } = await supabase.from("grower_contracts").update({ status: newStatus as any }).eq("id", id!);
+      const { error } = await supabase.from("grower_contracts").update({ status: newStatus as ContractStatus }).eq("id", id!);
       if (error) throw error;
     },
     onSuccess: () => {

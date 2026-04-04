@@ -1,4 +1,7 @@
 import { useState } from "react";
+import type { Database } from "@/integrations/supabase/types";
+type CostEntryStatus = Database["public"]["Enums"]["cost_entry_status"];
+type CostMethod = Database["public"]["Enums"]["cost_method"];
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -118,8 +121,8 @@ export default function CostOverview() {
         .order("effective_date", { ascending: false })
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
-      if (statusFilter !== "all") query = query.eq("status", statusFilter as any);
-      if (methodFilter !== "all") query = query.eq("method", methodFilter as any);
+      if (statusFilter !== "all") query = query.eq("status", statusFilter as CostEntryStatus);
+      if (methodFilter !== "all") query = query.eq("method", methodFilter as CostMethod);
       if (vintageFilter !== "all") query = query.eq("vintage_id", vintageFilter);
       if (categoryFilter !== "all") query = query.eq("category_id", categoryFilter);
 
@@ -134,7 +137,7 @@ export default function CostOverview() {
     mutationFn: async ({ id, amount, description }: { id: string; amount: number; description: string }) => {
       const { error } = await supabase
         .from("cost_entries")
-        .update({ total_amount: amount, description } as any)
+        .update({ total_amount: amount, description })
         .eq("id", id);
       if (error) throw error;
     },
@@ -154,7 +157,7 @@ export default function CostOverview() {
       const { error } = await supabase
         .from("cost_entries")
         .update({
-          status: "voided" as any,
+          status: "voided" as CostEntryStatus,
           voided_at: new Date().toISOString(),
           voided_by: profile?.id,
           void_reason: reason,
