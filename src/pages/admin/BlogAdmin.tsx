@@ -242,6 +242,19 @@ export default function BlogAdmin() {
             <p className="text-center text-muted-foreground py-12">No posts yet. Create your first one!</p>
           )}
         </div>
+
+        <AlertDialog open={!!deletingPostId} onOpenChange={(o) => !o && setDeletingPostId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this post permanently?</AlertDialogTitle>
+              <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => { if (deletingPostId) { deletePost(deletingPostId); setDeletingPostId(null); } }}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

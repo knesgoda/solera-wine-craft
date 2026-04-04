@@ -1,29 +1,39 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
+
+const PAGE_SIZE = 50;
 
 const CustomerList = () => {
   const { organization } = useAuth();
   const orgId = organization?.id;
+  const [page, setPage] = useState(0);
 
-  const { data: customers = [], isError: customersError } = useQuery({
-    queryKey: ["customers", orgId],
+  const { data, isError: customersError } = useQuery({
+    queryKey: ["customers", orgId, page],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from("customers")
-        .select("*")
+        .select("*", { count: "exact" })
         .eq("org_id", orgId!)
-        .order("total_spent", { ascending: false });
+        .order("total_spent", { ascending: false })
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
       if (error) throw error;
-      return data as any[];
+      return { customers: data as any[], total: count ?? 0 };
     },
     enabled: !!orgId,
   });
+
+  const customers = data?.customers ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   if (customersError) return <div className="py-12 text-center text-destructive">Failed to load customers. Please refresh the page.</div>;
 
@@ -31,7 +41,7 @@ const CustomerList = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">Customers</h1>
-        <p className="text-muted-foreground mt-1">{customers.length} customers</p>
+        <p className="text-muted-foreground mt-1">{total} customers</p>
       </div>
 
       <Card className="border-none shadow-md">
@@ -73,6 +83,22 @@ const CustomerList = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} of {total}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>
+              <ChevronLeft className="h-4 w-4 mr-1" /> Prev
+            </Button>
+            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}>
+              Next <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

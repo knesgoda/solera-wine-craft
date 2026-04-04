@@ -318,6 +318,19 @@ const AlertSettings = () => {
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!deletingRuleId} onOpenChange={(o) => !o && setDeletingRuleId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this alert rule?</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (deletingRuleId) { deleteRule.mutate(deletingRuleId); setDeletingRuleId(null); } }}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

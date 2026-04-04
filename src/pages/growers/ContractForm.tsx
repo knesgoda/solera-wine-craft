@@ -359,8 +359,9 @@ export default function ContractForm() {
     saveMutation.mutate();
   };
 
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const handleCancel = () => {
-    if (dirty && !confirm("You have unsaved changes. Discard them?")) return;
+    if (dirty) { setShowDiscardDialog(true); return; }
     navigate(-1);
   };
 

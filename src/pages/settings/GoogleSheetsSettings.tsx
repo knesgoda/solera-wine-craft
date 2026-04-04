@@ -369,7 +369,7 @@ const GoogleSheetsSettings = () => {
               conn={conn}
               onToggle={(active) => toggleConnection.mutate({ id: conn.id, active })}
               onSync={() => runSync.mutate(conn.id)}
-              onDelete={() => { if (confirm("Remove this connection?")) deleteConnection.mutate(conn.id); }}
+              onDelete={() => setDeletingConnId(conn.id)}
               isSyncing={runSync.isPending}
               moduleLabel={moduleLabel}
               scheduleLabel={scheduleLabel}

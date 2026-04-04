@@ -288,7 +288,7 @@ export default function VesselDetail() {
                 <div key={log.id} className="border border-border rounded-lg p-3 relative">
                   <div className="flex items-start justify-between">
                     <p className="text-sm font-medium text-foreground mb-1">
-                      {format(parseISO(log.logged_at), "MMM d, yyyy h:mm a")}
+                      {format(safeParse(log.logged_at), "MMM d, yyyy h:mm a")}
                     </p>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

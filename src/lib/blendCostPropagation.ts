@@ -232,7 +232,8 @@ export async function reverseBlendCosts(
     .select("id, total_amount")
     .eq("blend_trial_id", blendTrialId)
     .eq("vintage_id", targetVintageId)
-    .eq("status", "active" as any);
+    .eq("status", "active" as any)
+    .eq("org_id", orgId);
 
   if (error) throw error;
   if (!entries || entries.length === 0) return { voidedCount: 0, voidedAmount: 0 };
