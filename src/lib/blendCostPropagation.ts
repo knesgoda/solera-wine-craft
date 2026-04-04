@@ -128,7 +128,7 @@ export async function propagateBlendCosts(
       const transferAmount = Number(source.total_amount) * transferRatio;
       if (transferAmount <= 0) continue;
 
-      const newEntry: any = {
+      const newEntry: Database["public"]["Tables"]["cost_entries"]["Insert"] = {
         org_id: orgId,
         vintage_id: targetVintageId,
         category_id: source.category_id,
