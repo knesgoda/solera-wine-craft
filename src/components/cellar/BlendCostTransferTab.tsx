@@ -51,8 +51,8 @@ export function BlendCostTransferTab({ trialId, targetVintageId }: BlendCostTran
 
   const reverseMutation = useMutation({
     mutationFn: async () => {
-      if (!targetVintageId || !profile?.id) throw new Error("Missing context");
-      return reverseBlendCosts(trialId, targetVintageId, profile.id);
+      if (!targetVintageId || !profile?.id || !organization?.id) throw new Error("Missing context");
+      return reverseBlendCosts(trialId, targetVintageId, profile.id, organization.id);
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["blend-cost-transfers"] });
