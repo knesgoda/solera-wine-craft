@@ -124,7 +124,6 @@ export default function BlogAdmin() {
     });
   };
 
-  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const deletePost = async (id: string) => {
     try {
       await supabase.functions.invoke("verify-admin", {
