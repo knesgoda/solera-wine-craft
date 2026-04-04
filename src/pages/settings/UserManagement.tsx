@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { UserPlus, Users, Ban } from "lucide-react";
 import { TIER_LIMITS, getTierDisplay } from "@/hooks/useTierGate";
@@ -34,6 +35,7 @@ const UserManagement = () => {
   const [open, setOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("member");
+  const [deactivatingUser, setDeactivatingUser] = useState<any>(null);
 
   const { data: users = [] } = useQuery({
     queryKey: ["org-users", orgId],
@@ -62,6 +64,22 @@ const UserManagement = () => {
       setOpen(false);
       setInviteEmail("");
       queryClient.invalidateQueries({ queryKey: ["org-users"] });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const deactivateUser = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ org_id: null } as any)
+        .eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["org-users"] });
+      toast({ title: "User removed", description: "The user has been removed from your organization." });
+      setDeactivatingUser(null);
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
@@ -171,8 +189,13 @@ const UserManagement = () => {
                       {format(new Date(u.created_at), "MMM d, yyyy")}
                     </TableCell>
                     <TableCell>
-                      {u.id !== profile?.id && (
-                        <Button variant="ghost" size="icon" title="Deactivate">
+                      {u.id !== profile?.id && u.role !== "owner" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Remove from organization"
+                          onClick={() => setDeactivatingUser(u)}
+                        >
                           <Ban className="h-4 w-4 text-destructive" />
                         </Button>
                       )}
@@ -184,6 +207,30 @@ const UserManagement = () => {
           </CardContent>
         </Card>
       </div>
+      <AlertDialog open={!!deactivatingUser} onOpenChange={(open) => { if (!open) setDeactivatingUser(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove this user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deactivatingUser && (
+                <>
+                  <strong>{[deactivatingUser.first_name, deactivatingUser.last_name].filter(Boolean).join(" ") || deactivatingUser.email}</strong> will be removed from your organization. They will lose all access immediately. This action can be undone by re-inviting them.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deactivateUser.isPending}
+              onClick={() => deactivatingUser && deactivateUser.mutate(deactivatingUser.id)}
+            >
+              Remove User
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </RoleGate>
   );
 };
