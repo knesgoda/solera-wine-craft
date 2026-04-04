@@ -44,6 +44,7 @@ export async function propagateBlendCosts(
     .from("cost_entries")
     .select("id")
     .eq("blend_trial_id", blendTrialId)
+    .eq("org_id", orgId)
     .limit(1);
 
   if (existing && existing.length > 0) {
