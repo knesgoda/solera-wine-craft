@@ -93,4 +93,5 @@ export const MarketingFooter = React.forwardRef<HTMLElement>(function MarketingF
         </div>
       </div>
     </footer>
+  );
 });
