@@ -225,7 +225,8 @@ export async function previewBlendCosts(
 export async function reverseBlendCosts(
   blendTrialId: string,
   targetVintageId: string,
-  userId: string
+  userId: string,
+  orgId: string
 ): Promise<{ voidedCount: number; voidedAmount: number }> {
   const { data: entries, error } = await supabase
     .from("cost_entries")

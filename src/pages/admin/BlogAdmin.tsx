@@ -54,6 +54,7 @@ export default function BlogAdmin() {
   const [editing, setEditing] = useState<BlogPost | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
   if (!isAtLeast("owner")) {
     return (

@@ -54,6 +54,7 @@ const GoogleSheetsSettings = () => {
   const queryClient = useQueryClient();
 
   const [connectOpen, setConnectOpen] = useState(false);
+  const [deletingConnId, setDeletingConnId] = useState<string | null>(null);
   const [sheetUrl, setSheetUrl] = useState("");
   const [sheetName, setSheetName] = useState("");
   const [tabName, setTabName] = useState("");
