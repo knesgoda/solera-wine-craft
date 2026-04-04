@@ -32,6 +32,7 @@ interface AuthContextType {
   profile: Profile | null;
   organization: Organization | null;
   loading: boolean;
+  authError: string | null;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -42,6 +43,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   organization: null,
   loading: true,
+  authError: null,
   signOut: async () => {},
   refreshProfile: async () => {},
 });
@@ -54,8 +56,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const fetchProfile = async (userId: string) => {
+    setAuthError(null);
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("*")
@@ -64,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (profileError) {
       console.error("fetchProfile error:", profileError.message);
+      setAuthError("Failed to load your profile. Please refresh.");
       return;
     }
 
@@ -84,6 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
         if (orgError) {
           console.error("fetchOrg error:", orgError.message);
+          setAuthError("Failed to load organization data. Please refresh.");
         } else {
           setOrganization(orgData);
           setOrgTimezone(orgData.timezone ?? null);
@@ -124,7 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, organization, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, organization, loading, authError, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
