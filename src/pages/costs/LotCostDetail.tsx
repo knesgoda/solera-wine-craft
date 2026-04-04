@@ -56,7 +56,17 @@ export default function LotCostDetail() {
     if (!vintageId) return;
     setRecalculating(true);
     try {
-      try { await supabase.rpc("recalculate_lot_cost_summary_for_vintage" as any, { p_vintage_id: vintageId }); } catch {}
+      // Touch any active cost entry to trigger the recalculate_lot_cost_summary trigger
+      const { data: entry } = await supabase
+        .from("cost_entries")
+        .select("id")
+        .eq("vintage_id", vintageId)
+        .eq("status", "active")
+        .limit(1)
+        .maybeSingle();
+      if (entry) {
+        await supabase.from("cost_entries").update({ updated_at: new Date().toISOString() }).eq("id", entry.id);
+      }
       queryClient.invalidateQueries({ queryKey: ["lot-cost-summary", vintageId] });
       queryClient.invalidateQueries({ queryKey: ["lot-cost-entries", vintageId] });
       toast.success("COGS recalculated for this lot");

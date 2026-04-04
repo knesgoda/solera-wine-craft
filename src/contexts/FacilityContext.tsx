@@ -49,7 +49,10 @@ export const FacilityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       .eq("parent_org_id", profile.org_id)
       .eq("active", true)
       .order("name")
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Failed to load facilities:", error.message);
+        }
         setFacilities((data as any[]) || []);
         setLoading(false);
       });

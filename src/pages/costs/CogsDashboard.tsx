@@ -43,17 +43,22 @@ export default function CogsDashboard() {
     if (!orgId) return;
     setRecalculating(true);
     try {
+      // The recalculate_lot_cost_summary trigger fires automatically on cost_entries changes.
+      // To force a recalc, we touch each vintage's cost entries with a no-op update.
       const { data: vids } = await supabase.from("vintages").select("id").eq("org_id", orgId);
-      if (!vids || vids.length === 0) { toast.info("No vintages to recalculate"); return; }
-      let done = 0;
+      if (!vids || vids.length === 0) { toast.info("No vintages to recalculate"); setRecalculating(false); return; }
       for (const v of vids) {
-        // Trigger recalc by doing a no-op cost entry touch - the DB trigger handles the rest
-        try {
-          await supabase.rpc("recalculate_lot_cost_summary_for_vintage" as any, { p_vintage_id: v.id });
-        } catch {
-          // RPC may not exist yet; skip silently
+        // Touch any active cost entry to trigger the recalculate_lot_cost_summary trigger
+        const { data: entry } = await supabase
+          .from("cost_entries")
+          .select("id")
+          .eq("vintage_id", v.id)
+          .eq("status", "active")
+          .limit(1)
+          .maybeSingle();
+        if (entry) {
+          await supabase.from("cost_entries").update({ updated_at: new Date().toISOString() }).eq("id", entry.id);
         }
-        done++;
       }
       queryClient.invalidateQueries({ queryKey: ["cogs-per-lot"] });
       queryClient.invalidateQueries({ queryKey: ["lot-cost-summary"] });

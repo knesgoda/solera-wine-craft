@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect } from "react";
 
 export function useNotifications() {
   const { session } = useAuth();
@@ -25,22 +24,8 @@ export function useNotifications() {
 
   const unreadCount = notifications.filter((n: any) => !n.read).length;
 
-  // Realtime subscription
-  useEffect(() => {
-    if (!userId) return;
-    const channel = supabase
-      .channel("notifications-realtime")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["notifications", userId] });
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [userId, queryClient]);
+  // Realtime removed — notifications table is no longer published to realtime.
+  // React Query polling handles freshness via refetchOnWindowFocus.
 
   const markAsRead = useMutation({
     mutationFn: async (notificationId: string) => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -105,17 +105,8 @@ export default function ContractDetail() {
     enabled: !!id,
   });
 
-  // Auto-expire check
-  useEffect(() => {
-    if (contract && contract.status === "active" && contract.delivery_end_date) {
-      const endDate = new Date(contract.delivery_end_date);
-      if (endDate < new Date()) {
-        supabase.from("grower_contracts").update({ status: "expired" as any, updated_at: new Date().toISOString() }).eq("id", id!).then(() => {
-          queryClient.invalidateQueries({ queryKey: ["contract-detail", id] });
-        });
-      }
-    }
-  }, [contract, id, queryClient]);
+  // Auto-expire is now handled by the database trigger (trg_auto_expire_contracts)
+  // No client-side expiry logic needed
 
   const statusMutation = useMutation({
     mutationFn: async (newStatus: string) => {
