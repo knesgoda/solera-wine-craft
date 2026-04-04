@@ -232,7 +232,7 @@ export default function BlogAdmin() {
                 <Button size="sm" variant="ghost" onClick={() => togglePublish(post)}>
                   {post.published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => deletePost(post.id)}>
+                <Button size="sm" variant="ghost" onClick={() => setDeletingPostId(post.id)}>
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>
               </div>
