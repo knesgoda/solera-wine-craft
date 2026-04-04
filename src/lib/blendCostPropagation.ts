@@ -112,7 +112,8 @@ export async function propagateBlendCosts(
     if (!sourceCosts || sourceCosts.length === 0) continue;
 
     sourceLotCount++;
-    const sourceName = `${(comp as any).vintages?.year || ""} ${(comp as any).vintages?.blocks?.name || ""}`.trim();
+    const compWithJoins = comp as BlendingTrialLot & { vintages?: { year?: number; blocks?: { name?: string } } };
+    const sourceName = `${compWithJoins.vintages?.year || ""} ${compWithJoins.vintages?.blocks?.name || ""}`.trim();
 
     for (const source of sourceCosts) {
       // Recursion depth check (max 10 levels)
