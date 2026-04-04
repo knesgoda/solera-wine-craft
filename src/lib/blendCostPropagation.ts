@@ -58,12 +58,14 @@ export async function propagateBlendCosts(
   }
 
   // 2. Load the blending trial and its components
+  // SECURITY: enforce org ownership so callers cannot access other orgs' trials
   const { data: trial, error: trialError } = await supabase
     .from("blending_trials")
     .select("*, vintage_id")
     .eq("id", blendTrialId)
+    .eq("org_id", orgId)
     .single();
-  if (trialError || !trial) throw new Error("Blend trial not found");
+  if (trialError || !trial) throw new Error("Blend trial not found or access denied");
 
   const targetVintageId = trial.vintage_id;
   if (!targetVintageId) throw new Error("Blend trial has no target vintage");
@@ -166,7 +168,7 @@ export async function propagateBlendCosts(
  */
 export async function previewBlendCosts(
   blendTrialId: string,
-  orgId: string
+  orgId: string,
 ): Promise<{
   sources: Array<{
     vintageId: string;
@@ -178,6 +180,15 @@ export async function previewBlendCosts(
   }>;
   grandTotal: number;
 }> {
+  // Verify trial belongs to this org before loading components
+  const { data: trialCheck } = await supabase
+    .from("blending_trials")
+    .select("id")
+    .eq("id", blendTrialId)
+    .eq("org_id", orgId)
+    .maybeSingle();
+  if (!trialCheck) return { sources: [], grandTotal: 0 };
+
   const { data: components } = await supabase
     .from("blending_trial_lots")
     .select("*, vintages(year, blocks(name))")
