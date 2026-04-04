@@ -158,8 +158,13 @@ function SidebarNavGroup({ group, collapsed, currentPath }: { group: NavGroupCon
         <SidebarMenuItem>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center justify-center py-3 opacity-40 cursor-not-allowed">
-                <Lock className="h-5 w-5 text-sidebar-foreground/50" />
+              <div
+                role="button"
+                aria-disabled="true"
+                aria-label={`${groupLabel} — locked. Upgrade to ${tierCheck.requiredTierDisplay} to access.`}
+                className="flex items-center justify-center py-3 opacity-40 cursor-not-allowed"
+              >
+                <Lock className="h-5 w-5 text-sidebar-foreground/50" aria-hidden="true" />
               </div>
             </TooltipTrigger>
             <TooltipContent side="right">Upgrade to {tierCheck.requiredTierDisplay}</TooltipContent>
@@ -193,8 +198,13 @@ function SidebarNavGroup({ group, collapsed, currentPath }: { group: NavGroupCon
       <SidebarGroup>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-2 px-3 py-2 opacity-40 cursor-not-allowed select-none">
-              <Lock className="h-3.5 w-3.5" />
+            <div
+              role="button"
+              aria-disabled="true"
+              aria-label={`${groupLabel} — locked. Upgrade to ${tierCheck.requiredTierDisplay} to access.`}
+              className="flex items-center gap-2 px-3 py-2 opacity-40 cursor-not-allowed select-none"
+            >
+              <Lock className="h-3.5 w-3.5" aria-hidden="true" />
               <span className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">{groupLabel}</span>
             </div>
           </TooltipTrigger>
