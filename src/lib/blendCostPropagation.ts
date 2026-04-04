@@ -1,4 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+type CostEntry = Database["public"]["Tables"]["cost_entries"]["Row"];
+type BlendingTrial = Database["public"]["Tables"]["blending_trials"]["Row"];
+type BlendingTrialLot = Database["public"]["Tables"]["blending_trial_lots"]["Row"];
 
 interface PropagationResult {
   success: boolean;
