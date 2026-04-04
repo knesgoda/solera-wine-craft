@@ -123,8 +123,8 @@ export default function BlogAdmin() {
     });
   };
 
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const deletePost = async (id: string) => {
-    if (!confirm("Delete this post permanently?")) return;
     try {
       await supabase.functions.invoke("verify-admin", {
         body: { password, action: "delete-post", postId: id },
