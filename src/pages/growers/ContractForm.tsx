@@ -19,6 +19,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Loader2, Plus, Trash2, Lock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { GradingScaleBuilder, type GradingScaleForm, type MetricForm } from "@/components/growers/GradingScaleBuilder";
@@ -42,6 +43,7 @@ export default function ContractForm() {
   const { organization, user } = useAuth();
   const queryClient = useQueryClient();
 
+  const [discardOpen, setDiscardOpen] = useState(false);
   // Form state
   const [grower_id, setGrowerId] = useState(prefilledGrowerId);
   const [vintage_year, setVintageYear] = useState(String(currentYear));
@@ -360,7 +362,7 @@ export default function ContractForm() {
   };
 
   const handleCancel = () => {
-    if (dirty && !confirm("You have unsaved changes. Discard them?")) return;
+    if (dirty) { setDiscardOpen(true); return; }
     navigate(-1);
   };
 
@@ -611,6 +613,19 @@ export default function ContractForm() {
           {isEdit ? "Save Changes" : "Create Contract"}
         </Button>
       </div>
+
+      <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>You have unsaved changes. They will be lost if you leave.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate(-1)}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

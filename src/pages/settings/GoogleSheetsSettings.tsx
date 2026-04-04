@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,6 +54,7 @@ const GoogleSheetsSettings = () => {
   const queryClient = useQueryClient();
 
   const [connectOpen, setConnectOpen] = useState(false);
+  const [deletingConnId, setDeletingConnId] = useState<string | null>(null);
   const [sheetUrl, setSheetUrl] = useState("");
   const [sheetName, setSheetName] = useState("");
   const [tabName, setTabName] = useState("");
@@ -368,7 +370,7 @@ const GoogleSheetsSettings = () => {
               conn={conn}
               onToggle={(active) => toggleConnection.mutate({ id: conn.id, active })}
               onSync={() => runSync.mutate(conn.id)}
-              onDelete={() => { if (confirm("Remove this connection?")) deleteConnection.mutate(conn.id); }}
+              onDelete={() => setDeletingConnId(conn.id)}
               isSyncing={runSync.isPending}
               moduleLabel={moduleLabel}
               scheduleLabel={scheduleLabel}
@@ -376,6 +378,18 @@ const GoogleSheetsSettings = () => {
           ))}
         </div>
       )}
+    <AlertDialog open={!!deletingConnId} onOpenChange={(open) => { if (!open) setDeletingConnId(null); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Remove connection?</AlertDialogTitle>
+          <AlertDialogDescription>This will remove the Google Sheets connection. Synced data will not be deleted.</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={() => { deleteConnection.mutate(deletingConnId!); setDeletingConnId(null); }}>Remove</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </div>
   );
 };

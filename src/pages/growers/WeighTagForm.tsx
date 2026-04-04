@@ -20,6 +20,7 @@ import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { SEOHead } from "@/components/SEOHead";
@@ -56,6 +57,7 @@ export default function WeighTagForm() {
   const { organization, user } = useAuth();
   const queryClient = useQueryClient();
 
+  const [discardOpen, setDiscardOpen] = useState(false);
   const [contractId, setContractId] = useState(prefilledContractId);
   const [tagNumber, setTagNumber] = useState("");
   const [deliveryDate, setDeliveryDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -593,7 +595,7 @@ export default function WeighTagForm() {
           <Label htmlFor="record-another" className="text-sm">Record another delivery after save</Label>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={() => { if (dirty && !confirm("Discard changes?")) return; navigate("/growers/intake"); }}>
+          <Button variant="outline" onClick={() => { if (dirty) { setDiscardOpen(true); } else { navigate("/growers/intake"); } }}>
             Cancel
           </Button>
           <Button onClick={async () => { if (await validate()) saveMutation.mutate(); }} disabled={saveMutation.isPending}>
@@ -602,6 +604,19 @@ export default function WeighTagForm() {
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>Your unsaved changes will be lost.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate("/growers/intake")}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

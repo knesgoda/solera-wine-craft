@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { SEOHead } from "@/components/SEOHead";
 import { ArrowLeft, Plus, Pencil, Eye, EyeOff, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import ReactMarkdown from "react-markdown";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useNavigate } from "react-router-dom";
@@ -51,6 +52,7 @@ export default function BlogAdmin() {
   const [password, setPassword] = useState("");
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [editing, setEditing] = useState<BlogPost | null>(null);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -123,7 +125,6 @@ export default function BlogAdmin() {
   };
 
   const deletePost = async (id: string) => {
-    if (!confirm("Delete this post permanently?")) return;
     try {
       await supabase.functions.invoke("verify-admin", {
         body: { password, action: "delete-post", postId: id },
@@ -231,7 +232,7 @@ export default function BlogAdmin() {
                 <Button size="sm" variant="ghost" onClick={() => togglePublish(post)}>
                   {post.published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => deletePost(post.id)}>
+                <Button size="sm" variant="ghost" onClick={() => setDeletingPostId(post.id)}>
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>
               </div>
@@ -339,6 +340,19 @@ function PostEditor({
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!deletingPostId} onOpenChange={(open) => { if (!open) setDeletingPostId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete post permanently?</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { deletePost(deletingPostId!); setDeletingPostId(null); }}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

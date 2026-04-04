@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Bell, ShieldAlert, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
@@ -46,6 +47,7 @@ const AlertSettings = () => {
   const orgId = organization?.id;
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [deletingRuleId, setDeletingRuleId] = useState<string | null>(null);
   const [form, setForm] = useState({
     parameter: "",
     operator: "",
@@ -306,7 +308,7 @@ const AlertSettings = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => { if (confirm("Delete this rule?")) deleteRule.mutate(rule.id); }}
+                    onClick={() => setDeletingRuleId(rule.id)}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
@@ -316,6 +318,18 @@ const AlertSettings = () => {
           ))}
         </div>
       )}
+    <AlertDialog open={!!deletingRuleId} onOpenChange={(open) => { if (!open) setDeletingRuleId(null); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete alert rule?</AlertDialogTitle>
+          <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={() => { deleteRule.mutate(deletingRuleId!); setDeletingRuleId(null); }}>Delete</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </div>
   );
 };
