@@ -153,7 +153,11 @@ export default function VesselDetail() {
     setLogTempF(log.temp_f != null ? String(log.temp_f) : "");
     setLogBrix(log.brix != null ? String(log.brix) : "");
     setLogNotes(log.notes || "");
-    setLoggedAt(parseISO(log.logged_at).toISOString().slice(0, 16));
+    try {
+      setLoggedAt(parseISO(log.logged_at).toISOString().slice(0, 16));
+    } catch {
+      setLoggedAt(new Date().toISOString().slice(0, 16));
+    }
     setShowLogForm(true);
   };
 
@@ -164,11 +168,13 @@ export default function VesselDetail() {
     return <div className="p-6 text-center"><p className="text-muted-foreground">Vessel not found.</p></div>;
   }
 
-  const chartData = logs.map((l: any) => ({
-    date: format(parseISO(l.logged_at), "MM/dd HH:mm"),
-    temp_f: l.temp_f,
-    brix: l.brix,
-  }));
+  const chartData = logs.flatMap((l: any) => {
+    try {
+      return [{ date: format(parseISO(l.logged_at), "MM/dd HH:mm"), temp_f: l.temp_f, brix: l.brix }];
+    } catch {
+      return [];
+    }
+  });
 
   const logsDesc = [...logs].reverse();
 
