@@ -193,8 +193,13 @@ function SidebarNavGroup({ group, collapsed, currentPath }: { group: NavGroupCon
       <SidebarGroup>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-2 px-3 py-2 opacity-40 cursor-not-allowed select-none">
-              <Lock className="h-3.5 w-3.5" />
+            <div
+              className="flex items-center gap-2 px-3 py-2 opacity-40 cursor-not-allowed select-none"
+              role="group"
+              aria-disabled="true"
+              aria-label={`${groupLabel} — locked, upgrade required`}
+            >
+              <Lock className="h-3.5 w-3.5" aria-hidden="true" />
               <span className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">{groupLabel}</span>
             </div>
           </TooltipTrigger>

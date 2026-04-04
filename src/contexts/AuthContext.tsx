@@ -32,6 +32,7 @@ interface AuthContextType {
   profile: Profile | null;
   organization: Organization | null;
   loading: boolean;
+  authError: string | null;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -42,6 +43,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   organization: null,
   loading: true,
+  authError: null,
   signOut: async () => {},
   refreshProfile: async () => {},
 });
@@ -54,8 +56,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const fetchProfile = async (userId: string) => {
+    setAuthError(null);
+
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("*")
@@ -64,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (profileError) {
       console.error("fetchProfile error:", profileError.message);
+      setAuthError(`Failed to load profile: ${profileError.message}`);
       return;
     }
 
@@ -75,7 +81,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         i18n.changeLanguage(profileData.language);
       }
 
-
       if (profileData.org_id) {
         const { data: orgData, error: orgError } = await supabase
           .from("organizations")
@@ -84,6 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
         if (orgError) {
           console.error("fetchOrg error:", orgError.message);
+          setAuthError(`Failed to load organization: ${orgError.message}`);
         } else {
           setOrganization(orgData);
           setOrgTimezone(orgData.timezone ?? null);
@@ -107,6 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setProfile(null);
           setOrganization(null);
+          setAuthError(null);
         }
         setLoading(false);
       }
@@ -121,10 +128,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSession(null);
     setProfile(null);
     setOrganization(null);
+    setAuthError(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, organization, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, organization, loading, authError, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

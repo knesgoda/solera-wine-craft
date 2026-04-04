@@ -19,7 +19,7 @@ interface BlendCostTransferTabProps {
 }
 
 export function BlendCostTransferTab({ trialId, targetVintageId }: BlendCostTransferTabProps) {
-  const { profile } = useAuth();
+  const { profile, organization } = useAuth();
   const queryClient = useQueryClient();
   const [reverseDialogOpen, setReverseDialogOpen] = useState(false);
 
@@ -51,8 +51,8 @@ export function BlendCostTransferTab({ trialId, targetVintageId }: BlendCostTran
 
   const reverseMutation = useMutation({
     mutationFn: async () => {
-      if (!targetVintageId || !profile?.id) throw new Error("Missing context");
-      return reverseBlendCosts(trialId, targetVintageId, profile.id);
+      if (!targetVintageId || !profile?.id || !organization?.id) throw new Error("Missing context");
+      return reverseBlendCosts(trialId, targetVintageId, profile.id, organization.id);
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["blend-cost-transfers"] });

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -70,6 +71,7 @@ export default function WeighTagForm() {
   const [recordAnother, setRecordAnother] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const [duplicateConfirmed, setDuplicateConfirmed] = useState(false);
 
   const { data: activeContracts = [] } = useQuery({
@@ -593,7 +595,7 @@ export default function WeighTagForm() {
           <Label htmlFor="record-another" className="text-sm">Record another delivery after save</Label>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={() => { if (dirty && !confirm("Discard changes?")) return; navigate("/growers/intake"); }}>
+          <Button variant="outline" onClick={() => { if (dirty) { setShowDiscardDialog(true); return; } navigate("/growers/intake"); }}>
             Cancel
           </Button>
           <Button onClick={async () => { if (await validate()) saveMutation.mutate(); }} disabled={saveMutation.isPending}>
@@ -602,6 +604,19 @@ export default function WeighTagForm() {
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>Your unsaved delivery data will be lost.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate("/growers/intake")}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,4 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+type CostEntry = Database["public"]["Tables"]["cost_entries"]["Row"];
+type BlendingTrial = Database["public"]["Tables"]["blending_trials"]["Row"];
+type BlendingTrialLot = Database["public"]["Tables"]["blending_trial_lots"]["Row"];
 
 interface PropagationResult {
   success: boolean;
@@ -44,6 +49,7 @@ export async function propagateBlendCosts(
     .from("cost_entries")
     .select("id")
     .eq("blend_trial_id", blendTrialId)
+    .eq("org_id", orgId)
     .limit(1);
 
   if (existing && existing.length > 0) {
@@ -62,6 +68,7 @@ export async function propagateBlendCosts(
     .from("blending_trials")
     .select("*, vintage_id")
     .eq("id", blendTrialId)
+    .eq("org_id", orgId)
     .single();
   if (trialError || !trial) throw new Error("Blend trial not found");
 
@@ -99,13 +106,14 @@ export async function propagateBlendCosts(
       .from("cost_entries")
       .select("*")
       .eq("vintage_id", comp.vintage_id)
-      .eq("status", "active" as any)
+      .eq("status", "active")
       .eq("org_id", orgId);
     if (costError) throw costError;
     if (!sourceCosts || sourceCosts.length === 0) continue;
 
     sourceLotCount++;
-    const sourceName = `${(comp as any).vintages?.year || ""} ${(comp as any).vintages?.blocks?.name || ""}`.trim();
+    const compWithJoins = comp as BlendingTrialLot & { vintages?: { year?: number; blocks?: { name?: string } } };
+    const sourceName = `${compWithJoins.vintages?.year || ""} ${compWithJoins.vintages?.blocks?.name || ""}`.trim();
 
     for (const source of sourceCosts) {
       // Recursion depth check (max 10 levels)
@@ -120,7 +128,7 @@ export async function propagateBlendCosts(
       const transferAmount = Number(source.total_amount) * transferRatio;
       if (transferAmount <= 0) continue;
 
-      const newEntry: any = {
+      const newEntry: Database["public"]["Tables"]["cost_entries"]["Insert"] = {
         org_id: orgId,
         vintage_id: targetVintageId,
         category_id: source.category_id,
@@ -196,12 +204,13 @@ export async function previewBlendCosts(
       .from("cost_entries")
       .select("total_amount")
       .eq("vintage_id", comp.vintage_id)
-      .eq("status", "active" as any)
+      .eq("status", "active")
       .eq("org_id", orgId);
 
-    const totalCost = (costs || []).reduce((s: number, c: any) => s + Number(c.total_amount), 0);
+    const totalCost = (costs || []).reduce((s: number, c) => s + Number(c.total_amount), 0);
     const transferAmount = Math.round(totalCost * transferRatio * 100) / 100;
-    const vintageName = `${(comp as any).vintages?.year || ""} ${(comp as any).vintages?.blocks?.name || ""}`.trim();
+    const compWithJoins = comp as BlendingTrialLot & { vintages?: { year?: number; blocks?: { name?: string } } };
+    const vintageName = `${compWithJoins.vintages?.year || ""} ${compWithJoins.vintages?.blocks?.name || ""}`.trim();
 
     sources.push({
       vintageId: comp.vintage_id,
@@ -223,14 +232,16 @@ export async function previewBlendCosts(
 export async function reverseBlendCosts(
   blendTrialId: string,
   targetVintageId: string,
-  userId: string
+  userId: string,
+  orgId: string
 ): Promise<{ voidedCount: number; voidedAmount: number }> {
   const { data: entries, error } = await supabase
     .from("cost_entries")
     .select("id, total_amount")
     .eq("blend_trial_id", blendTrialId)
     .eq("vintage_id", targetVintageId)
-    .eq("status", "active" as any);
+    .eq("status", "active")
+    .eq("org_id", orgId);
 
   if (error) throw error;
   if (!entries || entries.length === 0) return { voidedCount: 0, voidedAmount: 0 };
@@ -241,7 +252,7 @@ export async function reverseBlendCosts(
   const { error: updateError } = await supabase
     .from("cost_entries")
     .update({
-      status: "voided" as any,
+      status: "voided",
       voided_at: new Date().toISOString(),
       voided_by: userId,
       void_reason: "Blend cost reversal",

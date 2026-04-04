@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -53,6 +54,7 @@ const GoogleSheetsSettings = () => {
   const queryClient = useQueryClient();
 
   const [connectOpen, setConnectOpen] = useState(false);
+  const [deletingConnId, setDeletingConnId] = useState<string | null>(null);
   const [sheetUrl, setSheetUrl] = useState("");
   const [sheetName, setSheetName] = useState("");
   const [tabName, setTabName] = useState("");
@@ -368,7 +370,7 @@ const GoogleSheetsSettings = () => {
               conn={conn}
               onToggle={(active) => toggleConnection.mutate({ id: conn.id, active })}
               onSync={() => runSync.mutate(conn.id)}
-              onDelete={() => { if (confirm("Remove this connection?")) deleteConnection.mutate(conn.id); }}
+              onDelete={() => setDeletingConnId(conn.id)}
               isSyncing={runSync.isPending}
               moduleLabel={moduleLabel}
               scheduleLabel={scheduleLabel}
@@ -376,6 +378,19 @@ const GoogleSheetsSettings = () => {
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!deletingConnId} onOpenChange={(o) => !o && setDeletingConnId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove this connection?</AlertDialogTitle>
+            <AlertDialogDescription>This will stop syncing data from this Google Sheet.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (deletingConnId) { deleteConnection.mutate(deletingConnId); setDeletingConnId(null); } }}>Remove</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

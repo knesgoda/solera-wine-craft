@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,6 +47,7 @@ const AlertSettings = () => {
   const orgId = organization?.id;
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [deletingRuleId, setDeletingRuleId] = useState<string | null>(null);
   const [form, setForm] = useState({
     parameter: "",
     operator: "",
@@ -306,7 +308,7 @@ const AlertSettings = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => { if (confirm("Delete this rule?")) deleteRule.mutate(rule.id); }}
+                    onClick={() => setDeletingRuleId(rule.id)}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
@@ -316,6 +318,19 @@ const AlertSettings = () => {
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!deletingRuleId} onOpenChange={(o) => !o && setDeletingRuleId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this alert rule?</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (deletingRuleId) { deleteRule.mutate(deletingRuleId); setDeletingRuleId(null); } }}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

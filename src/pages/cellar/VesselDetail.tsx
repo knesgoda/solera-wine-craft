@@ -14,6 +14,17 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, Loader2, Plus, Thermometer, Droplets, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+
+/** Safely parse an ISO date string, falling back to current date on failure */
+const safeParse = (d: string): Date => {
+  try {
+    const parsed = parseISO(d);
+    if (isNaN(parsed.getTime())) return new Date();
+    return parsed;
+  } catch {
+    return new Date();
+  }
+};
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -153,7 +164,7 @@ export default function VesselDetail() {
     setLogTempF(log.temp_f != null ? String(log.temp_f) : "");
     setLogBrix(log.brix != null ? String(log.brix) : "");
     setLogNotes(log.notes || "");
-    setLoggedAt(parseISO(log.logged_at).toISOString().slice(0, 16));
+    setLoggedAt(safeParse(log.logged_at).toISOString().slice(0, 16));
     setShowLogForm(true);
   };
 
@@ -165,7 +176,7 @@ export default function VesselDetail() {
   }
 
   const chartData = logs.map((l: any) => ({
-    date: format(parseISO(l.logged_at), "MM/dd HH:mm"),
+    date: format(safeParse(l.logged_at), "MM/dd HH:mm"),
     temp_f: l.temp_f,
     brix: l.brix,
   }));
@@ -277,7 +288,7 @@ export default function VesselDetail() {
                 <div key={log.id} className="border border-border rounded-lg p-3 relative">
                   <div className="flex items-start justify-between">
                     <p className="text-sm font-medium text-foreground mb-1">
-                      {format(parseISO(log.logged_at), "MMM d, yyyy h:mm a")}
+                      {format(safeParse(log.logged_at), "MMM d, yyyy h:mm a")}
                     </p>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
