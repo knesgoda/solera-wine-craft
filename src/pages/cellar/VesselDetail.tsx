@@ -14,6 +14,17 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, Loader2, Plus, Thermometer, Droplets, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+
+/** Safely parse an ISO date string, falling back to current date on failure */
+const safeParse = (d: string): Date => {
+  try {
+    const parsed = parseISO(d);
+    if (isNaN(parsed.getTime())) return new Date();
+    return parsed;
+  } catch {
+    return new Date();
+  }
+};
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
