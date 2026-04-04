@@ -93,7 +93,8 @@ const ClubDetail = () => {
     try {
       const update: any = { status: newStatus };
       if (newStatus === "cancelled") update.cancelled_at = new Date().toISOString();
-      await supabase.from("club_members").update(update).eq("id", memberId);
+      const { error } = await supabase.from("club_members").update(update).eq("id", memberId);
+      if (error) throw error;
       toast.success(`Member ${newStatus}`);
       qc.invalidateQueries({ queryKey: ["club-members", clubId] });
     } catch (e: any) {

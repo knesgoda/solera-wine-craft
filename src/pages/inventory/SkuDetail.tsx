@@ -83,6 +83,15 @@ const SkuDetail = () => {
       const cd = parseInt(casesDelta) || 0;
       const bd = parseInt(bottlesDelta) || 0;
 
+      if (cd < -9999 || cd > 9999) {
+        toast.error("Case adjustment must be between -9,999 and 9,999");
+        return;
+      }
+      if (bd < -9999 || bd > 9999) {
+        toast.error("Bottle adjustment must be between -9,999 and 9,999");
+        return;
+      }
+
       const { error: adjError } = await supabase.from("inventory_adjustments").insert({
         org_id: orgId,
         sku_id: skuId,
@@ -129,9 +138,18 @@ const SkuDetail = () => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !skuId) return;
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only JPEG, PNG, or WebP images are allowed");
+      return;
+    }
+    if (file.size > 5_000_000) {
+      toast.error("Image must be under 5 MB");
+      return;
+    }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const ext = file.name.split(".").pop() || "jpg";
       const path = `${orgId}/${skuId}.${ext}`;
       const { error: uploadError } = await supabase.storage.from("label-images").upload(path, file, { upsert: true });
       if (uploadError) throw uploadError;

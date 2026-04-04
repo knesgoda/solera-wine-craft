@@ -29,7 +29,7 @@ const ClubList = () => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", description: "", frequency: "quarterly", price: "", bottles: "2", active: true });
 
-  const { data: clubs = [] } = useQuery({
+  const { data: clubs = [], isError: clubsError } = useQuery({
     queryKey: ["wine-clubs", orgId],
     queryFn: async () => {
       const { data, error } = await supabase.from("wine_clubs").select("*").eq("org_id", orgId!).order("created_at", { ascending: false });
@@ -41,6 +41,16 @@ const ClubList = () => {
 
   const handleCreate = async () => {
     if (!orgId || !form.name) return;
+    const price = parseFloat(form.price);
+    if (isNaN(price) || price < 0) {
+      toast.error("Price must be a valid non-negative number");
+      return;
+    }
+    const bottles = parseInt(form.bottles);
+    if (!bottles || bottles < 1) {
+      toast.error("Bottles per shipment must be at least 1");
+      return;
+    }
     setSaving(true);
     try {
       const { error } = await supabase.from("wine_clubs").insert({
@@ -48,8 +58,8 @@ const ClubList = () => {
         name: form.name,
         description: form.description || null,
         frequency: form.frequency as any,
-        price_per_shipment: parseFloat(form.price) || 0,
-        bottles_per_shipment: parseInt(form.bottles) || 2,
+        price_per_shipment: price,
+        bottles_per_shipment: bottles,
         active: form.active,
       });
       if (error) throw error;
@@ -63,6 +73,8 @@ const ClubList = () => {
       setSaving(false);
     }
   };
+
+  if (clubsError) return <div className="py-12 text-center text-destructive">Failed to load wine clubs. Please refresh the page.</div>;
 
   return (
     <div className="space-y-6">
