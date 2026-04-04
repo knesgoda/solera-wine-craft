@@ -204,12 +204,13 @@ export async function previewBlendCosts(
       .from("cost_entries")
       .select("total_amount")
       .eq("vintage_id", comp.vintage_id)
-      .eq("status", "active" as any)
+      .eq("status", "active")
       .eq("org_id", orgId);
 
-    const totalCost = (costs || []).reduce((s: number, c: any) => s + Number(c.total_amount), 0);
+    const totalCost = (costs || []).reduce((s: number, c) => s + Number(c.total_amount), 0);
     const transferAmount = Math.round(totalCost * transferRatio * 100) / 100;
-    const vintageName = `${(comp as any).vintages?.year || ""} ${(comp as any).vintages?.blocks?.name || ""}`.trim();
+    const compWithJoins = comp as BlendingTrialLot & { vintages?: { year?: number; blocks?: { name?: string } } };
+    const vintageName = `${compWithJoins.vintages?.year || ""} ${compWithJoins.vintages?.blocks?.name || ""}`.trim();
 
     sources.push({
       vintageId: comp.vintage_id,
