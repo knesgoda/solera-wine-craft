@@ -106,7 +106,7 @@ export async function propagateBlendCosts(
       .from("cost_entries")
       .select("*")
       .eq("vintage_id", comp.vintage_id)
-      .eq("status", "active" as any)
+      .eq("status", "active")
       .eq("org_id", orgId);
     if (costError) throw costError;
     if (!sourceCosts || sourceCosts.length === 0) continue;
