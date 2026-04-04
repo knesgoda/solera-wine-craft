@@ -595,7 +595,7 @@ export default function WeighTagForm() {
           <Label htmlFor="record-another" className="text-sm">Record another delivery after save</Label>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={() => { if (dirty && !confirm("Discard changes?")) return; navigate("/growers/intake"); }}>
+          <Button variant="outline" onClick={() => { if (dirty) { setShowDiscardDialog(true); return; } navigate("/growers/intake"); }}>
             Cancel
           </Button>
           <Button onClick={async () => { if (await validate()) saveMutation.mutate(); }} disabled={saveMutation.isPending}>
