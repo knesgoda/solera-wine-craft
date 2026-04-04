@@ -63,6 +63,7 @@ export async function propagateBlendCosts(
     .from("blending_trials")
     .select("*, vintage_id")
     .eq("id", blendTrialId)
+    .eq("org_id", orgId)
     .single();
   if (trialError || !trial) throw new Error("Blend trial not found");
 
