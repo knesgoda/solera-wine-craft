@@ -176,7 +176,7 @@ export default function VesselDetail() {
   }
 
   const chartData = logs.map((l: any) => ({
-    date: format(parseISO(l.logged_at), "MM/dd HH:mm"),
+    date: format(safeParse(l.logged_at), "MM/dd HH:mm"),
     temp_f: l.temp_f,
     brix: l.brix,
   }));
