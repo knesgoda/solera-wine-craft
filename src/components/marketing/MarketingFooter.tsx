@@ -44,7 +44,7 @@ const COLUMNS = [
 
 export const MarketingFooter = React.forwardRef<HTMLElement>(function MarketingFooter(_, ref) {
   return (
-    <footer className="bg-primary text-primary-foreground">
+    <footer ref={ref} className="bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 lg:px-8 py-16">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand column */}
