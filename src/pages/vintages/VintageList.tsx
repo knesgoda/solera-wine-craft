@@ -38,7 +38,7 @@ export default function VintageList() {
   const [sortBy, setSortBy] = useState<SortKey>("year");
   const [sortAsc, setSortAsc] = useState(false);
 
-  const { data: vintages = [], isLoading } = useQuery({
+  const { data: vintages = [], isLoading, isError: vintagesError } = useQuery({
     queryKey: ["vintages", organization?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -64,6 +64,8 @@ export default function VintageList() {
     else if (sortBy === "harvest_date") cmp = (a.harvest_date || "").localeCompare(b.harvest_date || "");
     return sortAsc ? cmp : -cmp;
   });
+
+  if (vintagesError) return <div className="py-12 text-center text-destructive">Failed to load vintages. Please refresh the page.</div>;
 
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto pb-24 md:pb-6">

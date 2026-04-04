@@ -43,6 +43,7 @@ export default function VintageDetail() {
   const [deletingSampleId, setDeletingSampleId] = useState<string | null>(null);
   const [isEditingVintage, setIsEditingVintage] = useState(false);
   const [showDeleteVintage, setShowDeleteVintage] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [editHarvestDate, setEditHarvestDate] = useState<Date | undefined>(undefined);
   const [editTons, setEditTons] = useState("");
   const [editNotes, setEditNotes] = useState("");
@@ -177,9 +178,8 @@ export default function VintageDetail() {
   const handleStatusChange = (newStatus: string) => {
     const newIdx = statusOrder.indexOf(newStatus);
     if (newIdx < currentIdx) {
-      if (!confirm(`Move this vintage back to "${statusLabels[newStatus]}"? This will reverse its status timeline.`)) {
-        return;
-      }
+      setPendingStatus(newStatus);
+      return;
     }
     updateStatus.mutate(newStatus);
   };
@@ -442,6 +442,23 @@ export default function VintageDetail() {
             >
               {deleteSample.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!pendingStatus} onOpenChange={(open) => { if (!open) setPendingStatus(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reverse vintage status?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Move this vintage back to &ldquo;{pendingStatus ? statusLabels[pendingStatus] : ""}&rdquo;? This will reverse its status timeline.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (pendingStatus) { updateStatus.mutate(pendingStatus); setPendingStatus(null); } }}>
+              Confirm
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

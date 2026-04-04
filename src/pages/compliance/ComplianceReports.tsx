@@ -21,7 +21,9 @@ const WINE_TYPES = [
   { value: "other", label: "Other" },
 ] as const;
 
+/** TTB standard: 1 ton of grapes yields approximately 170 gallons of wine */
 const TONS_TO_GALLONS = 170;
+/** TTB standard: 1 standard case (12 × 750 ml bottles) = 2.378 gallons */
 const CASE_TO_GALLONS = 2.378;
 
 interface WineOps {
@@ -82,6 +84,10 @@ export default function ComplianceReports() {
 
   const autoCalculate = async () => {
     if (!profile?.org_id || !periodStart || !periodEnd) return;
+    if (new Date(periodEnd) < new Date(periodStart)) {
+      toast.error("End date must be on or after the start date");
+      return;
+    }
     setCalculating(true);
 
     // Get produced gallons from vintages harvested in period
@@ -174,6 +180,10 @@ export default function ComplianceReports() {
 
   const handleSaveReport = async () => {
     if (!profile?.org_id || !periodStart || !periodEnd) return;
+    if (new Date(periodEnd) < new Date(periodStart)) {
+      toast.error("End date must be on or after the start date");
+      return;
+    }
     if (!validate()) return;
     setSaving(true);
 

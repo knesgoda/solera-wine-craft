@@ -11,7 +11,7 @@ const CustomerList = () => {
   const { organization } = useAuth();
   const orgId = organization?.id;
 
-  const { data: customers = [] } = useQuery({
+  const { data: customers = [], isError: customersError } = useQuery({
     queryKey: ["customers", orgId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -24,6 +24,8 @@ const CustomerList = () => {
     },
     enabled: !!orgId,
   });
+
+  if (customersError) return <div className="py-12 text-center text-destructive">Failed to load customers. Please refresh the page.</div>;
 
   return (
     <div className="space-y-6">

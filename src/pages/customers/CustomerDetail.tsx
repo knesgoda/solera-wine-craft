@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,11 +29,14 @@ const CustomerDetail = () => {
     queryFn: async () => {
       const { data, error } = await supabase.from("customers").select("*").eq("id", customerId!).single();
       if (error) throw error;
-      setNotes((data as any).notes || "");
       return data as any;
     },
     enabled: !!customerId,
   });
+
+  useEffect(() => {
+    if (customer) setNotes(customer.notes || "");
+  }, [customer]);
 
   const { data: orders = [] } = useQuery({
     queryKey: ["customer-orders", customerId],

@@ -20,7 +20,7 @@ const Dashboard = () => {
   const orgId = organization?.id;
   const [showPrimeBlocks, setShowPrimeBlocks] = useState(false);
 
-  const { data: activeVintages = 0 } = useQuery({
+  const { data: activeVintages = 0, isLoading: vintagesLoading } = useQuery({
     queryKey: ["dashboard-active-vintages", orgId],
     queryFn: async () => {
       const { count, error } = await supabase
@@ -36,7 +36,7 @@ const Dashboard = () => {
 
   const { data: primeBlocks = [] } = usePrimeWindowBlocks();
 
-  const { data: inventoryStats } = useQuery({
+  const { data: inventoryStats, isLoading: inventoryLoading } = useQuery({
     queryKey: ["dashboard-inventory", orgId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -55,7 +55,7 @@ const Dashboard = () => {
     enabled: !!orgId,
   });
 
-  const { data: tasksDue = 0 } = useQuery({
+  const { data: tasksDue = 0, isLoading: tasksLoading } = useQuery({
     queryKey: ["dashboard-tasks-due", orgId],
     queryFn: async () => {
       const sevenDays = format(addDays(new Date(), 7), "yyyy-MM-dd");
@@ -72,11 +72,11 @@ const Dashboard = () => {
   });
 
   const stats = [
-    { title: "Active Vintages", value: activeVintages, icon: Wine, link: "/vintages", color: "text-primary" },
+    { title: "Active Vintages", value: vintagesLoading ? "—" : activeVintages, icon: Wine, link: "/vintages", color: "text-primary" },
     { title: "Prime Pick Windows", value: primeBlocks.length, icon: Calendar, color: "text-secondary", onClick: () => primeBlocks.length > 0 && setShowPrimeBlocks(true) },
-    { title: "Tasks Due", value: tasksDue, icon: CheckSquare, link: "/tasks", color: "text-secondary" },
-    { title: "Cases On Hand", value: inventoryStats?.totalCases ?? 0, icon: Package, link: "/inventory", color: "text-primary" },
-    { title: "Inventory Value", value: `$${(inventoryStats?.totalValue ?? 0).toLocaleString()}`, icon: DollarSign, link: "/inventory", color: "text-secondary" },
+    { title: "Tasks Due", value: tasksLoading ? "—" : tasksDue, icon: CheckSquare, link: "/tasks", color: "text-secondary" },
+    { title: "Cases On Hand", value: inventoryLoading ? "—" : (inventoryStats?.totalCases ?? 0), icon: Package, link: "/inventory", color: "text-primary" },
+    { title: "Inventory Value", value: inventoryLoading ? "—" : `$${(inventoryStats?.totalValue ?? 0).toLocaleString()}`, icon: DollarSign, link: "/inventory", color: "text-secondary" },
   ];
 
   return (

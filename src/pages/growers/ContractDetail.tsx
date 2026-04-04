@@ -190,7 +190,14 @@ export default function ContractDetail() {
         wt.total_price_adjustment, wt.final_price_per_unit, wt.total_value, wt.status,
       ];
     });
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const escapeCSV = (val: unknown) => {
+      const s = String(val ?? "");
+      if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+        return `"${s.replace(/"/g, '""')}"`;
+      }
+      return s;
+    };
+    const csv = [headers, ...rows].map((r) => r.map(escapeCSV).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

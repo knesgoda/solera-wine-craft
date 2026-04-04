@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
@@ -53,6 +54,7 @@ const BlockDetail = () => {
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState(emptyEditForm);
+  const [deleteBlockOpen, setDeleteBlockOpen] = useState(false);
 
   const { data: block, isLoading } = useQuery({
     queryKey: ["block", blockId],
@@ -156,7 +158,7 @@ const BlockDetail = () => {
           <Button variant="ghost" size="icon" onClick={startEdit}>
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this block?")) deleteBlock.mutate(); }}>
+          <Button variant="ghost" size="icon" onClick={() => setDeleteBlockOpen(true)}>
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
@@ -264,6 +266,27 @@ const BlockDetail = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteBlockOpen} onOpenChange={setDeleteBlockOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this block?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <strong>{block.name}</strong>. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteBlock.isPending}
+              onClick={() => deleteBlock.mutate()}
+            >
+              Delete Block
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

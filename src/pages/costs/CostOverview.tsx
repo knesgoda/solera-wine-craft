@@ -44,6 +44,9 @@ export default function CostOverview() {
   const [page, setPage] = useState(0);
   const [voidingEntry, setVoidingEntry] = useState<any>(null);
   const [voidReason, setVoidReason] = useState("");
+  const [editingEntry, setEditingEntry] = useState<any>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editDescription, setEditDescription] = useState("");
   const pageSize = 50;
 
   const { data: summaryData } = useQuery({
@@ -125,6 +128,25 @@ export default function CostOverview() {
       return { entries: data as any[], total: count || 0 };
     },
     enabled: !!orgId,
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async ({ id, amount, description }: { id: string; amount: number; description: string }) => {
+      const { error } = await supabase
+        .from("cost_entries")
+        .update({ total_amount: amount, description } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cost-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["cost-summary-ytd"] });
+      toast.success("Cost entry updated");
+      setEditingEntry(null);
+      setEditAmount("");
+      setEditDescription("");
+    },
+    onError: (err: any) => toast.error(err.message),
   });
 
   const voidMutation = useMutation({
@@ -285,7 +307,17 @@ export default function CostOverview() {
                     <TableCell>
                       <div className="flex gap-1">
                         {entry.status === "active" && entry.method === "ad_hoc" && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8" title="Edit">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            title="Edit"
+                            onClick={() => {
+                              setEditingEntry(entry);
+                              setEditAmount(String(entry.total_amount));
+                              setEditDescription(entry.description || "");
+                            }}
+                          >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
                         )}
@@ -318,6 +350,49 @@ export default function CostOverview() {
       )}
 
       <AddCostDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
+
+      {/* Edit ad-hoc cost entry */}
+      <Dialog
+        open={!!editingEntry}
+        onOpenChange={(open) => { if (!open) { setEditingEntry(null); setEditAmount(""); setEditDescription(""); } }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Cost Entry</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Amount ($)</label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={editAmount}
+                onChange={(e) => setEditAmount(e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Description</label>
+              <Textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Describe this cost…"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingEntry(null)}>Cancel</Button>
+            <Button
+              disabled={!editAmount || isNaN(Number(editAmount)) || Number(editAmount) < 0 || editMutation.isPending}
+              onClick={() => editingEntry && editMutation.mutate({ id: editingEntry.id, amount: Number(editAmount), description: editDescription })}
+            >
+              {editMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Void confirmation */}
       <AlertDialog open={!!voidingEntry} onOpenChange={(open) => { if (!open) { setVoidingEntry(null); setVoidReason(""); } }}>
