@@ -19,7 +19,7 @@ interface BlendCostTransferTabProps {
 }
 
 export function BlendCostTransferTab({ trialId, targetVintageId }: BlendCostTransferTabProps) {
-  const { profile } = useAuth();
+  const { profile, organization } = useAuth();
   const queryClient = useQueryClient();
   const [reverseDialogOpen, setReverseDialogOpen] = useState(false);
 
