@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, ChevronRight, MapPin, Trash2, CloudSun, Grid3x3, Pencil, Loader2 } from "lucide-react";
@@ -46,6 +47,7 @@ const VineyardDetail = () => {
   const [form, setForm] = useState(emptyBlock);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", region: "", coordinates: "", acres: "" });
+  const [deleteVineyardOpen, setDeleteVineyardOpen] = useState(false);
 
   const { data: vineyard, isLoading: loadingVineyard } = useQuery({
     queryKey: ["vineyard", vineyardId],
@@ -234,7 +236,7 @@ const VineyardDetail = () => {
               </form>
             </DialogContent>
           </Dialog>
-          <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this vineyard and all its blocks?")) deleteVineyard.mutate(); }}>
+          <Button variant="ghost" size="icon" onClick={() => setDeleteVineyardOpen(true)}>
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
@@ -327,6 +329,27 @@ const VineyardDetail = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteVineyardOpen} onOpenChange={setDeleteVineyardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this vineyard?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <strong>{vineyard?.name}</strong> and all its blocks. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteVineyard.isPending}
+              onClick={() => deleteVineyard.mutate()}
+            >
+              Delete Vineyard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

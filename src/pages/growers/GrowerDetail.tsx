@@ -15,6 +15,7 @@ import {
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Loader2, Pencil, Plus, Trash2, Phone, Mail, MapPin, FileText, Scale as ScaleIcon } from "lucide-react";
 import { GrowerDialog } from "@/components/growers/GrowerDialog";
 import { SEOHead } from "@/components/SEOHead";
@@ -67,6 +68,7 @@ export default function GrowerDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [contactForm, setContactForm] = useState<{ name: string; role: string; email: string; phone: string } | null>(null);
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  const [deleteGrowerOpen, setDeleteGrowerOpen] = useState(false);
 
   const { data: grower, isLoading } = useQuery({
     queryKey: ["grower", id],
@@ -208,7 +210,7 @@ export default function GrowerDetail() {
             <Pencil className="mr-2 h-4 w-4" /> Edit Grower
           </Button>
           {canDeleteGrower ? (
-            <Button variant="destructive" size="sm" onClick={() => { if (confirm("Delete this grower permanently?")) deleteGrowerMutation.mutate(); }}>
+            <Button variant="destructive" size="sm" onClick={() => setDeleteGrowerOpen(true)}>
               <Trash2 className="mr-1 h-3 w-3" /> Delete
             </Button>
           ) : null}
@@ -501,6 +503,27 @@ export default function GrowerDetail() {
       </Tabs>
 
       <GrowerDialog open={editOpen} onOpenChange={setEditOpen} grower={grower} />
+
+      <AlertDialog open={deleteGrowerOpen} onOpenChange={setDeleteGrowerOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this grower?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <strong>{grower.name}</strong> and all associated records. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteGrowerMutation.isPending}
+              onClick={() => deleteGrowerMutation.mutate()}
+            >
+              Delete Grower
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
