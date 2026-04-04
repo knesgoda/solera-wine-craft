@@ -378,6 +378,19 @@ const GoogleSheetsSettings = () => {
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!deletingConnId} onOpenChange={(o) => !o && setDeletingConnId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove this connection?</AlertDialogTitle>
+            <AlertDialogDescription>This will stop syncing data from this Google Sheet.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (deletingConnId) { deleteConnection.mutate(deletingConnId); setDeletingConnId(null); } }}>Remove</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
