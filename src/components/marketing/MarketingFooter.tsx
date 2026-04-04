@@ -42,7 +42,7 @@ const COLUMNS = [
   },
 ];
 
-export function MarketingFooter() {
+export const MarketingFooter = React.forwardRef<HTMLElement>(function MarketingFooter(_, ref) {
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 lg:px-8 py-16">
