@@ -783,6 +783,7 @@ export type Database = {
           drainage: string | null
           elevation_ft: number | null
           exposure: string | null
+          external_block_id: string | null
           id: string
           irrigation: string | null
           lifecycle_stage:
@@ -809,6 +810,7 @@ export type Database = {
           drainage?: string | null
           elevation_ft?: number | null
           exposure?: string | null
+          external_block_id?: string | null
           id?: string
           irrigation?: string | null
           lifecycle_stage?:
@@ -835,6 +837,7 @@ export type Database = {
           drainage?: string | null
           elevation_ft?: number | null
           exposure?: string | null
+          external_block_id?: string | null
           id?: string
           irrigation?: string | null
           lifecycle_stage?:
@@ -1877,6 +1880,7 @@ export type Database = {
           capacity_liters: number | null
           created_at: string
           current_fill_gal: number | null
+          external_vessel_id: string | null
           facility_id: string | null
           id: string
           location: string | null
@@ -1895,6 +1899,7 @@ export type Database = {
           capacity_liters?: number | null
           created_at?: string
           current_fill_gal?: number | null
+          external_vessel_id?: string | null
           facility_id?: string | null
           id?: string
           location?: string | null
@@ -1913,6 +1918,7 @@ export type Database = {
           capacity_liters?: number | null
           created_at?: string
           current_fill_gal?: number | null
+          external_vessel_id?: string | null
           facility_id?: string | null
           id?: string
           location?: string | null
@@ -2215,23 +2221,30 @@ export type Database = {
       }
       grower_contracts: {
         Row: {
+          approval_status: string | null
+          ava: string | null
           base_price_per_unit: number
           contract_number: string | null
+          contract_type: string | null
           created_at: string
           created_by: string | null
           delivery_end_date: string | null
           delivery_start_date: string | null
           estimated_acres: number | null
           estimated_tons: number | null
+          external_contract_id: string | null
           grower_id: string
           id: string
           max_tons: number | null
           min_tons: number | null
           notes: string | null
           org_id: string
+          payment_due_date: string | null
+          payment_status: string | null
           payment_term: Database["public"]["Enums"]["payment_term"]
           payment_term_custom_days: number | null
           pricing_unit: Database["public"]["Enums"]["contract_pricing_unit"]
+          source_vineyard_name: string | null
           special_terms: string | null
           status: Database["public"]["Enums"]["contract_status"]
           total_contract_value: number | null
@@ -2241,23 +2254,30 @@ export type Database = {
           vintage_year: number
         }
         Insert: {
+          approval_status?: string | null
+          ava?: string | null
           base_price_per_unit: number
           contract_number?: string | null
+          contract_type?: string | null
           created_at?: string
           created_by?: string | null
           delivery_end_date?: string | null
           delivery_start_date?: string | null
           estimated_acres?: number | null
           estimated_tons?: number | null
+          external_contract_id?: string | null
           grower_id: string
           id?: string
           max_tons?: number | null
           min_tons?: number | null
           notes?: string | null
           org_id: string
+          payment_due_date?: string | null
+          payment_status?: string | null
           payment_term?: Database["public"]["Enums"]["payment_term"]
           payment_term_custom_days?: number | null
           pricing_unit?: Database["public"]["Enums"]["contract_pricing_unit"]
+          source_vineyard_name?: string | null
           special_terms?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
           total_contract_value?: number | null
@@ -2267,23 +2287,30 @@ export type Database = {
           vintage_year: number
         }
         Update: {
+          approval_status?: string | null
+          ava?: string | null
           base_price_per_unit?: number
           contract_number?: string | null
+          contract_type?: string | null
           created_at?: string
           created_by?: string | null
           delivery_end_date?: string | null
           delivery_start_date?: string | null
           estimated_acres?: number | null
           estimated_tons?: number | null
+          external_contract_id?: string | null
           grower_id?: string
           id?: string
           max_tons?: number | null
           min_tons?: number | null
           notes?: string | null
           org_id?: string
+          payment_due_date?: string | null
+          payment_status?: string | null
           payment_term?: Database["public"]["Enums"]["payment_term"]
           payment_term_custom_days?: number | null
           pricing_unit?: Database["public"]["Enums"]["contract_pricing_unit"]
+          source_vineyard_name?: string | null
           special_terms?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
           total_contract_value?: number | null
@@ -2456,6 +2483,174 @@ export type Database = {
             columns: ["vintage_id"]
             isOneToOne: false
             referencedRelation: "vintages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      harvest_predictions: {
+        Row: {
+          block_id: string | null
+          block_name: string | null
+          brix_per_day: number | null
+          clone: string | null
+          confidence: string | null
+          created_at: string
+          current_brix: number | null
+          current_ph: number | null
+          current_ta: number | null
+          days_to_target: number | null
+          external_prediction_id: string | null
+          gdd_at_prediction: number | null
+          id: string
+          last_updated: string | null
+          notes: string | null
+          org_id: string
+          predicted_pick_date: string | null
+          rootstock: string | null
+          target_brix: number | null
+          updated_at: string
+          variety: string | null
+          vintage_year: number | null
+        }
+        Insert: {
+          block_id?: string | null
+          block_name?: string | null
+          brix_per_day?: number | null
+          clone?: string | null
+          confidence?: string | null
+          created_at?: string
+          current_brix?: number | null
+          current_ph?: number | null
+          current_ta?: number | null
+          days_to_target?: number | null
+          external_prediction_id?: string | null
+          gdd_at_prediction?: number | null
+          id?: string
+          last_updated?: string | null
+          notes?: string | null
+          org_id: string
+          predicted_pick_date?: string | null
+          rootstock?: string | null
+          target_brix?: number | null
+          updated_at?: string
+          variety?: string | null
+          vintage_year?: number | null
+        }
+        Update: {
+          block_id?: string | null
+          block_name?: string | null
+          brix_per_day?: number | null
+          clone?: string | null
+          confidence?: string | null
+          created_at?: string
+          current_brix?: number | null
+          current_ph?: number | null
+          current_ta?: number | null
+          days_to_target?: number | null
+          external_prediction_id?: string | null
+          gdd_at_prediction?: number | null
+          id?: string
+          last_updated?: string | null
+          notes?: string | null
+          org_id?: string
+          predicted_pick_date?: string | null
+          rootstock?: string | null
+          target_brix?: number | null
+          updated_at?: string
+          variety?: string | null
+          vintage_year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "harvest_predictions_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "harvest_predictions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      harvest_progress: {
+        Row: {
+          acres: number | null
+          block_id: string | null
+          block_name: string | null
+          brix_at_pick: number | null
+          clone: string | null
+          created_at: string
+          expected_tons: number | null
+          external_progress_id: string | null
+          harvest_complete: boolean | null
+          id: string
+          notes: string | null
+          org_id: string
+          pick_date: string | null
+          rootstock: string | null
+          tons_harvested: number | null
+          updated_at: string
+          variety: string | null
+          vintage_year: number | null
+        }
+        Insert: {
+          acres?: number | null
+          block_id?: string | null
+          block_name?: string | null
+          brix_at_pick?: number | null
+          clone?: string | null
+          created_at?: string
+          expected_tons?: number | null
+          external_progress_id?: string | null
+          harvest_complete?: boolean | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          pick_date?: string | null
+          rootstock?: string | null
+          tons_harvested?: number | null
+          updated_at?: string
+          variety?: string | null
+          vintage_year?: number | null
+        }
+        Update: {
+          acres?: number | null
+          block_id?: string | null
+          block_name?: string | null
+          brix_at_pick?: number | null
+          clone?: string | null
+          created_at?: string
+          expected_tons?: number | null
+          external_progress_id?: string | null
+          harvest_complete?: boolean | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          pick_date?: string | null
+          rootstock?: string | null
+          tons_harvested?: number | null
+          updated_at?: string
+          variety?: string | null
+          vintage_year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "harvest_progress_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "harvest_progress_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2784,8 +2979,10 @@ export type Database = {
       lab_samples: {
         Row: {
           alcohol: number | null
+          block_id: string | null
           brix: number | null
           created_at: string
+          external_sample_id: string | null
           gdd_cumulative: number | null
           id: string
           notes: string | null
@@ -2802,8 +2999,10 @@ export type Database = {
         }
         Insert: {
           alcohol?: number | null
+          block_id?: string | null
           brix?: number | null
           created_at?: string
+          external_sample_id?: string | null
           gdd_cumulative?: number | null
           id?: string
           notes?: string | null
@@ -2820,8 +3019,10 @@ export type Database = {
         }
         Update: {
           alcohol?: number | null
+          block_id?: string | null
           brix?: number | null
           created_at?: string
+          external_sample_id?: string | null
           gdd_cumulative?: number | null
           id?: string
           notes?: string | null
@@ -2837,6 +3038,13 @@ export type Database = {
           vintage_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "lab_samples_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "blocks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lab_samples_vintage_id_fkey"
             columns: ["vintage_id"]
@@ -3190,6 +3398,105 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pick_windows: {
+        Row: {
+          block_id: string | null
+          block_name: string | null
+          brix_per_day: number | null
+          clone: string | null
+          created_at: string
+          current_brix: number | null
+          current_ph: number | null
+          current_ta: number | null
+          days_to_window_close: number | null
+          days_to_window_open: number | null
+          external_window_id: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          rootstock: string | null
+          target_brix_high: number | null
+          target_brix_low: number | null
+          target_ph_high: number | null
+          target_ph_low: number | null
+          updated_at: string
+          urgency: string | null
+          variety: string | null
+          window_close_date: string | null
+          window_open_date: string | null
+          window_status: string | null
+        }
+        Insert: {
+          block_id?: string | null
+          block_name?: string | null
+          brix_per_day?: number | null
+          clone?: string | null
+          created_at?: string
+          current_brix?: number | null
+          current_ph?: number | null
+          current_ta?: number | null
+          days_to_window_close?: number | null
+          days_to_window_open?: number | null
+          external_window_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          rootstock?: string | null
+          target_brix_high?: number | null
+          target_brix_low?: number | null
+          target_ph_high?: number | null
+          target_ph_low?: number | null
+          updated_at?: string
+          urgency?: string | null
+          variety?: string | null
+          window_close_date?: string | null
+          window_open_date?: string | null
+          window_status?: string | null
+        }
+        Update: {
+          block_id?: string | null
+          block_name?: string | null
+          brix_per_day?: number | null
+          clone?: string | null
+          created_at?: string
+          current_brix?: number | null
+          current_ph?: number | null
+          current_ta?: number | null
+          days_to_window_close?: number | null
+          days_to_window_open?: number | null
+          external_window_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          rootstock?: string | null
+          target_brix_high?: number | null
+          target_brix_low?: number | null
+          target_ph_high?: number | null
+          target_ph_low?: number | null
+          updated_at?: string
+          urgency?: string | null
+          variety?: string | null
+          window_close_date?: string | null
+          window_open_date?: string | null
+          window_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pick_windows_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pick_windows_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -3704,6 +4011,7 @@ export type Database = {
           category: string | null
           created_at: string
           due_date: string | null
+          external_task_id: string | null
           gps_lat: number | null
           gps_lng: number | null
           id: string
@@ -3712,6 +4020,7 @@ export type Database = {
           org_id: string
           photos: string[] | null
           priority: string | null
+          source_reference: string | null
           status: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at: string
@@ -3723,6 +4032,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           due_date?: string | null
+          external_task_id?: string | null
           gps_lat?: number | null
           gps_lng?: number | null
           id?: string
@@ -3731,6 +4041,7 @@ export type Database = {
           org_id: string
           photos?: string[] | null
           priority?: string | null
+          source_reference?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at?: string
@@ -3742,6 +4053,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           due_date?: string | null
+          external_task_id?: string | null
           gps_lat?: number | null
           gps_lng?: number | null
           id?: string
@@ -3750,6 +4062,7 @@ export type Database = {
           org_id?: string
           photos?: string[] | null
           priority?: string | null
+          source_reference?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           title?: string
           updated_at?: string
@@ -4137,6 +4450,8 @@ export type Database = {
           client_org_id: string | null
           clone: string | null
           created_at: string
+          external_lot_id: string | null
+          external_vintage_id: string | null
           fermentation_start: string | null
           gallons: number | null
           harvest_date: string | null
@@ -4162,6 +4477,8 @@ export type Database = {
           client_org_id?: string | null
           clone?: string | null
           created_at?: string
+          external_lot_id?: string | null
+          external_vintage_id?: string | null
           fermentation_start?: string | null
           gallons?: number | null
           harvest_date?: string | null
@@ -4187,6 +4504,8 @@ export type Database = {
           client_org_id?: string | null
           clone?: string | null
           created_at?: string
+          external_lot_id?: string | null
+          external_vintage_id?: string | null
           fermentation_start?: string | null
           gallons?: number | null
           harvest_date?: string | null
