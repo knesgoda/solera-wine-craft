@@ -104,31 +104,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Bootstrap: restore session from storage first
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id).finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
-    });
+    let initialLoad = true;
 
-    // Subscribe to future auth changes (fire-and-forget, no await)
+    // Subscribe first — onAuthStateChange fires INITIAL_SESSION on mount
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          fetchProfile(session.user.id);
+          const promise = fetchProfile(session.user.id);
+          // Only gate loading on the initial session event
+          if (initialLoad) {
+            initialLoad = false;
+            promise.finally(() => setLoading(false));
+          }
         } else {
           setProfile(null);
           setOrganization(null);
           setAuthError(null);
+          if (initialLoad) {
+            initialLoad = false;
+            setLoading(false);
+          }
         }
       }
     );
+
+    // Trigger the INITIAL_SESSION event (no state set here)
+    supabase.auth.getSession();
 
     return () => subscription.unsubscribe();
   }, []);
