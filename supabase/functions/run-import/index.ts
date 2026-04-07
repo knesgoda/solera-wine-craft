@@ -7,6 +7,91 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// --- Enum normalization maps ---
+function normalizeTaskStatus(v: string): string {
+  const s = v.toLowerCase().trim();
+  if (["completed", "done", "complete"].includes(s)) return "complete";
+  if (["in progress", "active", "in_progress"].includes(s)) return "in_progress";
+  if (["scheduled", "pending", "todo", "to do"].includes(s)) return "pending";
+  return s; // pass through if already valid
+}
+
+function normalizeVintageStatus(v: string): string {
+  const s = v.toLowerCase().trim();
+  if (["active fermentation", "fermenting", "press & settle", "press and settle"].includes(s)) return "in_progress";
+  if (s.startsWith("barrel aging") || s.startsWith("aging")) return "in_cellar";
+  if (["waiting fruit", "pre-harvest", "pre harvest"].includes(s)) return "planned";
+  if (s === "bottled") return "bottled";
+  if (s === "released") return "released";
+  if (s === "harvested") return "harvested";
+  return s;
+}
+
+// --- Entity resolution caches (per-request) ---
+type EntityCache = Record<string, string>; // name → id
+
+async function resolveVineyard(
+  supabase: any, orgId: string, name: string, cache: EntityCache
+): Promise<string> {
+  const key = name.toLowerCase().trim();
+  if (cache[key]) return cache[key];
+
+  const { data: existing } = await supabase
+    .from("vineyards")
+    .select("id")
+    .eq("org_id", orgId)
+    .ilike("name", key)
+    .maybeSingle();
+
+  if (existing) {
+    cache[key] = existing.id;
+    return existing.id;
+  }
+
+  const { data: created, error } = await supabase
+    .from("vineyards")
+    .insert({ org_id: orgId, name: name.trim() })
+    .select("id")
+    .single();
+
+  if (error) throw new Error(`Failed to create vineyard "${name}": ${error.message}`);
+  cache[key] = created.id;
+  return created.id;
+}
+
+async function resolveVintage(
+  supabase: any, orgId: string, name: string, cache: EntityCache
+): Promise<string> {
+  const key = name.toLowerCase().trim();
+  if (cache[key]) return cache[key];
+
+  const { data: existing } = await supabase
+    .from("vintages")
+    .select("id")
+    .eq("org_id", orgId)
+    .ilike("name", key)
+    .maybeSingle();
+
+  if (existing) {
+    cache[key] = existing.id;
+    return existing.id;
+  }
+
+  // Try to extract year from the name
+  const yearMatch = name.match(/\b(19|20)\d{2}\b/);
+  const year = yearMatch ? parseInt(yearMatch[0]) : null;
+
+  const { data: created, error } = await supabase
+    .from("vintages")
+    .insert({ org_id: orgId, name: name.trim(), ...(year ? { year } : {}) })
+    .select("id")
+    .single();
+
+  if (error) throw new Error(`Failed to create vintage "${name}": ${error.message}`);
+  cache[key] = created.id;
+  return created.id;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -33,6 +118,10 @@ serve(async (req) => {
     let skipped = 0;
     let errors = 0;
 
+    // Per-request entity resolution caches
+    const vineyardCache: EntityCache = {};
+    const vintageCache: EntityCache = {};
+
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       try {
@@ -57,6 +146,42 @@ serve(async (req) => {
             data.org_id = orgId;
           }
 
+          // --- Enum normalization ---
+          if (table === "tasks" && data.status) {
+            data.status = normalizeTaskStatus(data.status);
+          }
+          if (table === "vintages" && data.status) {
+            data.status = normalizeVintageStatus(data.status);
+          }
+
+          // --- Entity resolution: blocks need vineyard_id ---
+          if (table === "blocks") {
+            // Check if there's a vineyard_name pseudo-field
+            if (data.vineyard_name && !data.vineyard_id) {
+              data.vineyard_id = await resolveVineyard(supabase, orgId, data.vineyard_name, vineyardCache);
+              delete data.vineyard_name;
+            }
+            // If still no vineyard_id, skip this row
+            if (!data.vineyard_id) {
+              throw new Error("blocks: vineyard_id is required — provide a vineyard name or ID");
+            }
+          }
+
+          // --- Entity resolution: lab_samples need vintage_id ---
+          if (table === "lab_samples") {
+            if (data.vintage_name && !data.vintage_id) {
+              data.vintage_id = await resolveVintage(supabase, orgId, data.vintage_name, vintageCache);
+              delete data.vintage_name;
+            }
+            if (data.lot_name && !data.vintage_id) {
+              data.vintage_id = await resolveVintage(supabase, orgId, data.lot_name, vintageCache);
+              delete data.lot_name;
+            }
+            if (!data.vintage_id) {
+              throw new Error("lab_samples: vintage_id is required — provide a vintage/lot name or ID");
+            }
+          }
+
           // Duplicate detection for vintages
           if (table === "vintages" && data.year) {
             const { data: existing } = await supabase
@@ -73,7 +198,6 @@ serve(async (req) => {
                 rowImported = true;
                 continue;
               }
-              // merge: update only non-null fields
               if (duplicateStrategy === "merge") {
                 await supabase.from("vintages").update(data).eq("id", existing.id);
                 rowImported = true;
