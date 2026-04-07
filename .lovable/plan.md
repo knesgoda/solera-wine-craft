@@ -1,170 +1,80 @@
 
-## What I found
+Goal: fix the remaining import failures by aligning the database, mapping engine, and importer around the actual CSV shapes now failing.
 
-The current import failures are not just “one more missing field” issue. The logs show 5 separate problems happening at once:
+What’s actually broken now
+- grower_contracts fails because `clone` is being mapped, but `grower_contracts` still does not have `clone` (and likely also lacks `variety` / `rootstock`) in the database.
+- blocks still fails because header aliases are global and not context-aware. A file can expose `vineyard`, but if mapping does not end up on `blocks.vineyard_name`, `run-import` still throws for missing `vineyard_id`.
+- lab_samples still fails because the importer only succeeds when `vintage_name` or `lot_name` is mapped into `lab_samples`, but the current alias logic can send shared headers like `lot_name`, `block_name`, or `block_id` to the wrong table based on generic rules.
 
-1. **Wrong auto-mapping for whole file types**
-   - `harvest_progress`, `harvest_predictions`, `pick_windows`, and `grower_contracts` CSVs are being mapped into existing tables like `blocks` and `vintages` because there are no proper import targets for them.
-   - That is why those imports keep failing with `blocks: vineyard_id is required`.
+Implementation plan
 
-2. **Blocks CSV alias mismatch**
-   - Your blocks file uses the header `vineyard`, but the importer only knows how to resolve `blocks.vineyard_name`.
-   - So the block rows never get a `vineyard_id`.
+1. Add the missing contract columns to the database
+- Create a migration to add these nullable columns to `grower_contracts`:
+  - `variety text`
+  - `clone text`
+  - `rootstock text`
+- Keep the existing contract import fields already added.
+- Do not change existing enums or required columns.
 
-3. **Vintage status normalization is incomplete**
-   - The importer handles `Barrel Aging` but not values like:
-     - `Active — Barrel Aging`
-     - `Active — Fermenting`
-     - `Active — Settling`
-     - `Active — Awaiting Fruit`
-     - `Active — Aging`
-     - `Aging — Concrete Egg`
-   - Those are the exact values currently failing in the logs.
+2. Make mapping file-type aware instead of global-first
+- Refactor `suggest-mapping` so deterministic aliases are applied in the context of the detected file type first.
+- Example behavior:
+  - blocks file: `vineyard` -> `blocks.vineyard_name`
+  - lab samples file: `lot_name` -> `lab_samples.lot_name`, `block_name` -> `lab_samples.block_name`, `block_id` -> lab-sample block linkage path
+  - vintages file: `lot_name` -> `vintages.name`, `lot_id` -> `vintages.external_lot_id`
+  - grower contracts file: `clone` -> `grower_contracts.clone`
+- Keep fallback AI mapping, but only after contextual deterministic rules are applied.
 
-4. **Duplicate detection for vintages is wrong**
-   - Right now duplicates are detected by **year only**.
-   - That means multiple 2025 lots are treated as the same record, which is incorrect for winery lots.
+3. Add stronger file signatures for the failing CSV types
+- Expand file detection in `suggest-mapping` so these formats are classified reliably:
+  - blocks
+  - lab_samples
+  - vintages / wine lots
+  - grower_contracts
+- Use combinations of headers rather than single shared names to avoid cross-table bleed.
 
-5. **The success/failure summary is misleading**
-   - A row that errors is also being counted as skipped in some paths.
-   - That is why you’re seeing results like `Imported 0 / Skipped 8 / Errors 8` for an 8-row file.
+4. Harden `run-import` for blocks imports
+- Keep current vineyard auto-create logic.
+- Add a pre-insert normalization layer so if a blocks row includes a likely vineyard source under alias variants, it is coerced into the vineyard resolution path before validation.
+- Improve the thrown error so it includes the source column expectation when vineyard mapping is missing.
 
-## Updated plan
+5. Improve `run-import` for lab samples
+- Add a second resolution path:
+  - if `block_name` or external `block_id` resolves to a block, attempt to derive the target vintage from that block when possible
+  - if `lot_name` exists, prefer resolving vintage from `lot_name`
+- Only fail after trying all three:
+  - `vintage_name`
+  - `lot_name`
+  - block-based resolution
+- Keep `block_id` storage on `lab_samples` for traceability.
 
-### 1. Expand the database so every uploaded CSV has a real home
+6. Add import validation before execution
+- In the preview/import flow, warn early when a file is about to fail:
+  - blocks must map a vineyard reference
+  - lab samples must map at least one vintage or block reference
+  - grower contracts should not target fields missing from the schema
+- This should block obvious bad runs before the edge function is called.
 
-Add missing columns to existing operational tables so imported source identifiers and relationships can be preserved:
+7. Make the mapping review clearer for users
+- In `MappingReview`, group or highlight the likely detected destination table.
+- Surface a warning when a file has mappings split across multiple unrelated tables unexpectedly.
+- This is especially important for shared column names like `block_name`, `lot_name`, and `block_id`.
 
-- **`blocks`**
-  - add `external_block_id`
-- **`vintages`**
-  - add `external_vintage_id`
-  - add `external_lot_id`
-- **`fermentation_vessels`**
-  - add `external_vessel_id`
-- **`tasks`**
-  - add `external_task_id`
-  - add `source_reference`
-- **`lab_samples`**
-  - add `external_sample_id`
-  - add `block_id` so vineyard/block sampling can be stored directly
-- **`grower_contracts`**
-  - add `approval_status`
-  - add `payment_status`
-  - add `payment_due_date`
-  - add `contract_type`
-  - add `source_vineyard_name`
-  - add `ava`
-  - add `external_contract_id`
-
-Create dedicated tables for the three CSV types that currently have nowhere valid to import:
-
-- **`harvest_progress`**
-- **`harvest_predictions`**
-- **`pick_windows`**
-
-Each should include:
-- `org_id`
-- external/source id from the CSV
-- block linkage (`block_id` or resolved block UUID)
-- all source columns from the uploaded files
-- timestamps / created_at
-
-Also add org-scoped RLS policies matching the rest of the app.
-
-### 2. Make mapping deterministic for known winery CSV formats
-
-Update `suggest-mapping` so it does not rely only on free-form AI guesses.
-
-Add header aliases and file-shape rules such as:
-- `vineyard` → `blocks.vineyard_name`
-- `lot_name` → `vintages.name`
-- `vintage_id` → `vintages.external_vintage_id`
-- `lot_id` → `vintages.external_lot_id`
-- `block_id` → `blocks.external_block_id` or `lab_samples/block link`
-- `sample_id` → `lab_samples.external_sample_id`
-- `contract_id` → `grower_contracts.contract_number` or `external_contract_id`
-- `vessel_id` → `fermentation_vessels.external_vessel_id`
-
-Add explicit target groups for:
-- `grower_contracts`
-- `harvest_progress`
-- `harvest_predictions`
-- `pick_windows`
-
-This prevents those files from being misrouted into `blocks` or `vintages`.
-
-### 3. Fix importer resolution logic
-
-Update `run-import` to support real winery relationships:
-
-- **Blocks**
-  - accept both `vineyard_name` and `vineyard`
-  - auto-create / resolve vineyard by name
-- **Vintages**
-  - resolve `block_id` from imported external block id
-  - stop duplicate detection by year only
-  - detect duplicates by stronger keys:
-    - external IDs first
-    - otherwise `org_id + year + name`
-- **Lab samples**
-  - resolve by `block_id` / `block_name`
-  - if no matching vintage exists yet, create or resolve the correct lot for that block/year
-- **Grower contracts**
-  - resolve or create grower from `grower_name`
-  - map `price_per_ton` to `base_price_per_unit`
-  - set `pricing_unit = per_ton`
-- **Tasks**
-  - store free-text assignee in `assigned_to_name`
-  - optionally resolve `block_vessel` into `block_id` later when it is a clean single block reference
-
-### 4. Expand status normalization
-
-Add normalization for the status values actually seen in your files:
-
-```text
-Vintages:
-"Active — Fermenting"     -> in_progress
-"Active — Settling"       -> in_progress
-"Active — Awaiting Fruit" -> planned
-"Active — Barrel Aging"   -> in_cellar
-"Active — Aging"          -> in_cellar
-"Aging — Concrete Egg"    -> in_cellar
-"Barrel Aging"            -> in_cellar
-"Press & Settle"          -> in_progress
-"Waiting Fruit"           -> planned
-```
-
-Also normalize em dash / en dash / hyphen variants before matching.
-
-### 5. Add pre-import validation and clearer error reporting
-
-Before running import:
-- block imports must have either `vineyard_name`/`vineyard` or `vineyard_id`
-- lab samples must have a date plus a block/lot/vintage reference
-- prevent two source columns mapping to the same target field unless user overrides it intentionally
-
-Improve UI feedback:
-- show top error messages from `import_errors`
-- distinguish **skipped** from **failed**
-- fix row accounting so one row cannot count as both
-
-## Files to update
-
-- new migration(s) for schema additions and new tables
-- `src/components/import/MappingReview.tsx`
-- `src/components/import/ImportPreview.tsx`
-- `src/components/import/ImportReport.tsx`
-- `src/pages/DataImport.tsx`
+Files to update
+- New migration in `supabase/migrations/`
 - `supabase/functions/suggest-mapping/index.ts`
 - `supabase/functions/run-import/index.ts`
+- `src/components/import/MappingReview.tsx`
+- `src/components/import/ImportPreview.tsx`
+- `src/pages/DataImport.tsx`
 
-## Technical notes
+Technical notes
+- The current issue is no longer mainly schema cache refresh; it is schema mismatch plus context-insensitive mapping.
+- Existing RLS for `blocks` and `lab_samples` appears compatible once the correct foreign keys are resolved.
+- The most important fix is to stop reusing the same alias rules across unrelated file types.
 
-- The React ref warning in `MappingReview` is real but **not** the reason the imports are failing.
-- The biggest functional bug is that several CSVs still have no real target table, so the AI is inventing mappings into unrelated tables.
-- The biggest data-integrity bug is vintage duplicate detection by `year` only.
-- Once implemented, the same uploaded files should import into:
-  - core operational tables where appropriate
-  - dedicated raw/analytical tables for harvest progress, predictions, and pick windows
-  - with preserved external IDs for re-imports and merge/replace behavior
+Expected outcome
+- grower contracts imports stop failing on `clone`
+- blocks imports consistently resolve `vineyard_id`
+- lab sample imports succeed when the file provides lot, vintage, or block context
+- users get earlier warnings instead of learning about mapping mistakes only after a failed import
