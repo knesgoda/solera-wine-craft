@@ -1,35 +1,36 @@
 
 
-# Fix: Login Hangs Forever
+# Fix: Stuck on "Solera" Loading Screen After Login
 
 ## Root Cause
 
-The `AuthContext` has a known race condition: it only uses `onAuthStateChange` without first calling `supabase.auth.getSession()`, AND it `await`s `fetchProfile()` inside the `onAuthStateChange` callback. Per Supabase docs, awaiting async work inside `onAuthStateChange` can cause deadlocks — the auth state change queue blocks until the callback completes, which prevents subsequent auth events from processing.
+The `AuthContext` has **two competing `fetchProfile` calls** — one from `onAuthStateChange` (fire-and-forget) and one from `getSession()` (with `.finally(() => setLoading(false))`). This creates a race condition:
 
-The `loading` flag starts as `true` and only clears at the end of the callback, so if the callback stalls, the user sees an infinite spinner.
+1. `onAuthStateChange` fires → calls `fetchProfile` → sets `profile` (with `org_id`) mid-way through, triggering a re-render
+2. `ProtectedRoute` sees `profile.org_id` is set but `organization` is still `null` → shows the "Solera" pulsing screen (line 58)
+3. The org query may complete eventually, but the concurrent duplicate calls and unbatched state updates cause unpredictable timing
+
+Additionally, React 18 does **not** batch state updates across `await` boundaries, so `setProfile(...)` and `setOrganization(...)` trigger separate renders — creating a window where profile exists but organization doesn't.
 
 ## Fix (single file: `src/contexts/AuthContext.tsx`)
 
-1. **Bootstrap with `getSession()`** — call it first to restore the session from storage, set user/session/loading state immediately
-2. **Remove `await` from `onAuthStateChange`** — use a fire-and-forget pattern for `fetchProfile` inside the listener to avoid blocking the auth event queue
-3. **Set `loading = false`** after `getSession()` resolves, not inside the listener
+**Use `onAuthStateChange` as the single source of truth** — remove the duplicate `fetchProfile` from `getSession()`. Per Supabase docs, `onAuthStateChange` fires with `INITIAL_SESSION` on mount, so `getSession()` only needs to be called to trigger that event.
+
+1. **Set up `onAuthStateChange` first** — call `fetchProfile` with `.finally(() => setLoading(false))` inside it
+2. **Call `getSession()` after** — only to trigger the initial event, don't set state from it
+3. **Remove the duplicate `fetchProfile` call** from the `getSession().then()` block
 
 ```text
-useEffect flow (before):
-  onAuthStateChange → await fetchProfile → setLoading(false)
-  (deadlock-prone, no getSession)
+useEffect flow (before — broken):
+  getSession → fetchProfile + setLoading(false)   ← call #1
+  onAuthStateChange → fetchProfile (fire-forget)   ← call #2 (race!)
 
-useEffect flow (after):
-  getSession → fetchProfile → setLoading(false)
-  onAuthStateChange → fetchProfile (fire-and-forget, no await)
+useEffect flow (after — fixed):
+  onAuthStateChange → fetchProfile → setLoading(false)  ← single call
+  getSession() called only to trigger INITIAL_SESSION event
 ```
 
-## Also Fix: forwardRef Console Warnings
-
-The `forwardRef` warnings on `Login` come from React Router internally passing a ref. Wrapping the route `element` prop won't help — these are harmless React Router v6 warnings. No code change needed.
-
 ## Steps
-1. Rewrite the `useEffect` in `AuthProvider` to call `getSession()` first, then subscribe to `onAuthStateChange`
-2. Remove `await` before `fetchProfile` inside the `onAuthStateChange` callback
-3. Test login flow end-to-end
+1. Rewrite the `useEffect` in `AuthProvider`: subscribe to `onAuthStateChange` first, handle `setLoading(false)` inside it, and call `getSession()` only to trigger the initial event
+2. Verify login flow renders dashboard correctly
 
