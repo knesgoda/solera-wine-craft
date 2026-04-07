@@ -85,7 +85,8 @@ serve(async (req) => {
           // Cast numeric fields
           const numericFields = ["year", "tons_harvested", "brix", "ph", "ta", "va", "so2_free", "so2_total",
             "alcohol", "rs", "acres", "soil_ph", "soil_organic_matter", "size_liters", "capacity_liters",
-            "amount", "batch_size", "cases", "bottles", "price", "vintage_year"];
+            "amount", "batch_size", "cases", "bottles", "price", "vintage_year",
+            "row_spacing_ft", "vine_spacing_ft", "year_planted", "elevation_ft", "capacity_gallons", "gallons", "cases_projected"];
           for (const f of numericFields) {
             if (data[f] !== undefined) {
               const n = parseFloat(data[f]);
