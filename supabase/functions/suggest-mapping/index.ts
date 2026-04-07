@@ -85,6 +85,11 @@ const FILE_ALIASES: Record<string, Record<string, string>> = {
     fermentation_start: "vintages.fermentation_start",
     ml_complete: "vintages.ml_complete",
     bottling_target: "vintages.bottling_target",
+    block_id: "vintages._block_ref",
+    source_block: "vintages._block_ref",
+    primary_vessel: "vintages._vessel_ref",
+    target_brix_at_pick: "vintages._ignore",
+    actual_brix_at_pick: "vintages._ignore",
   },
   grower_contracts: {
     contract_id: "grower_contracts.external_contract_id",
