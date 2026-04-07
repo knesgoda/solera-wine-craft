@@ -1,50 +1,55 @@
 
-Root cause
-- The uploaded file is being detected correctly as `harvest_predictions` (the function log shows that), so file detection is not the problem.
-- The real bug is in `supabase/functions/suggest-mapping/index.ts`:
-  - `harvest_predictions` has no file-specific alias for `block_id`
-  - `pick_windows` also has no file-specific alias for `block_id`
-  - `harvest_progress` incorrectly maps `block_id` to `harvest_progress.block_name`
-  - when a detected file is missing a file-specific alias, the mapper falls back to `GLOBAL_ALIASES`, where `block_id` maps to `blocks.external_block_id`
-- That causes one harvest row to be split across two tables: the intended harvest table and `blocks`. The `blocks` insert then fails because your file does not include a vineyard reference, which is expected for a harvest predictions file.
-- The mapping UI makes this harder to fix manually because `block_id` is not available as a target field for the harvest tables.
+Goal: stop `pick_windows` CSVs from ever trying to insert into `blocks`, which is what triggers the `vineyard_id is required` error.
 
-Plan
-1. Fix harvest table aliases in `suggest-mapping`
-- Add `block_id` aliases for:
-  - `harvest_predictions.block_id`
-  - `pick_windows.block_id`
-- Correct `harvest_progress.block_id` so it maps to `harvest_progress.block_id`, not `block_name`
-- Keep `block_name` mapped separately to the readable name field
+What I found
+- Your uploaded file is a clean `pick_windows` file with headers like `window_id`, `block_id`, `window_open_date`, `window_close_date`.
+- The current repo already contains the earlier harvest-table fix:
+  - `suggest-mapping` has `pick_windows.block_id -> pick_windows._block_ref`
+  - global `block_id -> blocks.external_block_id` fallback is disabled once a file type is detected
+  - `run-import` resolves harvest `block_id` values into real block UUIDs
+  - the mapping UI already exposes `pick_windows.block_id`
+- So the remaining failure is most likely this: a `blocks.*` mapping is still reaching `run-import` at runtime, and `run-import` currently inserts every mapped table it sees. If even one column is still mapped to `blocks`, it attempts a `blocks` insert and fails because this file has no vineyard column.
 
-2. Stop unrelated global alias fallback after file detection
-- Change the mapping logic so that once a file type is detected, fallback aliases cannot silently map headers into unrelated tables like `blocks`
-- This prevents the same class of bug for other shared headers in future imports
+Implementation plan
 
-3. Make the manual mapping UI support the fix
-- Add `block_id` as a selectable target field in `src/components/import/MappingReview.tsx` for:
-  - `harvest_progress`
-  - `harvest_predictions`
-  - `pick_windows`
-- This lets users correct a bad suggestion without being forced into `block_name`
+1. Harden `run-import` so stale/wrong mappings cannot create orphan `blocks` rows
+- In `supabase/functions/run-import/index.ts`, add a pre-processing step before table inserts:
+  - infer the row’s primary import target from mappings
+  - if the file is a harvest table (`pick_windows`, `harvest_predictions`, `harvest_progress`), strip accidental `blocks` payloads unless the row truly contains block-creation data like `vineyard`, `vineyard_name`, or `vineyard_id`
+- Add a fallback rewrite:
+  - if `block_id` was mapped to `blocks.external_block_id` by mistake, reinterpret it as the harvest table’s block reference and resolve it normally
+  - if `block_name` was mapped to `blocks.name`, reinterpret it as the harvest table’s readable block reference
 
-4. Add importer hardening as a safety net
-- In `supabase/functions/run-import/index.ts`, keep the current block resolution path but also add a raw-row fallback for harvest tables if `block_id` was not mapped correctly
-- If a non-UUID `block_id` comes in, resolve it through `blocks.external_block_id` before insert
+2. Add a second safety net in `suggest-mapping`
+- In `supabase/functions/suggest-mapping/index.ts`, keep current deterministic detection, but add a final normalization pass:
+  - when the detected file type is `pick_windows`, `harvest_predictions`, or `harvest_progress`, remap any accidental `blocks.*` result for `block_id` / `block_name` back into the harvest table before returning mappings
+- Add lightweight logging of:
+  - detected file type
+  - final target tables in the mapping response
+- This will make future import debugging much easier.
 
-5. Expected result after implementation
-- Your current CSV should map like this:
-  - `prediction_id` → `harvest_predictions.external_prediction_id`
-  - `block_id` → `harvest_predictions.block_id`
-  - `block_name` → `harvest_predictions.block_name`
-- The mapping screen should stop showing `blocks` as a detected target
-- The vineyard warning should disappear
-- Imports should write only to `harvest_predictions`, with block IDs resolved from existing blocks when possible
+3. Make the UI catch this exact bad state early
+- In `src/components/import/MappingReview.tsx`, add a specific validation rule:
+  - if mappings contain a harvest table plus `blocks`, show a targeted warning that `block_id` is being routed into `blocks` instead of the harvest table
+- Update the warning logic so this case is flagged even when only 2 tables are present
+- Disable or block “Confirm Mapping” when the only `blocks` mapping is an invalid harvest spillover with no vineyard field.
+
+4. Add a preview/preflight guard before import runs
+- In `src/pages/DataImport.tsx` or `src/components/import/ImportPreview.tsx`, add a final validation before calling `run-import`:
+  - if mappings imply a harvest import but also contain `blocks` rows without a vineyard reference, stop the import and send the user back to mapping review with a clear message
+- This prevents batch imports that are guaranteed to fail row-by-row.
+
+5. Expected result
+- A `pick_windows` CSV like your uploaded file should map only to `pick_windows`
+- `block_id` should resolve against existing blocks, not create new block rows
+- The `blocks` vineyard warning should no longer appear for harvest/pick-window files
+- Even if a stale or bad mapping somehow slips through, the importer will refuse to treat it as a block creation request
 
 Files to update
+- `supabase/functions/run-import/index.ts`
 - `supabase/functions/suggest-mapping/index.ts`
 - `src/components/import/MappingReview.tsx`
-- `supabase/functions/run-import/index.ts`
+- `src/pages/DataImport.tsx` or `src/components/import/ImportPreview.tsx`
 
 Database changes
-- No migration needed; the current schema already supports this flow
+- No migration needed
