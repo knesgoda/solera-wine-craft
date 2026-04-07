@@ -27,6 +27,7 @@ export interface ImportResult {
   skipped: number;
   errors: number;
   total: number;
+  errorMessages?: string[];
 }
 
 export default function DataImport() {
@@ -127,7 +128,22 @@ export default function DataImport() {
       }
 
       setImportProgress(100);
-      setImportResult({ imported: totalImported, skipped: totalSkipped, errors: totalErrors, total: allRows.length });
+
+      // Fetch top error messages if any
+      let errorMessages: string[] = [];
+      if (totalErrors > 0) {
+        try {
+          const { data: errRows } = await supabase
+            .from("import_errors")
+            .select("error_message")
+            .eq("job_id", job.id)
+            .order("row_number", { ascending: true })
+            .limit(5);
+          if (errRows) errorMessages = errRows.map((r: any) => r.error_message);
+        } catch { /* non-critical */ }
+      }
+
+      setImportResult({ imported: totalImported, skipped: totalSkipped, errors: totalErrors, total: allRows.length, errorMessages });
       setStep("complete");
       toast.success("Import complete!");
     } catch (err: any) {
