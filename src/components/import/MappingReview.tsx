@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Mapping } from "@/pages/DataImport";
 
 const targetOptions: Record<string, string[]> = {
@@ -40,6 +41,38 @@ const confBadge = (c: string) => {
   return <Badge variant="outline">Unmapped</Badge>;
 };
 
+// Detect validation warnings based on current mappings
+function getValidationWarnings(mappings: Mapping[]): string[] {
+  const warnings: string[] = [];
+  const mappedTables = new Set(mappings.filter(m => m.target_table).map(m => m.target_table!));
+
+  // Blocks must have vineyard reference
+  if (mappedTables.has("blocks")) {
+    const hasVineyard = mappings.some(m => m.target_table === "blocks" && (m.target_field === "vineyard_name" || m.target_field === "vineyard_id"));
+    if (!hasVineyard) {
+      warnings.push("Blocks import requires a vineyard name or ID. Map a column to blocks → vineyard_name.");
+    }
+  }
+
+  // Lab samples must have vintage or block reference
+  if (mappedTables.has("lab_samples")) {
+    const hasVintageRef = mappings.some(m =>
+      m.target_table === "lab_samples" &&
+      (m.target_field === "vintage_name" || m.target_field === "lot_name" || m.target_field === "block_name")
+    );
+    if (!hasVintageRef) {
+      warnings.push("Lab samples require a vintage/lot name or block name. Map a column to lab_samples → vintage_name, lot_name, or block_name.");
+    }
+  }
+
+  // Check for mappings split across many unrelated tables
+  if (mappedTables.size > 2) {
+    warnings.push(`Mappings target ${mappedTables.size} different tables (${[...mappedTables].join(", ")}). This may indicate misrouted columns — review carefully.`);
+  }
+
+  return warnings;
+}
+
 export function MappingReview({ mappings, setMappings, isLoading, onConfirm, onBack }: Props) {
   const updateMapping = (idx: number, value: string) => {
     const updated = [...mappings];
@@ -56,6 +89,7 @@ export function MappingReview({ mappings, setMappings, isLoading, onConfirm, onB
 
   // Detect target table for summary
   const targetTables = [...new Set(mappings.filter(m => m.target_table).map(m => m.target_table!))];
+  const warnings = isLoading ? [] : getValidationWarnings(mappings);
 
   return (
     <Card>
@@ -83,6 +117,16 @@ export function MappingReview({ mappings, setMappings, isLoading, onConfirm, onB
           </div>
         ) : (
           <>
+            {warnings.length > 0 && (
+              <div className="space-y-2 mb-4">
+                {warnings.map((w, i) => (
+                  <Alert key={i} variant="destructive" className="border-yellow-500 bg-yellow-50 text-yellow-800">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>{w}</AlertDescription>
+                  </Alert>
+                ))}
+              </div>
+            )}
             <div className="overflow-x-auto rounded-lg border border-border">
               <Table>
                 <TableHeader>

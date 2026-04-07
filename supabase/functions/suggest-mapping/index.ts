@@ -6,110 +6,263 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Deterministic header alias map: source header → table.field
-const HEADER_ALIASES: Record<string, string> = {
-  // blocks
+// ── File-type-specific alias maps ──────────────────────────────────────────
+// Each key is a detected file type; value maps lowercase header → table.field
+const FILE_ALIASES: Record<string, Record<string, string>> = {
+  blocks: {
+    block_name: "blocks.name",
+    block_id: "blocks.external_block_id",
+    name: "blocks.name",
+    vineyard: "blocks.vineyard_name",
+    vineyard_name: "blocks.vineyard_name",
+    variety: "blocks.variety",
+    clone: "blocks.clone",
+    rootstock: "blocks.rootstock",
+    acres: "blocks.acres",
+    status: "blocks.status",
+    lifecycle_stage: "blocks.lifecycle_stage",
+    soil_ph: "blocks.soil_ph",
+    soil_texture: "blocks.soil_texture",
+    soil_organic_matter: "blocks.soil_organic_matter",
+    row_spacing_ft: "blocks.row_spacing_ft",
+    vine_spacing_ft: "blocks.vine_spacing_ft",
+    year_planted: "blocks.year_planted",
+    exposure: "blocks.exposure",
+    elevation_ft: "blocks.elevation_ft",
+    irrigation: "blocks.irrigation",
+    drainage: "blocks.drainage",
+    notes: "blocks.notes",
+    external_block_id: "blocks.external_block_id",
+  },
+  lab_samples: {
+    sample_id: "lab_samples.external_sample_id",
+    external_sample_id: "lab_samples.external_sample_id",
+    sampled_at: "lab_samples.sampled_at",
+    sampled_by: "lab_samples.sampled_by",
+    vintage_name: "lab_samples.vintage_name",
+    lot_name: "lab_samples.lot_name",
+    block_name: "lab_samples.block_name",
+    block_id: "lab_samples.block_name",
+    brix: "lab_samples.brix",
+    ph: "lab_samples.ph",
+    ta: "lab_samples.ta",
+    va: "lab_samples.va",
+    so2_free: "lab_samples.so2_free",
+    so2_total: "lab_samples.so2_total",
+    alcohol: "lab_samples.alcohol",
+    rs: "lab_samples.rs",
+    notes: "lab_samples.notes",
+    gdd_cumulative: "lab_samples.gdd_cumulative",
+  },
+  vintages: {
+    lot_name: "vintages.name",
+    lot_id: "vintages.external_lot_id",
+    vintage_id: "vintages.external_vintage_id",
+    external_vintage_id: "vintages.external_vintage_id",
+    external_lot_id: "vintages.external_lot_id",
+    name: "vintages.name",
+    year: "vintages.year",
+    vintage_year: "vintages.year",
+    status: "vintages.status",
+    harvest_date: "vintages.harvest_date",
+    tons_harvested: "vintages.tons_harvested",
+    notes: "vintages.notes",
+    gallons: "vintages.gallons",
+    cases_projected: "vintages.cases_projected",
+    pick_date: "vintages.pick_date",
+    press_date: "vintages.press_date",
+    winemaker_notes: "vintages.winemaker_notes",
+    variety: "vintages.variety",
+    clone: "vintages.clone",
+    rootstock: "vintages.rootstock",
+    fermentation_start: "vintages.fermentation_start",
+    ml_complete: "vintages.ml_complete",
+    bottling_target: "vintages.bottling_target",
+  },
+  grower_contracts: {
+    contract_id: "grower_contracts.external_contract_id",
+    external_contract_id: "grower_contracts.external_contract_id",
+    grower_name: "grower_contracts.grower_name",
+    vineyard_name: "grower_contracts.source_vineyard_name",
+    source_vineyard_name: "grower_contracts.source_vineyard_name",
+    ava: "grower_contracts.ava",
+    variety: "grower_contracts.variety",
+    clone: "grower_contracts.clone",
+    rootstock: "grower_contracts.rootstock",
+    contracted_tons: "grower_contracts.contracted_tons",
+    price_per_ton: "grower_contracts.price_per_ton",
+    contract_value: "grower_contracts.contract_value",
+    vintage_year: "grower_contracts.vintage_year",
+    contract_year: "grower_contracts.vintage_year",
+    status: "grower_contracts.status",
+    approval_status: "grower_contracts.approval_status",
+    delivery_date: "grower_contracts.delivery_date",
+    tons_delivered: "grower_contracts.tons_delivered",
+    payment_due_date: "grower_contracts.payment_due_date",
+    payment_status: "grower_contracts.payment_status",
+    contract_type: "grower_contracts.contract_type",
+    notes: "grower_contracts.notes",
+    winery_name: "grower_contracts.source_vineyard_name",
+  },
+  harvest_progress: {
+    progress_id: "harvest_progress.external_progress_id",
+    external_progress_id: "harvest_progress.external_progress_id",
+    block_name: "harvest_progress.block_name",
+    block_id: "harvest_progress.block_name",
+    variety: "harvest_progress.variety",
+    clone: "harvest_progress.clone",
+    rootstock: "harvest_progress.rootstock",
+    vintage_year: "harvest_progress.vintage_year",
+    acres: "harvest_progress.acres",
+    expected_tons: "harvest_progress.expected_tons",
+    tons_harvested: "harvest_progress.tons_harvested",
+    harvest_complete: "harvest_progress.harvest_complete",
+    pick_date: "harvest_progress.pick_date",
+    brix_at_pick: "harvest_progress.brix_at_pick",
+    notes: "harvest_progress.notes",
+  },
+  harvest_predictions: {
+    prediction_id: "harvest_predictions.external_prediction_id",
+    external_prediction_id: "harvest_predictions.external_prediction_id",
+    block_name: "harvest_predictions.block_name",
+    variety: "harvest_predictions.variety",
+    clone: "harvest_predictions.clone",
+    rootstock: "harvest_predictions.rootstock",
+    vintage_year: "harvest_predictions.vintage_year",
+    current_brix: "harvest_predictions.current_brix",
+    current_ph: "harvest_predictions.current_ph",
+    current_ta: "harvest_predictions.current_ta",
+    brix_per_day: "harvest_predictions.brix_per_day",
+    target_brix: "harvest_predictions.target_brix",
+    predicted_pick_date: "harvest_predictions.predicted_pick_date",
+    days_to_target: "harvest_predictions.days_to_target",
+    gdd_at_prediction: "harvest_predictions.gdd_at_prediction",
+    confidence: "harvest_predictions.confidence",
+    last_updated: "harvest_predictions.last_updated",
+    notes: "harvest_predictions.notes",
+  },
+  pick_windows: {
+    window_id: "pick_windows.external_window_id",
+    external_window_id: "pick_windows.external_window_id",
+    block_name: "pick_windows.block_name",
+    variety: "pick_windows.variety",
+    clone: "pick_windows.clone",
+    rootstock: "pick_windows.rootstock",
+    current_brix: "pick_windows.current_brix",
+    target_brix_low: "pick_windows.target_brix_low",
+    target_brix_high: "pick_windows.target_brix_high",
+    current_ph: "pick_windows.current_ph",
+    target_ph_low: "pick_windows.target_ph_low",
+    target_ph_high: "pick_windows.target_ph_high",
+    current_ta: "pick_windows.current_ta",
+    brix_per_day: "pick_windows.brix_per_day",
+    days_to_window_open: "pick_windows.days_to_window_open",
+    days_to_window_close: "pick_windows.days_to_window_close",
+    window_open_date: "pick_windows.window_open_date",
+    window_close_date: "pick_windows.window_close_date",
+    window_status: "pick_windows.window_status",
+    urgency: "pick_windows.urgency",
+    notes: "pick_windows.notes",
+  },
+  fermentation_vessels: {
+    vessel_id: "fermentation_vessels.external_vessel_id",
+    external_vessel_id: "fermentation_vessels.external_vessel_id",
+    name: "fermentation_vessels.name",
+    vessel_type: "fermentation_vessels.vessel_type",
+    capacity_gallons: "fermentation_vessels.capacity_gallons",
+    capacity_liters: "fermentation_vessels.capacity_liters",
+    current_fill_gal: "fermentation_vessels.current_fill_gal",
+    temp_controlled: "fermentation_vessels.temp_controlled",
+    material: "fermentation_vessels.material",
+    status: "fermentation_vessels.status",
+    location: "fermentation_vessels.location",
+    notes: "fermentation_vessels.notes",
+  },
+  tasks: {
+    task_id: "tasks.external_task_id",
+    external_task_id: "tasks.external_task_id",
+    title: "tasks.title",
+    due_date: "tasks.due_date",
+    status: "tasks.status",
+    instructions: "tasks.instructions",
+    category: "tasks.category",
+    priority: "tasks.priority",
+    assigned_to: "tasks.assigned_to_name",
+    assigned_to_name: "tasks.assigned_to_name",
+    source_reference: "tasks.source_reference",
+    notes: "tasks.instructions",
+  },
+};
+
+// ── File-type detection via header signatures ──────────────────────────────
+// Each entry: [fileType, requiredHeaders (need ≥ matchThreshold), matchThreshold]
+const FILE_SIGNATURES: [string, string[], number][] = [
+  // Specific analytical tables first
+  ["harvest_predictions", ["predicted_pick_date", "days_to_target", "brix_per_day", "current_brix", "prediction_id"], 2],
+  ["pick_windows", ["window_open_date", "window_close_date", "target_brix_low", "target_brix_high", "window_id", "window_status"], 2],
+  ["harvest_progress", ["harvest_complete", "brix_at_pick", "expected_tons", "progress_id"], 2],
+  // Core operational tables
+  ["grower_contracts", ["grower_name", "price_per_ton", "contracted_tons", "contract_id", "contract_value", "contract_type"], 2],
+  ["lab_samples", ["brix", "ph", "ta", "sampled_at", "sample_id", "so2_free", "va"], 3],
+  ["fermentation_vessels", ["vessel_type", "capacity_gallons", "vessel_id", "current_fill_gal", "temp_controlled"], 2],
+  ["tasks", ["due_date", "assigned_to", "priority", "task_id", "instructions"], 2],
+  ["blocks", ["vineyard", "vineyard_name", "acres", "year_planted", "soil_ph", "elevation_ft", "block_id", "block_name"], 2],
+  ["vintages", ["harvest_date", "tons_harvested", "winemaker_notes", "vintage_id", "lot_id", "press_date", "fermentation_start", "bottling_target"], 2],
+];
+
+function detectFileType(headers: string[]): string | null {
+  const lowerHeaders = new Set(headers.map(h => h.toLowerCase().trim()));
+  for (const [fileType, signatures, threshold] of FILE_SIGNATURES) {
+    const matches = signatures.filter(s => lowerHeaders.has(s));
+    if (matches.length >= threshold) return fileType;
+  }
+  return null;
+}
+
+// ── Global fallback alias (only used when file type is unknown) ────────────
+const GLOBAL_ALIASES: Record<string, string> = {
   vineyard: "blocks.vineyard_name",
   vineyard_name: "blocks.vineyard_name",
   block_name: "blocks.name",
   block_id: "blocks.external_block_id",
-  // vintages
   lot_name: "vintages.name",
   lot_id: "vintages.external_lot_id",
   vintage_id: "vintages.external_vintage_id",
-  winemaker_notes: "vintages.winemaker_notes",
-  // lab_samples
   sample_id: "lab_samples.external_sample_id",
-  sampled_at: "lab_samples.sampled_at",
-  sampled_by: "lab_samples.sampled_by",
-  vintage_name: "lab_samples.vintage_name",
-  // vessels
   vessel_id: "fermentation_vessels.external_vessel_id",
-  vessel_type: "fermentation_vessels.vessel_type",
-  capacity_gallons: "fermentation_vessels.capacity_gallons",
-  current_fill_gal: "fermentation_vessels.current_fill_gal",
-  temp_controlled: "fermentation_vessels.temp_controlled",
-  // tasks
   task_id: "tasks.external_task_id",
-  assigned_to: "tasks.assigned_to_name",
-  assigned_to_name: "tasks.assigned_to_name",
-  // grower contracts
   contract_id: "grower_contracts.external_contract_id",
   grower_name: "grower_contracts.grower_name",
   price_per_ton: "grower_contracts.price_per_ton",
-  contract_value: "grower_contracts.contract_value",
-  contracted_tons: "grower_contracts.contracted_tons",
-  contract_year: "grower_contracts.vintage_year",
-  tons_delivered: "grower_contracts.tons_delivered",
-  approval_status: "grower_contracts.approval_status",
-  payment_status: "grower_contracts.payment_status",
-  payment_due_date: "grower_contracts.payment_due_date",
-  contract_type: "grower_contracts.contract_type",
-  delivery_date: "grower_contracts.delivery_date",
-  // harvest progress
-  progress_id: "harvest_progress.external_progress_id",
-  expected_tons: "harvest_progress.expected_tons",
-  harvest_complete: "harvest_progress.harvest_complete",
-  brix_at_pick: "harvest_progress.brix_at_pick",
-  // harvest predictions
-  prediction_id: "harvest_predictions.external_prediction_id",
-  current_brix: "harvest_predictions.current_brix",
-  current_ph: "harvest_predictions.current_ph",
-  current_ta: "harvest_predictions.current_ta",
-  brix_per_day: "harvest_predictions.brix_per_day",
-  target_brix: "harvest_predictions.target_brix",
-  predicted_pick_date: "harvest_predictions.predicted_pick_date",
-  days_to_target: "harvest_predictions.days_to_target",
-  gdd_at_prediction: "harvest_predictions.gdd_at_prediction",
-  confidence: "harvest_predictions.confidence",
-  // pick windows
-  window_id: "pick_windows.external_window_id",
-  target_brix_low: "pick_windows.target_brix_low",
-  target_brix_high: "pick_windows.target_brix_high",
-  target_ph_low: "pick_windows.target_ph_low",
-  target_ph_high: "pick_windows.target_ph_high",
-  days_to_window_open: "pick_windows.days_to_window_open",
-  days_to_window_close: "pick_windows.days_to_window_close",
-  window_open_date: "pick_windows.window_open_date",
-  window_close_date: "pick_windows.window_close_date",
-  window_status: "pick_windows.window_status",
-  urgency: "pick_windows.urgency",
+  assigned_to: "tasks.assigned_to_name",
+  assigned_to_name: "tasks.assigned_to_name",
 };
-
-// Signature headers that identify a file type definitively
-const FILE_TYPE_SIGNATURES: Record<string, string[]> = {
-  harvest_progress: ["progress_id", "harvest_complete", "brix_at_pick"],
-  harvest_predictions: ["prediction_id", "predicted_pick_date", "days_to_target"],
-  pick_windows: ["window_id", "window_open_date", "window_close_date"],
-  grower_contracts: ["contract_id", "grower_name", "price_per_ton"],
-};
-
-function detectFileType(headers: string[]): string | null {
-  const lowerHeaders = headers.map(h => h.toLowerCase().trim());
-  for (const [fileType, signatures] of Object.entries(FILE_TYPE_SIGNATURES)) {
-    const matches = signatures.filter(s => lowerHeaders.includes(s));
-    if (matches.length >= 2) return fileType;
-  }
-  return null;
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const { headers, sampleRows, sourceType } = await req.json();
-
-    // Step 1: Try deterministic mapping first
     const lowerHeaders = headers.map((h: string) => h.toLowerCase().trim());
-    const detectedType = detectFileType(lowerHeaders);
 
-    // Build deterministic mappings from aliases
+    // Step 1: Detect file type
+    const detectedType = detectFileType(lowerHeaders);
+    console.log("Detected file type:", detectedType, "from headers:", lowerHeaders.join(", "));
+
+    // Step 2: Build mappings using file-type-specific aliases first
+    const aliasMap = detectedType ? FILE_ALIASES[detectedType] || {} : {};
     const deterministicMappings: any[] = [];
     let deterministicCount = 0;
 
     for (const originalHeader of headers) {
       const lower = originalHeader.toLowerCase().trim();
-      const alias = HEADER_ALIASES[lower];
+
+      // Try file-type-specific alias first
+      let alias = aliasMap[lower];
+
+      // Fall back to global alias if no file-specific match
+      if (!alias) alias = GLOBAL_ALIASES[lower];
+
       if (alias) {
         const [table, field] = alias.split(".");
         deterministicMappings.push({
@@ -129,22 +282,22 @@ serve(async (req) => {
       }
     }
 
-    // If we mapped most headers deterministically (>=60%), use that directly
-    if (deterministicCount / headers.length >= 0.6) {
-      // For remaining unmapped, try to infer from detected file type
+    // If we matched at least 40% of headers deterministically, use that
+    // (lowered from 60% since file-type-aware aliases are more precise)
+    if (deterministicCount / headers.length >= 0.4) {
+      // For remaining unmapped columns in a detected file type, try common field names
       if (detectedType) {
+        const commonFields: Record<string, string> = {
+          variety: "variety", clone: "clone", rootstock: "rootstock",
+          notes: "notes", vintage_year: "vintage_year", acres: "acres",
+          pick_date: "pick_date", winery_name: "winery_name",
+          tons_harvested: "tons_harvested", last_updated: "last_updated",
+          name: "name", status: "status",
+        };
         for (const m of deterministicMappings) {
           if (m.target_table === null) {
             const lower = m.source_column.toLowerCase().trim();
-            // Common fields that exist on many tables
-            const commonFields: Record<string, string> = {
-              variety: "variety", clone: "clone", rootstock: "rootstock",
-              notes: "notes", vintage_year: "vintage_year", acres: "acres",
-              pick_date: "pick_date", winery_name: "winery_name",
-              tons_harvested: "tons_harvested", last_updated: "last_updated",
-            };
             if (commonFields[lower]) {
-              // Check if the detected table actually has this field
               m.target_table = detectedType;
               m.target_field = commonFields[lower];
               m.confidence = "medium";
@@ -157,9 +310,14 @@ serve(async (req) => {
       });
     }
 
-    // Step 2: Fall back to AI mapping for unknown formats
+    // Step 3: Fall back to AI mapping for unknown formats
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
+    if (!ANTHROPIC_API_KEY) {
+      // No API key — return whatever deterministic mappings we have
+      return new Response(JSON.stringify({ mappings: deterministicMappings }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const soleraFields = {
       vintages: ["year", "name", "status", "harvest_date", "tons_harvested", "notes", "gallons", "cases_projected", "pick_date", "press_date", "winemaker_notes", "variety", "clone", "rootstock", "fermentation_start", "ml_complete", "bottling_target", "external_vintage_id", "external_lot_id"],
@@ -187,7 +345,7 @@ Source type: ${sourceType || "csv"}
 
 IMPORTANT RULES:
 - If the file has "progress_id" or "harvest_complete", map to harvest_progress table
-- If the file has "prediction_id" or "predicted_pick_date", map to harvest_predictions table  
+- If the file has "prediction_id" or "predicted_pick_date", map to harvest_predictions table
 - If the file has "window_id" or "window_open_date", map to pick_windows table
 - If the file has "contract_id" and "grower_name", map to grower_contracts table
 - "vineyard" or "vineyard_name" in a blocks file should map to blocks.vineyard_name
@@ -222,15 +380,26 @@ Sample rows (first 5): ${JSON.stringify(sampleRows)}`;
     if (!response.ok) {
       const t = await response.text();
       console.error("Anthropic API error:", response.status, t);
-      throw new Error("AI mapping suggestion failed");
+      // Return deterministic mappings as fallback
+      return new Response(JSON.stringify({ mappings: deterministicMappings }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const result = await response.json();
     let content = result.content?.[0]?.text || "[]";
     content = content.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-    const mappings = JSON.parse(content);
+    const aiMappings = JSON.parse(content);
 
-    return new Response(JSON.stringify({ mappings }), {
+    // Merge: keep deterministic mappings, fill in AI suggestions for unmapped only
+    const finalMappings = deterministicMappings.map((dm: any) => {
+      if (dm.target_table !== null) return dm; // already mapped deterministically
+      const aiMatch = aiMappings.find((ai: any) => ai.source_column === dm.source_column);
+      if (aiMatch && aiMatch.target_table) return aiMatch;
+      return dm;
+    });
+
+    return new Response(JSON.stringify({ mappings: finalMappings }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
