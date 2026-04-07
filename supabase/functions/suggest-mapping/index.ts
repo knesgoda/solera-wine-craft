@@ -299,6 +299,25 @@ serve(async (req) => {
       }
     }
 
+    // --- Post-processing: remap accidental blocks.* when detected type is a harvest table ---
+    const HARVEST_FILE_TYPES = ["pick_windows", "harvest_predictions", "harvest_progress"];
+    if (detectedType && HARVEST_FILE_TYPES.includes(detectedType)) {
+      for (const m of deterministicMappings) {
+        if (m.target_table === "blocks") {
+          if (m.target_field === "external_block_id" || m.target_field === "name") {
+            // Rewrite to harvest table's _block_ref or block_name
+            m.target_table = detectedType;
+            m.target_field = m.target_field === "external_block_id" ? "_block_ref" : "block_name";
+            console.log(`Remapped ${m.source_column} from blocks to ${detectedType}.${m.target_field}`);
+          }
+        }
+      }
+    }
+
+    // Log final mapping summary
+    const finalTables = [...new Set(deterministicMappings.filter(m => m.target_table).map(m => m.target_table))];
+    console.log("Final mapping target tables:", finalTables.join(", "));
+
     // If we matched at least 40% of headers deterministically, use that
     // (lowered from 60% since file-type-aware aliases are more precise)
     if (deterministicCount / headers.length >= 0.4) {

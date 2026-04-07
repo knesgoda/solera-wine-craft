@@ -267,6 +267,28 @@ serve(async (req) => {
           }
         }
 
+        // --- Harvest guard: strip accidental `blocks` payloads ---
+        const HARVEST_TABLES = ["harvest_progress", "harvest_predictions", "pick_windows"];
+        const mappedTables = Object.keys(tableData);
+        const hasHarvestTable = mappedTables.some(t => HARVEST_TABLES.includes(t));
+
+        if (hasHarvestTable && tableData["blocks"]) {
+          const blocksData = tableData["blocks"];
+          const hasVineyard = blocksData.vineyard_name || blocksData.vineyard || blocksData.vineyard_id || blocksData.source_vineyard_name;
+          if (!hasVineyard) {
+            // Rewrite block_id / block_name from blocks into the harvest table
+            const harvestTable = mappedTables.find(t => HARVEST_TABLES.includes(t))!;
+            if (!tableData[harvestTable]) tableData[harvestTable] = {};
+            if (blocksData.external_block_id && !tableData[harvestTable]._block_ref && !tableData[harvestTable].block_id) {
+              tableData[harvestTable]._block_ref = blocksData.external_block_id;
+            }
+            if (blocksData.name && !tableData[harvestTable].block_name) {
+              tableData[harvestTable].block_name = blocksData.name;
+            }
+            delete tableData["blocks"];
+          }
+        }
+
         let rowImported = false;
         for (const [table, data] of Object.entries(tableData)) {
           if (Object.keys(data).length === 0) continue;
