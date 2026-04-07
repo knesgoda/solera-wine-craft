@@ -2224,6 +2224,7 @@ export type Database = {
           approval_status: string | null
           ava: string | null
           base_price_per_unit: number
+          clone: string | null
           contract_number: string | null
           contract_type: string | null
           created_at: string
@@ -2244,6 +2245,7 @@ export type Database = {
           payment_term: Database["public"]["Enums"]["payment_term"]
           payment_term_custom_days: number | null
           pricing_unit: Database["public"]["Enums"]["contract_pricing_unit"]
+          rootstock: string | null
           source_vineyard_name: string | null
           special_terms: string | null
           status: Database["public"]["Enums"]["contract_status"]
@@ -2251,12 +2253,14 @@ export type Database = {
           total_delivered_tons: number | null
           updated_at: string
           updated_by: string | null
+          variety: string | null
           vintage_year: number
         }
         Insert: {
           approval_status?: string | null
           ava?: string | null
           base_price_per_unit: number
+          clone?: string | null
           contract_number?: string | null
           contract_type?: string | null
           created_at?: string
@@ -2277,6 +2281,7 @@ export type Database = {
           payment_term?: Database["public"]["Enums"]["payment_term"]
           payment_term_custom_days?: number | null
           pricing_unit?: Database["public"]["Enums"]["contract_pricing_unit"]
+          rootstock?: string | null
           source_vineyard_name?: string | null
           special_terms?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
@@ -2284,12 +2289,14 @@ export type Database = {
           total_delivered_tons?: number | null
           updated_at?: string
           updated_by?: string | null
+          variety?: string | null
           vintage_year: number
         }
         Update: {
           approval_status?: string | null
           ava?: string | null
           base_price_per_unit?: number
+          clone?: string | null
           contract_number?: string | null
           contract_type?: string | null
           created_at?: string
@@ -2310,6 +2317,7 @@ export type Database = {
           payment_term?: Database["public"]["Enums"]["payment_term"]
           payment_term_custom_days?: number | null
           pricing_unit?: Database["public"]["Enums"]["contract_pricing_unit"]
+          rootstock?: string | null
           source_vineyard_name?: string | null
           special_terms?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
@@ -2317,6 +2325,7 @@ export type Database = {
           total_delivered_tons?: number | null
           updated_at?: string
           updated_by?: string | null
+          variety?: string | null
           vintage_year?: number
         }
         Relationships: [
