@@ -460,6 +460,23 @@ serve(async (req) => {
             delete data.winery_name;
           }
 
+          // --- Entity resolution: fermentation_vessels name fallback ---
+          if (table === "fermentation_vessels") {
+            if (!data.name && data.vessel_name) {
+              data.name = data.vessel_name;
+              delete data.vessel_name;
+            }
+            if (!data.capacity_gallons && data.capacity_gal) {
+              data.capacity_gallons = data.capacity_gal;
+              delete data.capacity_gal;
+            }
+            // Also check raw row fallbacks
+            if (!data.name) {
+              const rawName = row["vessel_name"] || row["Vessel_Name"] || row["Vessel Name"] || row["vessel name"];
+              if (rawName) data.name = rawName;
+            }
+          }
+
           // --- Duplicate detection for vintages (improved) ---
           if (table === "vintages") {
             delete data.winery_name;
