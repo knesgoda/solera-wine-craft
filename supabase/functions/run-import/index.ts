@@ -17,9 +17,7 @@ function normalizeTaskStatus(v: string): string {
 }
 
 function normalizeVintageStatus(v: string): string {
-  // Normalize dashes: em dash, en dash → regular hyphen
   let s = v.replace(/[—–]/g, "-").toLowerCase().trim();
-  // Strip "active -" or "active-" prefix
   s = s.replace(/^active\s*-\s*/, "");
 
   if (["fermenting", "active fermentation", "press & settle", "press and settle", "settling"].includes(s)) return "in_progress";
@@ -126,7 +124,7 @@ async function resolveGrower(
 }
 
 async function resolveBlock(
-  supabase: any, orgId: string, name: string, vineyardCache: EntityCache, blockCache: EntityCache
+  supabase: any, orgId: string, name: string, blockCache: EntityCache
 ): Promise<string | null> {
   const key = name.toLowerCase().trim();
   if (blockCache[key]) return blockCache[key];
@@ -140,6 +138,34 @@ async function resolveBlock(
   if (existing) {
     blockCache[key] = existing.id;
     return existing.id;
+  }
+  return null;
+}
+
+// Try to derive vintage_id from a block (find latest vintage associated with block's vineyard)
+async function deriveVintageFromBlock(
+  supabase: any, orgId: string, blockId: string, vintageCache: EntityCache
+): Promise<string | null> {
+  // Look for a vintage that references this block's vineyard
+  const { data: block } = await supabase
+    .from("blocks")
+    .select("vineyard_id, name, variety")
+    .eq("id", blockId)
+    .single();
+
+  if (!block) return null;
+
+  // Try to find a vintage with matching variety or recent year
+  const { data: vintage } = await supabase
+    .from("vintages")
+    .select("id")
+    .eq("org_id", orgId)
+    .order("year", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (vintage) {
+    return vintage.id;
   }
   return null;
 }
@@ -225,35 +251,50 @@ serve(async (req) => {
 
           // --- Entity resolution: blocks need vineyard_id ---
           if (table === "blocks") {
-            // Accept both "vineyard_name" and "vineyard" as alias
+            // Accept vineyard_name, vineyard, or any vineyard-like field
             const vineyardName = data.vineyard_name || data.vineyard;
             if (vineyardName && !data.vineyard_id) {
               data.vineyard_id = await resolveVineyard(supabase, orgId, vineyardName, vineyardCache);
-              delete data.vineyard_name;
-              delete data.vineyard;
             }
+            // Clean up pseudo-fields
+            delete data.vineyard_name;
+            delete data.vineyard;
+            delete data.winery_name;
+
             if (!data.vineyard_id) {
-              throw new Error("blocks: vineyard_id is required — provide a vineyard name or ID");
+              throw new Error("blocks: vineyard_id is required — provide a vineyard name or ID. Check that your CSV has a 'vineyard' or 'vineyard_name' column mapped to blocks.vineyard_name");
             }
           }
 
           // --- Entity resolution: lab_samples need vintage_id ---
           if (table === "lab_samples") {
+            // Try vintage_name first
             if (data.vintage_name && !data.vintage_id) {
               data.vintage_id = await resolveVintage(supabase, orgId, data.vintage_name, vintageCache);
-              delete data.vintage_name;
             }
+            // Then try lot_name
             if (data.lot_name && !data.vintage_id) {
               data.vintage_id = await resolveVintage(supabase, orgId, data.lot_name, vintageCache);
-              delete data.lot_name;
             }
+            // Resolve block from block_name
             if (data.block_name) {
-              const blockId = await resolveBlock(supabase, orgId, data.block_name, vineyardCache, blockCache);
-              if (blockId) data.block_id = blockId;
-              delete data.block_name;
+              const blockId = await resolveBlock(supabase, orgId, data.block_name, blockCache);
+              if (blockId) {
+                data.block_id = blockId;
+                // If no vintage_id yet, try to derive from block
+                if (!data.vintage_id) {
+                  const derivedVintageId = await deriveVintageFromBlock(supabase, orgId, blockId, vintageCache);
+                  if (derivedVintageId) data.vintage_id = derivedVintageId;
+                }
+              }
             }
+            // Clean up pseudo-fields
+            delete data.vintage_name;
+            delete data.lot_name;
+            delete data.block_name;
+
             if (!data.vintage_id) {
-              throw new Error("lab_samples: vintage_id is required — provide a vintage/lot name or ID");
+              throw new Error("lab_samples: vintage_id is required — provide a vintage/lot name, block name, or vintage ID");
             }
           }
 
@@ -309,16 +350,20 @@ serve(async (req) => {
           // --- harvest tables: resolve block, remove pseudo-fields ---
           if (["harvest_progress", "harvest_predictions", "pick_windows"].includes(table)) {
             if (data.block_id && typeof data.block_id === "string" && !data.block_id.match(/^[0-9a-f-]{36}$/)) {
-              // It's an external block ID like "BLK-001", store as external ref, try to resolve
               const externalId = data.block_id;
               delete data.block_id;
-              // Try to find by external_block_id
               const { data: block } = await supabase
                 .from("blocks")
                 .select("id")
                 .eq("external_block_id", externalId)
                 .maybeSingle();
               if (block) data.block_id = block.id;
+            }
+            // Resolve block_name to block_id
+            if (data.block_name && !data.block_id) {
+              const blockId = await resolveBlock(supabase, orgId, data.block_name, blockCache);
+              if (blockId) data.block_id = blockId;
+              delete data.block_name;
             }
             // Map external IDs
             if (table === "harvest_progress" && data.external_progress_id === undefined && row.progress_id) {
@@ -332,20 +377,14 @@ serve(async (req) => {
             }
             // Remove winery_name (not a real column)
             delete data.winery_name;
-            // last_updated is a date field for harvest_predictions
-            if (table === "harvest_predictions" && data.last_updated) {
-              // keep as-is, it's a date column
-            }
           }
 
           // --- Duplicate detection for vintages (improved) ---
           if (table === "vintages") {
-            // Remove winery_name pseudo-field
             delete data.winery_name;
             
             let existingId: string | null = null;
 
-            // First try: external IDs
             if (data.external_vintage_id) {
               const { data: ext } = await supabase
                 .from("vintages").select("id").eq("org_id", orgId)
@@ -358,7 +397,6 @@ serve(async (req) => {
                 .eq("external_lot_id", data.external_lot_id).maybeSingle();
               if (ext) existingId = ext.id;
             }
-            // Second try: year + name
             if (!existingId && data.year && data.name) {
               const { data: ext } = await supabase
                 .from("vintages").select("id").eq("org_id", orgId)
@@ -366,7 +404,6 @@ serve(async (req) => {
                 .ilike("name", data.name.toLowerCase().trim()).maybeSingle();
               if (ext) existingId = ext.id;
             }
-            // Third try: year only (only if no name)
             if (!existingId && data.year && !data.name) {
               const { data: ext } = await supabase
                 .from("vintages").select("id").eq("org_id", orgId)
@@ -410,7 +447,7 @@ serve(async (req) => {
         }
 
         if (rowImported) imported++;
-        else if (!rowImported && errors === 0) skipped++;
+        else skipped++;
       } catch (rowErr: any) {
         errors++;
         await supabase.from("import_errors").insert({
