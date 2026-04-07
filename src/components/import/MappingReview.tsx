@@ -42,14 +42,21 @@ const confBadge = (c: string) => {
 };
 
 // Detect validation warnings based on current mappings
-function getValidationWarnings(mappings: Mapping[]): string[] {
+function getValidationWarnings(mappings: Mapping[]): { warnings: string[]; blockConfirm: boolean } {
   const warnings: string[] = [];
+  let blockConfirm = false;
   const mappedTables = new Set(mappings.filter(m => m.target_table).map(m => m.target_table!));
 
   // Blocks must have vineyard reference
+  const HARVEST_TABLES = new Set(["harvest_progress", "harvest_predictions", "pick_windows"]);
+  const hasHarvestTable = [...mappedTables].some(t => HARVEST_TABLES.has(t));
+
   if (mappedTables.has("blocks")) {
     const hasVineyard = mappings.some(m => m.target_table === "blocks" && (m.target_field === "vineyard_name" || m.target_field === "vineyard_id"));
-    if (!hasVineyard) {
+    if (!hasVineyard && hasHarvestTable) {
+      warnings.push("block_id is being routed to the blocks table instead of the harvest table. Change block_id mapping from blocks → external_block_id to the appropriate harvest table → block_id.");
+      blockConfirm = true;
+    } else if (!hasVineyard) {
       warnings.push("Blocks import requires a vineyard name or ID. Map a column to blocks → vineyard_name.");
     }
   }
@@ -70,7 +77,7 @@ function getValidationWarnings(mappings: Mapping[]): string[] {
     warnings.push(`Mappings target ${mappedTables.size} different tables (${[...mappedTables].join(", ")}). This may indicate misrouted columns — review carefully.`);
   }
 
-  return warnings;
+  return { warnings, blockConfirm };
 }
 
 export function MappingReview({ mappings, setMappings, isLoading, onConfirm, onBack }: Props) {
@@ -89,7 +96,7 @@ export function MappingReview({ mappings, setMappings, isLoading, onConfirm, onB
 
   // Detect target table for summary
   const targetTables = [...new Set(mappings.filter(m => m.target_table).map(m => m.target_table!))];
-  const warnings = isLoading ? [] : getValidationWarnings(mappings);
+  const { warnings, blockConfirm } = isLoading ? { warnings: [], blockConfirm: false } : getValidationWarnings(mappings);
 
   return (
     <Card>
@@ -158,7 +165,7 @@ export function MappingReview({ mappings, setMappings, isLoading, onConfirm, onB
               </Table>
             </div>
             <div className="flex justify-end mt-4">
-              <Button onClick={onConfirm} className="min-h-[44px]">Confirm Mapping</Button>
+              <Button onClick={onConfirm} className="min-h-[44px]" disabled={blockConfirm}>Confirm Mapping</Button>
             </div>
           </>
         )}

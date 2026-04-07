@@ -19,6 +19,14 @@ interface Props {
 export function ImportPreview({ headers, mappings, rows, totalRows, duplicateStrategy, setDuplicateStrategy, onConfirm, onBack }: Props) {
   const mappedCols = mappings.filter((m) => m.target_table && m.target_field);
 
+  // Preflight guard: block harvest imports that accidentally include blocks without vineyard
+  const HARVEST_TABLES = new Set(["harvest_progress", "harvest_predictions", "pick_windows"]);
+  const mappedTables = new Set(mappedCols.map(m => m.target_table!));
+  const hasHarvest = [...mappedTables].some(t => HARVEST_TABLES.has(t));
+  const hasBlocks = mappedTables.has("blocks");
+  const hasVineyardMapping = mappings.some(m => m.target_table === "blocks" && (m.target_field === "vineyard_name" || m.target_field === "vineyard_id"));
+  const blockedByBlocksConflict = hasHarvest && hasBlocks && !hasVineyardMapping;
+
   return (
     <Card>
       <CardHeader>
@@ -68,9 +76,15 @@ export function ImportPreview({ headers, mappings, rows, totalRows, duplicateStr
           </Table>
         </div>
 
+        {blockedByBlocksConflict && (
+          <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+            <strong>Cannot import:</strong> block_id is mapped to the blocks table without a vineyard reference. Go back to mapping review and reassign block_id to the harvest table.
+          </div>
+        )}
+
         <div className="flex justify-between">
           <Button variant="outline" onClick={onBack}>Back</Button>
-          <Button onClick={onConfirm} className="min-h-[44px]">
+          <Button onClick={onConfirm} className="min-h-[44px]" disabled={blockedByBlocksConflict}>
             Import {totalRows} Rows
           </Button>
         </div>
