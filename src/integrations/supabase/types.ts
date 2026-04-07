@@ -1876,6 +1876,7 @@ export type Database = {
           capacity_gallons: number | null
           capacity_liters: number | null
           created_at: string
+          current_fill_gal: number | null
           facility_id: string | null
           id: string
           location: string | null
@@ -1893,6 +1894,7 @@ export type Database = {
           capacity_gallons?: number | null
           capacity_liters?: number | null
           created_at?: string
+          current_fill_gal?: number | null
           facility_id?: string | null
           id?: string
           location?: string | null
@@ -1910,6 +1912,7 @@ export type Database = {
           capacity_gallons?: number | null
           capacity_liters?: number | null
           created_at?: string
+          current_fill_gal?: number | null
           facility_id?: string | null
           id?: string
           location?: string | null
@@ -2783,12 +2786,14 @@ export type Database = {
           alcohol: number | null
           brix: number | null
           created_at: string
+          gdd_cumulative: number | null
           id: string
           notes: string | null
           offline_queued: boolean
           ph: number | null
           rs: number | null
           sampled_at: string
+          sampled_by: string | null
           so2_free: number | null
           so2_total: number | null
           ta: number | null
@@ -2799,12 +2804,14 @@ export type Database = {
           alcohol?: number | null
           brix?: number | null
           created_at?: string
+          gdd_cumulative?: number | null
           id?: string
           notes?: string | null
           offline_queued?: boolean
           ph?: number | null
           rs?: number | null
           sampled_at: string
+          sampled_by?: string | null
           so2_free?: number | null
           so2_total?: number | null
           ta?: number | null
@@ -2815,12 +2822,14 @@ export type Database = {
           alcohol?: number | null
           brix?: number | null
           created_at?: string
+          gdd_cumulative?: number | null
           id?: string
           notes?: string | null
           offline_queued?: boolean
           ph?: number | null
           rs?: number | null
           sampled_at?: string
+          sampled_by?: string | null
           so2_free?: number | null
           so2_total?: number | null
           ta?: number | null
@@ -3690,7 +3699,9 @@ export type Database = {
       tasks: {
         Row: {
           assigned_to: string | null
+          assigned_to_name: string | null
           block_id: string | null
+          category: string | null
           created_at: string
           due_date: string | null
           gps_lat: number | null
@@ -3700,13 +3711,16 @@ export type Database = {
           offline_queued: boolean
           org_id: string
           photos: string[] | null
+          priority: string | null
           status: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at: string
         }
         Insert: {
           assigned_to?: string | null
+          assigned_to_name?: string | null
           block_id?: string | null
+          category?: string | null
           created_at?: string
           due_date?: string | null
           gps_lat?: number | null
@@ -3716,13 +3730,16 @@ export type Database = {
           offline_queued?: boolean
           org_id: string
           photos?: string[] | null
+          priority?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at?: string
         }
         Update: {
           assigned_to?: string | null
+          assigned_to_name?: string | null
           block_id?: string | null
+          category?: string | null
           created_at?: string
           due_date?: string | null
           gps_lat?: number | null
@@ -3732,6 +3749,7 @@ export type Database = {
           offline_queued?: boolean
           org_id?: string
           photos?: string[] | null
+          priority?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           title?: string
           updated_at?: string
@@ -4114,55 +4132,76 @@ export type Database = {
       vintages: {
         Row: {
           block_id: string | null
+          bottling_target: string | null
           cases_projected: number | null
           client_org_id: string | null
+          clone: string | null
           created_at: string
+          fermentation_start: string | null
           gallons: number | null
           harvest_date: string | null
           id: string
+          ml_complete: string | null
+          name: string | null
           notes: string | null
           org_id: string
           pick_date: string | null
           press_date: string | null
+          rootstock: string | null
           status: Database["public"]["Enums"]["vintage_status"]
           tons_harvested: number | null
           updated_at: string
+          variety: string | null
           winemaker_notes: string | null
           year: number
         }
         Insert: {
           block_id?: string | null
+          bottling_target?: string | null
           cases_projected?: number | null
           client_org_id?: string | null
+          clone?: string | null
           created_at?: string
+          fermentation_start?: string | null
           gallons?: number | null
           harvest_date?: string | null
           id?: string
+          ml_complete?: string | null
+          name?: string | null
           notes?: string | null
           org_id: string
           pick_date?: string | null
           press_date?: string | null
+          rootstock?: string | null
           status?: Database["public"]["Enums"]["vintage_status"]
           tons_harvested?: number | null
           updated_at?: string
+          variety?: string | null
           winemaker_notes?: string | null
           year: number
         }
         Update: {
           block_id?: string | null
+          bottling_target?: string | null
           cases_projected?: number | null
           client_org_id?: string | null
+          clone?: string | null
           created_at?: string
+          fermentation_start?: string | null
           gallons?: number | null
           harvest_date?: string | null
           id?: string
+          ml_complete?: string | null
+          name?: string | null
           notes?: string | null
           org_id?: string
           pick_date?: string | null
           press_date?: string | null
+          rootstock?: string | null
           status?: Database["public"]["Enums"]["vintage_status"]
           tons_harvested?: number | null
           updated_at?: string
+          variety?: string | null
           winemaker_notes?: string | null
           year?: number
         }
