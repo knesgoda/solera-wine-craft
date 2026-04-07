@@ -9,7 +9,7 @@ import type { Mapping } from "@/pages/DataImport";
 
 const targetOptions: Record<string, string[]> = {
   vintages: ["year", "name", "status", "harvest_date", "tons_harvested", "notes", "gallons", "cases_projected", "pick_date", "press_date", "winemaker_notes", "variety", "clone", "rootstock", "fermentation_start", "ml_complete", "bottling_target", "external_vintage_id", "external_lot_id"],
-  lab_samples: ["vintage_name", "lot_name", "sampled_at", "brix", "ph", "ta", "va", "so2_free", "so2_total", "alcohol", "rs", "notes", "sampled_by", "gdd_cumulative", "block_name", "external_sample_id"],
+  lab_samples: ["vintage_name", "lot_name", "sampled_at", "brix", "ph", "ta", "va", "so2_free", "so2_total", "alcohol", "rs", "notes", "sampled_by", "gdd_cumulative", "block_name", "external_sample_id", "external_block_id"],
   blocks: ["name", "vineyard_name", "variety", "clone", "rootstock", "acres", "status", "lifecycle_stage", "soil_ph", "soil_texture", "soil_organic_matter", "row_spacing_ft", "vine_spacing_ft", "year_planted", "exposure", "elevation_ft", "irrigation", "drainage", "notes", "external_block_id"],
   barrels: ["barrel_id", "type", "cooperage", "toast", "size_liters", "variety", "status"],
   fermentation_vessels: ["name", "capacity_liters", "material", "vessel_type", "status", "location", "capacity_gallons", "notes", "temp_controlled", "current_fill_gal", "external_vessel_id"],
@@ -58,10 +58,10 @@ function getValidationWarnings(mappings: Mapping[]): string[] {
   if (mappedTables.has("lab_samples")) {
     const hasVintageRef = mappings.some(m =>
       m.target_table === "lab_samples" &&
-      (m.target_field === "vintage_name" || m.target_field === "lot_name" || m.target_field === "block_name")
+      (m.target_field === "vintage_name" || m.target_field === "lot_name" || m.target_field === "block_name" || m.target_field === "external_block_id")
     );
     if (!hasVintageRef) {
-      warnings.push("Lab samples require a vintage/lot name or block name. Map a column to lab_samples → vintage_name, lot_name, or block_name.");
+      warnings.push("Lab samples require a vintage/lot name, block name, or block ID. Map a column to lab_samples → vintage_name, lot_name, block_name, or external_block_id.");
     }
   }
 

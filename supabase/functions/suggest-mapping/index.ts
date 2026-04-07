@@ -43,7 +43,7 @@ const FILE_ALIASES: Record<string, Record<string, string>> = {
     vintage_name: "lab_samples.vintage_name",
     lot_name: "lab_samples.lot_name",
     block_name: "lab_samples.block_name",
-    block_id: "lab_samples.block_name",
+    block_id: "lab_samples.external_block_id",
     brix: "lab_samples.brix",
     ph: "lab_samples.ph",
     ta: "lab_samples.ta",

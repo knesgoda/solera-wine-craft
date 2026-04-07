@@ -129,10 +129,31 @@ async function resolveBlock(
   const key = name.toLowerCase().trim();
   if (blockCache[key]) return blockCache[key];
 
+  // Try by name first (org-scoped)
+  const { data: byName } = await supabase
+    .from("blocks")
+    .select("id, vineyard_id")
+    .ilike("name", key)
+    .maybeSingle();
+
+  if (byName) {
+    blockCache[key] = byName.id;
+    return byName.id;
+  }
+  return null;
+}
+
+// Resolve block by external_block_id (org-scoped via vineyard)
+async function resolveBlockByExternalId(
+  supabase: any, orgId: string, externalId: string, blockCache: EntityCache
+): Promise<string | null> {
+  const key = `ext:${externalId.toLowerCase().trim()}`;
+  if (blockCache[key]) return blockCache[key];
+
   const { data: existing } = await supabase
     .from("blocks")
     .select("id")
-    .ilike("name", key)
+    .eq("external_block_id", externalId.trim())
     .maybeSingle();
 
   if (existing) {
@@ -304,27 +325,49 @@ serve(async (req) => {
             }
             // Remove fields that don't exist on lab_samples table
             delete data.ybn;
+            delete data.variety;
+            delete data.clone;
+            delete data.rootstock;
 
-            // Try vintage_name first
+            // 1. Try vintage_name first
             if (data.vintage_name && !data.vintage_id) {
               data.vintage_id = await resolveVintage(supabase, orgId, data.vintage_name, vintageCache);
             }
-            // Then try lot_name
+            // 2. Then try lot_name
             if (data.lot_name && !data.vintage_id) {
               data.vintage_id = await resolveVintage(supabase, orgId, data.lot_name, vintageCache);
             }
-            // Resolve block from block_name
-            if (data.block_name) {
-              const blockId = await resolveBlock(supabase, orgId, data.block_name, blockCache);
-              if (blockId) {
-                data.block_id = blockId;
-                // If no vintage_id yet, try to derive from block (will auto-create if needed)
-                if (!data.vintage_id) {
-                  const derivedVintageId = await deriveVintageFromBlock(supabase, orgId, blockId, vintageCache);
-                  if (derivedVintageId) data.vintage_id = derivedVintageId;
+
+            // 3. Resolve block from external_block_id (mapped from CSV block_id)
+            let resolvedBlockId: string | null = null;
+            if (data.external_block_id && !resolvedBlockId) {
+              resolvedBlockId = await resolveBlockByExternalId(supabase, orgId, data.external_block_id, blockCache);
+              delete data.external_block_id;
+            }
+            // 4. Resolve block from block_name
+            if (data.block_name && !resolvedBlockId) {
+              resolvedBlockId = await resolveBlock(supabase, orgId, data.block_name, blockCache);
+            }
+            // Also check raw row for block_id that wasn't mapped
+            if (!resolvedBlockId) {
+              const rawBlockId = row["block_id"] || row["Block_ID"] || row["Block ID"];
+              if (rawBlockId) {
+                resolvedBlockId = await resolveBlockByExternalId(supabase, orgId, rawBlockId, blockCache);
+                if (!resolvedBlockId) {
+                  resolvedBlockId = await resolveBlock(supabase, orgId, rawBlockId, blockCache);
                 }
               }
             }
+
+            if (resolvedBlockId) {
+              data.block_id = resolvedBlockId;
+              // 5. If no vintage_id yet, derive from block (auto-create if needed)
+              if (!data.vintage_id) {
+                const derivedVintageId = await deriveVintageFromBlock(supabase, orgId, resolvedBlockId, vintageCache);
+                if (derivedVintageId) data.vintage_id = derivedVintageId;
+              }
+            }
+
             // Clean up pseudo-fields
             delete data.vintage_name;
             delete data.lot_name;
