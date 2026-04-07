@@ -58,10 +58,10 @@ function getValidationWarnings(mappings: Mapping[]): string[] {
   if (mappedTables.has("lab_samples")) {
     const hasVintageRef = mappings.some(m =>
       m.target_table === "lab_samples" &&
-      (m.target_field === "vintage_name" || m.target_field === "lot_name" || m.target_field === "block_name")
+      (m.target_field === "vintage_name" || m.target_field === "lot_name" || m.target_field === "block_name" || m.target_field === "external_block_id")
     );
     if (!hasVintageRef) {
-      warnings.push("Lab samples require a vintage/lot name or block name. Map a column to lab_samples → vintage_name, lot_name, or block_name.");
+      warnings.push("Lab samples require a vintage/lot name, block name, or block ID. Map a column to lab_samples → vintage_name, lot_name, block_name, or external_block_id.");
     }
   }
 
