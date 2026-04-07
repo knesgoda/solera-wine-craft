@@ -430,21 +430,46 @@ serve(async (req) => {
 
           // --- harvest tables: resolve block, remove pseudo-fields ---
           if (["harvest_progress", "harvest_predictions", "pick_windows"].includes(table)) {
+            // Handle _block_ref pseudo-field (from block_id CSV column)
+            if (data._block_ref) {
+              const ref = String(data._block_ref).trim();
+              delete data._block_ref;
+              if (ref.match(/^[0-9a-f-]{36}$/)) {
+                data.block_id = ref;
+              } else {
+                // Try external_block_id first, then name
+                const resolved = await resolveBlockByExternalId(supabase, orgId, ref, blockCache)
+                  || await resolveBlock(supabase, orgId, ref, blockCache);
+                if (resolved) data.block_id = resolved;
+              }
+            }
+            // Handle block_id that came through directly (non-UUID)
             if (data.block_id && typeof data.block_id === "string" && !data.block_id.match(/^[0-9a-f-]{36}$/)) {
               const externalId = data.block_id;
               delete data.block_id;
-              const { data: block } = await supabase
-                .from("blocks")
-                .select("id")
-                .eq("external_block_id", externalId)
-                .maybeSingle();
-              if (block) data.block_id = block.id;
+              const resolved = await resolveBlockByExternalId(supabase, orgId, externalId, blockCache)
+                || await resolveBlock(supabase, orgId, externalId, blockCache);
+              if (resolved) data.block_id = resolved;
             }
             // Resolve block_name to block_id
             if (data.block_name && !data.block_id) {
               const blockId = await resolveBlock(supabase, orgId, data.block_name, blockCache);
               if (blockId) data.block_id = blockId;
               delete data.block_name;
+            }
+            // Also check raw row for block_id if still not resolved
+            if (!data.block_id) {
+              const rawBlockId = row["block_id"] || row["Block_ID"] || row["Block ID"];
+              if (rawBlockId) {
+                const ref = String(rawBlockId).trim();
+                if (ref.match(/^[0-9a-f-]{36}$/)) {
+                  data.block_id = ref;
+                } else {
+                  const resolved = await resolveBlockByExternalId(supabase, orgId, ref, blockCache)
+                    || await resolveBlock(supabase, orgId, ref, blockCache);
+                  if (resolved) data.block_id = resolved;
+                }
+              }
             }
             // Map external IDs
             if (table === "harvest_progress" && data.external_progress_id === undefined && row.progress_id) {

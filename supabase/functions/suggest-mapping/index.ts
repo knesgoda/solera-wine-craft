@@ -120,7 +120,7 @@ const FILE_ALIASES: Record<string, Record<string, string>> = {
     progress_id: "harvest_progress.external_progress_id",
     external_progress_id: "harvest_progress.external_progress_id",
     block_name: "harvest_progress.block_name",
-    block_id: "harvest_progress.block_name",
+    block_id: "harvest_progress._block_ref",
     variety: "harvest_progress.variety",
     clone: "harvest_progress.clone",
     rootstock: "harvest_progress.rootstock",
@@ -137,6 +137,7 @@ const FILE_ALIASES: Record<string, Record<string, string>> = {
     prediction_id: "harvest_predictions.external_prediction_id",
     external_prediction_id: "harvest_predictions.external_prediction_id",
     block_name: "harvest_predictions.block_name",
+    block_id: "harvest_predictions._block_ref",
     variety: "harvest_predictions.variety",
     clone: "harvest_predictions.clone",
     rootstock: "harvest_predictions.rootstock",
@@ -157,6 +158,7 @@ const FILE_ALIASES: Record<string, Record<string, string>> = {
     window_id: "pick_windows.external_window_id",
     external_window_id: "pick_windows.external_window_id",
     block_name: "pick_windows.block_name",
+    block_id: "pick_windows._block_ref",
     variety: "pick_windows.variety",
     clone: "pick_windows.clone",
     rootstock: "pick_windows.rootstock",
@@ -274,8 +276,9 @@ serve(async (req) => {
       // Try file-type-specific alias first
       let alias = aliasMap[lower];
 
-      // Fall back to global alias if no file-specific match
-      if (!alias) alias = GLOBAL_ALIASES[lower];
+      // Fall back to global alias ONLY if no file type was detected
+      // This prevents headers like block_id from leaking into unrelated tables
+      if (!alias && !detectedType) alias = GLOBAL_ALIASES[lower];
 
       if (alias) {
         const [table, field] = alias.split(".");

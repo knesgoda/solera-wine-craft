@@ -18,9 +18,9 @@ const targetOptions: Record<string, string[]> = {
   vineyards: ["name", "region", "acres", "notes"],
   tasks: ["title", "due_date", "status", "instructions", "category", "priority", "assigned_to_name", "external_task_id", "source_reference"],
   grower_contracts: ["external_contract_id", "grower_name", "source_vineyard_name", "ava", "variety", "clone", "rootstock", "contracted_tons", "price_per_ton", "contract_value", "vintage_year", "status", "approval_status", "delivery_date", "tons_delivered", "payment_due_date", "payment_status", "contract_type", "notes"],
-  harvest_progress: ["external_progress_id", "block_name", "variety", "clone", "rootstock", "vintage_year", "acres", "expected_tons", "tons_harvested", "harvest_complete", "pick_date", "brix_at_pick", "notes"],
-  harvest_predictions: ["external_prediction_id", "block_name", "variety", "clone", "rootstock", "vintage_year", "current_brix", "current_ph", "current_ta", "brix_per_day", "target_brix", "predicted_pick_date", "days_to_target", "gdd_at_prediction", "confidence", "last_updated", "notes"],
-  pick_windows: ["external_window_id", "block_name", "variety", "clone", "rootstock", "current_brix", "target_brix_low", "target_brix_high", "current_ph", "target_ph_low", "target_ph_high", "current_ta", "brix_per_day", "days_to_window_open", "days_to_window_close", "window_open_date", "window_close_date", "window_status", "urgency", "notes"],
+  harvest_progress: ["external_progress_id", "block_id", "block_name", "variety", "clone", "rootstock", "vintage_year", "acres", "expected_tons", "tons_harvested", "harvest_complete", "pick_date", "brix_at_pick", "notes"],
+  harvest_predictions: ["external_prediction_id", "block_id", "block_name", "variety", "clone", "rootstock", "vintage_year", "current_brix", "current_ph", "current_ta", "brix_per_day", "target_brix", "predicted_pick_date", "days_to_target", "gdd_at_prediction", "confidence", "last_updated", "notes"],
+  pick_windows: ["external_window_id", "block_id", "block_name", "variety", "clone", "rootstock", "current_brix", "target_brix_low", "target_brix_high", "current_ph", "target_ph_low", "target_ph_high", "current_ta", "brix_per_day", "days_to_window_open", "days_to_window_close", "window_open_date", "window_close_date", "window_status", "urgency", "notes"],
 };
 
 const allTargets = Object.entries(targetOptions).flatMap(([table, fields]) =>
