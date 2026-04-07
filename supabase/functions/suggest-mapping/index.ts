@@ -16,15 +16,15 @@ serve(async (req) => {
     if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
 
     const soleraFields = {
-      vintages: ["year", "name", "status", "harvest_date", "tons_harvested", "notes", "gallons", "cases_projected", "pick_date", "press_date", "winemaker_notes"],
-      lab_samples: ["vintage_name", "lot_name", "sampled_at", "brix", "ph", "ta", "va", "so2_free", "so2_total", "alcohol", "rs", "notes"],
+      vintages: ["year", "name", "status", "harvest_date", "tons_harvested", "notes", "gallons", "cases_projected", "pick_date", "press_date", "winemaker_notes", "variety", "clone", "rootstock", "fermentation_start", "ml_complete", "bottling_target"],
+      lab_samples: ["vintage_name", "lot_name", "sampled_at", "brix", "ph", "ta", "va", "so2_free", "so2_total", "alcohol", "rs", "notes", "sampled_by", "gdd_cumulative", "block_name"],
       blocks: ["name", "vineyard_name", "variety", "clone", "rootstock", "acres", "status", "lifecycle_stage", "soil_ph", "soil_texture", "soil_organic_matter", "row_spacing_ft", "vine_spacing_ft", "year_planted", "exposure", "elevation_ft", "irrigation", "drainage", "notes"],
       barrels: ["barrel_id", "type", "cooperage", "toast", "size_liters", "variety", "status"],
-      fermentation_vessels: ["name", "capacity_liters", "material", "vessel_type", "status", "location", "capacity_gallons", "notes", "temp_controlled"],
+      fermentation_vessels: ["name", "capacity_liters", "material", "vessel_type", "status", "location", "capacity_gallons", "notes", "temp_controlled", "current_fill_gal"],
       ttb_additions: ["added_at", "addition_type", "ttb_code", "amount", "unit", "batch_size", "added_by"],
       inventory_skus: ["label", "variety", "vintage_year", "cases", "bottles", "price"],
       vineyards: ["name", "region", "acres", "notes"],
-      tasks: ["title", "due_date", "status", "instructions"],
+      tasks: ["title", "due_date", "status", "instructions", "category", "priority", "assigned_to_name"],
     };
 
     const systemPrompt = `You are a data mapping assistant for a winery management system called Solera.
