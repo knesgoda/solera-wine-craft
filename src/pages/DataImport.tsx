@@ -27,6 +27,7 @@ export interface ImportResult {
   skipped: number;
   errors: number;
   total: number;
+  errorMessages?: string[];
 }
 
 export default function DataImport() {
