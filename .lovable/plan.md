@@ -1,80 +1,53 @@
 
-Goal: fix the remaining import failures by aligning the database, mapping engine, and importer around the actual CSV shapes now failing.
 
-What’s actually broken now
-- grower_contracts fails because `clone` is being mapped, but `grower_contracts` still does not have `clone` (and likely also lacks `variety` / `rootstock`) in the database.
-- blocks still fails because header aliases are global and not context-aware. A file can expose `vineyard`, but if mapping does not end up on `blocks.vineyard_name`, `run-import` still throws for missing `vineyard_id`.
-- lab_samples still fails because the importer only succeeds when `vintage_name` or `lot_name` is mapped into `lab_samples`, but the current alias logic can send shared headers like `lot_name`, `block_name`, or `block_id` to the wrong table based on generic rules.
+# Fix Remaining Import Failures
 
-Implementation plan
+## Root Causes Found
 
-1. Add the missing contract columns to the database
-- Create a migration to add these nullable columns to `grower_contracts`:
-  - `variety text`
-  - `clone text`
-  - `rootstock text`
-- Keep the existing contract import fields already added.
-- Do not change existing enums or required columns.
+### 1. grower_contracts: `"completed"` is not a valid enum value
+The `contract_status` enum has values: `draft`, `active`, `fulfilled`, `cancelled`, `expired`. The normalizer on line 337 maps `"completed"` and `"fulfilled"` → `"completed"`, but "completed" does not exist. The CSV also has `"Fulfilled"` which should stay as `"fulfilled"`, and `"Active"` which is fine.
 
-2. Make mapping file-type aware instead of global-first
-- Refactor `suggest-mapping` so deterministic aliases are applied in the context of the detected file type first.
-- Example behavior:
-  - blocks file: `vineyard` -> `blocks.vineyard_name`
-  - lab samples file: `lot_name` -> `lab_samples.lot_name`, `block_name` -> `lab_samples.block_name`, `block_id` -> lab-sample block linkage path
-  - vintages file: `lot_name` -> `vintages.name`, `lot_id` -> `vintages.external_lot_id`
-  - grower contracts file: `clone` -> `grower_contracts.clone`
-- Keep fallback AI mapping, but only after contextual deterministic rules are applied.
+**Fix**: Change the normalizer to map `"completed"` → `"fulfilled"` (since that's the actual enum value).
 
-3. Add stronger file signatures for the failing CSV types
-- Expand file detection in `suggest-mapping` so these formats are classified reliably:
-  - blocks
-  - lab_samples
-  - vintages / wine lots
-  - grower_contracts
-- Use combinations of headers rather than single shared names to avoid cross-table bleed.
+### 2. blocks: vineyard_name not reaching the importer
+The suggest-mapping logs show blocks CSV was **not detected** in this latest upload session — it's missing from the logs entirely. The blocks file may have been uploaded in a batch where the mapping wasn't applied. However, the alias mapping itself is correct (`vineyard` → `blocks.vineyard_name`). The issue is that the blocks CSV also has `block_id` as an external ID field, and the suggest-mapping maps it as `blocks.external_block_id` — but the `blocks` table may not have this column yet.
 
-4. Harden `run-import` for blocks imports
-- Keep current vineyard auto-create logic.
-- Add a pre-insert normalization layer so if a blocks row includes a likely vineyard source under alias variants, it is coerced into the vineyard resolution path before validation.
-- Improve the thrown error so it includes the source column expectation when vineyard mapping is missing.
+Actually, looking more carefully: the blocks detection should work. But the `vineyard` column value is reaching run-import as `data.vineyard_name` — the resolution code on line 255 checks `data.vineyard_name || data.vineyard`. This should work. The likely issue is that **during the actual import**, the `vineyard` header isn't being mapped to `blocks.vineyard_name` by the user — perhaps the UI shows it unmapped or the user didn't confirm the mapping.
 
-5. Improve `run-import` for lab samples
-- Add a second resolution path:
-  - if `block_name` or external `block_id` resolves to a block, attempt to derive the target vintage from that block when possible
-  - if `lot_name` exists, prefer resolving vintage from `lot_name`
-- Only fail after trying all three:
-  - `vintage_name`
-  - `lot_name`
-  - block-based resolution
-- Keep `block_id` storage on `lab_samples` for traceability.
+**More likely root cause**: The `blocks` table doesn't have `external_block_id` column, so the insert fails on that column before even checking vineyard. But wait — the migration should have added it. Let me verify.
 
-6. Add import validation before execution
-- In the preview/import flow, warn early when a file is about to fail:
-  - blocks must map a vineyard reference
-  - lab samples must map at least one vintage or block reference
-  - grower contracts should not target fields missing from the schema
-- This should block obvious bad runs before the edge function is called.
+Actually, the clearest fix is to add a **fallback in run-import** that also checks for the raw `vineyard` key in the data object (in case the mapping sends it as `vineyard` instead of `vineyard_name`), and to also handle cases where unmapped columns like `sample_date` (should be `sampled_at`) and `ta_g_l` (should be `ta`) are present.
 
-7. Make the mapping review clearer for users
-- In `MappingReview`, group or highlight the likely detected destination table.
-- Surface a warning when a file has mappings split across multiple unrelated tables unexpectedly.
-- This is especially important for shared column names like `block_name`, `lot_name`, and `block_id`.
+### 3. lab_samples: vintage_id resolution fails
+The lab CSV has `block_id` and `block_name` but no `vintage_name` or `lot_name`. The block resolution tries to find the block by name, then derive a vintage from it. But:
+- `block_name` resolution uses `ilike` on `blocks.name` — this should work IF blocks were imported first
+- `deriveVintageFromBlock` just grabs the latest vintage by year — it works but only if vintages exist
+- The CSV has `sample_date` (not `sampled_at`) which is unmapped, and `ta_g_l` / `va_g_l` / `so2_free_ppm` which don't match the alias names `ta` / `va` / `so2_free`
 
-Files to update
-- New migration in `supabase/migrations/`
-- `supabase/functions/suggest-mapping/index.ts`
+**Fix**: Add more lab sample header aliases for the actual CSV column names.
+
+### 4. pick_windows detected as harvest_predictions
+The pick_windows CSV is being misclassified because `harvest_predictions` signature matches first (both have `current_brix`, `brix_per_day`). The pick_windows signature needs higher priority or more specific detection.
+
+**Fix**: Reorder FILE_SIGNATURES so pick_windows is checked before harvest_predictions, and add `window_status` / `window_open_date` as distinguishing signatures.
+
+## Changes
+
+### Migration (new)
+- Add `contract_status` enum value `completed` so both `completed` and `fulfilled` work — OR just fix the normalizer (cheaper, no enum change needed)
+
+### `supabase/functions/run-import/index.ts`
+1. Fix contract status normalizer: `"completed"` and `"fulfilled"` → `"fulfilled"` (the actual enum value)
+2. Add lab_samples field aliases in the importer: map `sample_date` → `sampled_at`, `ta_g_l` → `ta`, `va_g_l` → `va`, `so2_free_ppm` → `so2_free`, `ybn` → ignore/skip
+3. In blocks handler, also check for raw `vineyard` key as fallback for vineyard resolution
+4. For lab_samples, if no vintage can be derived, auto-create a vintage from the block's variety + current year instead of failing
+
+### `supabase/functions/suggest-mapping/index.ts`
+1. Add lab_samples aliases: `sample_date` → `lab_samples.sampled_at`, `ta_g_l` → `lab_samples.ta`, `va_g_l` → `lab_samples.va`, `so2_free_ppm` → `lab_samples.so2_free`
+2. Reorder FILE_SIGNATURES: move `pick_windows` before `harvest_predictions`
+3. Add `contract_year` → `grower_contracts.vintage_year` alias
+
+## Files to update
 - `supabase/functions/run-import/index.ts`
-- `src/components/import/MappingReview.tsx`
-- `src/components/import/ImportPreview.tsx`
-- `src/pages/DataImport.tsx`
+- `supabase/functions/suggest-mapping/index.ts`
 
-Technical notes
-- The current issue is no longer mainly schema cache refresh; it is schema mismatch plus context-insensitive mapping.
-- Existing RLS for `blocks` and `lab_samples` appears compatible once the correct foreign keys are resolved.
-- The most important fix is to stop reusing the same alias rules across unrelated file types.
-
-Expected outcome
-- grower contracts imports stop failing on `clone`
-- blocks imports consistently resolve `vineyard_id`
-- lab sample imports succeed when the file provides lot, vintage, or block context
-- users get earlier warnings instead of learning about mapping mistakes only after a failed import
