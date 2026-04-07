@@ -142,11 +142,10 @@ async function resolveBlock(
   return null;
 }
 
-// Try to derive vintage_id from a block (find latest vintage associated with block's vineyard)
+// Try to derive vintage_id from a block; auto-create if none exists
 async function deriveVintageFromBlock(
   supabase: any, orgId: string, blockId: string, vintageCache: EntityCache
 ): Promise<string | null> {
-  // Look for a vintage that references this block's vineyard
   const { data: block } = await supabase
     .from("blocks")
     .select("vineyard_id, name, variety")
@@ -164,10 +163,22 @@ async function deriveVintageFromBlock(
     .limit(1)
     .maybeSingle();
 
-  if (vintage) {
-    return vintage.id;
-  }
-  return null;
+  if (vintage) return vintage.id;
+
+  // Auto-create a vintage from block variety + current year
+  const currentYear = new Date().getFullYear();
+  const vintageName = block.variety
+    ? `${block.variety} ${currentYear}`
+    : `${block.name} ${currentYear}`;
+  const { data: created, error } = await supabase
+    .from("vintages")
+    .insert({ org_id: orgId, name: vintageName, year: currentYear, variety: block.variety || null })
+    .select("id")
+    .single();
+  if (error) return null;
+  const key = vintageName.toLowerCase().trim();
+  vintageCache[key] = created.id;
+  return created.id;
 }
 
 // Tables that need org_id
@@ -251,14 +262,20 @@ serve(async (req) => {
 
           // --- Entity resolution: blocks need vineyard_id ---
           if (table === "blocks") {
-            // Accept vineyard_name, vineyard, or any vineyard-like field
-            const vineyardName = data.vineyard_name || data.vineyard;
-            if (vineyardName && !data.vineyard_id) {
-              data.vineyard_id = await resolveVineyard(supabase, orgId, vineyardName, vineyardCache);
+            // Accept vineyard_name, vineyard, source_vineyard_name, or any vineyard-like field
+            const vineyardName = data.vineyard_name || data.vineyard || data.source_vineyard_name;
+            // Also check the raw row for common vineyard header variants
+            const vineyardFromRow = !vineyardName
+              ? (row["vineyard"] || row["Vineyard"] || row["vineyard_name"] || row["Vineyard_Name"] || row["vineyard name"] || row["Vineyard Name"])
+              : null;
+            const resolvedVineyardName = vineyardName || vineyardFromRow;
+            if (resolvedVineyardName && !data.vineyard_id) {
+              data.vineyard_id = await resolveVineyard(supabase, orgId, resolvedVineyardName, vineyardCache);
             }
             // Clean up pseudo-fields
             delete data.vineyard_name;
             delete data.vineyard;
+            delete data.source_vineyard_name;
             delete data.winery_name;
 
             if (!data.vineyard_id) {
@@ -268,6 +285,26 @@ serve(async (req) => {
 
           // --- Entity resolution: lab_samples need vintage_id ---
           if (table === "lab_samples") {
+            // Field aliases: normalize CSV column names to DB column names
+            if (data.sample_date !== undefined && data.sampled_at === undefined) {
+              data.sampled_at = data.sample_date;
+              delete data.sample_date;
+            }
+            if (data.ta_g_l !== undefined && data.ta === undefined) {
+              data.ta = data.ta_g_l;
+              delete data.ta_g_l;
+            }
+            if (data.va_g_l !== undefined && data.va === undefined) {
+              data.va = data.va_g_l;
+              delete data.va_g_l;
+            }
+            if (data.so2_free_ppm !== undefined && data.so2_free === undefined) {
+              data.so2_free = data.so2_free_ppm;
+              delete data.so2_free_ppm;
+            }
+            // Remove fields that don't exist on lab_samples table
+            delete data.ybn;
+
             // Try vintage_name first
             if (data.vintage_name && !data.vintage_id) {
               data.vintage_id = await resolveVintage(supabase, orgId, data.vintage_name, vintageCache);
@@ -281,7 +318,7 @@ serve(async (req) => {
               const blockId = await resolveBlock(supabase, orgId, data.block_name, blockCache);
               if (blockId) {
                 data.block_id = blockId;
-                // If no vintage_id yet, try to derive from block
+                // If no vintage_id yet, try to derive from block (will auto-create if needed)
                 if (!data.vintage_id) {
                   const derivedVintageId = await deriveVintageFromBlock(supabase, orgId, blockId, vintageCache);
                   if (derivedVintageId) data.vintage_id = derivedVintageId;
@@ -334,9 +371,10 @@ serve(async (req) => {
             if (data.status) {
               const s = data.status.toLowerCase().trim();
               if (s === "active") data.status = "active";
-              else if (s === "completed" || s === "fulfilled") data.status = "completed";
+              else if (s === "completed" || s === "fulfilled") data.status = "fulfilled";
               else if (s === "expired") data.status = "expired";
               else if (s === "cancelled" || s === "canceled") data.status = "cancelled";
+              else if (s === "draft") data.status = "draft";
             }
             // Map source_vineyard_name from vineyard_name if present
             if (data.vineyard_name) {

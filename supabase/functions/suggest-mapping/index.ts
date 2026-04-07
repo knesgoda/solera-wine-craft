@@ -38,6 +38,7 @@ const FILE_ALIASES: Record<string, Record<string, string>> = {
     sample_id: "lab_samples.external_sample_id",
     external_sample_id: "lab_samples.external_sample_id",
     sampled_at: "lab_samples.sampled_at",
+    sample_date: "lab_samples.sampled_at",
     sampled_by: "lab_samples.sampled_by",
     vintage_name: "lab_samples.vintage_name",
     lot_name: "lab_samples.lot_name",
@@ -46,13 +47,19 @@ const FILE_ALIASES: Record<string, Record<string, string>> = {
     brix: "lab_samples.brix",
     ph: "lab_samples.ph",
     ta: "lab_samples.ta",
+    ta_g_l: "lab_samples.ta",
     va: "lab_samples.va",
+    va_g_l: "lab_samples.va",
     so2_free: "lab_samples.so2_free",
+    so2_free_ppm: "lab_samples.so2_free",
     so2_total: "lab_samples.so2_total",
     alcohol: "lab_samples.alcohol",
     rs: "lab_samples.rs",
     notes: "lab_samples.notes",
     gdd_cumulative: "lab_samples.gdd_cumulative",
+    variety: "lab_samples.variety",
+    clone: "lab_samples.clone",
+    rootstock: "lab_samples.rootstock",
   },
   vintages: {
     lot_name: "vintages.name",
@@ -197,13 +204,13 @@ const FILE_ALIASES: Record<string, Record<string, string>> = {
 // ── File-type detection via header signatures ──────────────────────────────
 // Each entry: [fileType, requiredHeaders (need ≥ matchThreshold), matchThreshold]
 const FILE_SIGNATURES: [string, string[], number][] = [
-  // Specific analytical tables first
-  ["harvest_predictions", ["predicted_pick_date", "days_to_target", "brix_per_day", "current_brix", "prediction_id"], 2],
-  ["pick_windows", ["window_open_date", "window_close_date", "target_brix_low", "target_brix_high", "window_id", "window_status"], 2],
+  // Pick windows BEFORE harvest_predictions (both share current_brix, brix_per_day)
+  ["pick_windows", ["window_open_date", "window_close_date", "target_brix_low", "target_brix_high", "window_id", "window_status", "days_to_window_open", "days_to_window_close"], 2],
+  ["harvest_predictions", ["predicted_pick_date", "days_to_target", "brix_per_day", "current_brix", "prediction_id", "gdd_at_prediction"], 2],
   ["harvest_progress", ["harvest_complete", "brix_at_pick", "expected_tons", "progress_id"], 2],
   // Core operational tables
-  ["grower_contracts", ["grower_name", "price_per_ton", "contracted_tons", "contract_id", "contract_value", "contract_type"], 2],
-  ["lab_samples", ["brix", "ph", "ta", "sampled_at", "sample_id", "so2_free", "va"], 3],
+  ["grower_contracts", ["grower_name", "price_per_ton", "contracted_tons", "contract_id", "contract_value", "contract_type", "contract_year"], 2],
+  ["lab_samples", ["brix", "ph", "ta", "sampled_at", "sample_id", "so2_free", "va", "sample_date", "ta_g_l", "va_g_l", "so2_free_ppm"], 3],
   ["fermentation_vessels", ["vessel_type", "capacity_gallons", "vessel_id", "current_fill_gal", "temp_controlled"], 2],
   ["tasks", ["due_date", "assigned_to", "priority", "task_id", "instructions"], 2],
   ["blocks", ["vineyard", "vineyard_name", "acres", "year_planted", "soil_ph", "elevation_ft", "block_id", "block_name"], 2],
