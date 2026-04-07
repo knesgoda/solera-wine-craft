@@ -480,6 +480,10 @@ serve(async (req) => {
           // --- Duplicate detection for vintages (improved) ---
           if (table === "vintages") {
             delete data.winery_name;
+            // Clean up pseudo-fields that don't exist on the vintages table
+            delete data._block_ref;
+            delete data._vessel_ref;
+            delete data._ignore;
             
             let existingId: string | null = null;
 
