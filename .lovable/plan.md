@@ -1,27 +1,35 @@
 
 
-# Fix: Upgrade Test Organization Tier to Enterprise
+# Fix: Login Hangs Forever
 
-## Problem
-The organization for `kevin.nesgoda@gmail.com` (org ID `79c55bf1-dd62-44c8-8e03-d91d3648b628`) has `tier = 'hobbyist'` in the `organizations` table. The `useTierGate` hook compares the org tier against required tiers, and since hobbyist is the lowest, all gated features are blocked.
+## Root Cause
 
-## Fix
-Run a single database migration to update the organization tier to `enterprise`, which unlocks everything:
+The `AuthContext` has a known race condition: it only uses `onAuthStateChange` without first calling `supabase.auth.getSession()`, AND it `await`s `fetchProfile()` inside the `onAuthStateChange` callback. Per Supabase docs, awaiting async work inside `onAuthStateChange` can cause deadlocks — the auth state change queue blocks until the callback completes, which prevents subsequent auth events from processing.
 
-```sql
-UPDATE public.organizations
-SET tier = 'enterprise'
-WHERE id = '79c55bf1-dd62-44c8-8e03-d91d3648b628';
+The `loading` flag starts as `true` and only clears at the end of the callback, so if the callback stalls, the user sees an infinite spinner.
+
+## Fix (single file: `src/contexts/AuthContext.tsx`)
+
+1. **Bootstrap with `getSession()`** — call it first to restore the session from storage, set user/session/loading state immediately
+2. **Remove `await` from `onAuthStateChange`** — use a fire-and-forget pattern for `fetchProfile` inside the listener to avoid blocking the auth event queue
+3. **Set `loading = false`** after `getSession()` resolves, not inside the listener
+
+```text
+useEffect flow (before):
+  onAuthStateChange → await fetchProfile → setLoading(false)
+  (deadlock-prone, no getSession)
+
+useEffect flow (after):
+  getSession → fetchProfile → setLoading(false)
+  onAuthStateChange → fetchProfile (fire-and-forget, no await)
 ```
 
-## Also Fix: Console Errors
-Two `forwardRef` warnings are firing:
-1. **Login component** — being passed a ref from `App` but doesn't accept one
-2. **LanguageSelector** — same issue inside Login
+## Also Fix: forwardRef Console Warnings
 
-Both need to either be wrapped in `React.forwardRef` or have the ref removed from where they're rendered.
+The `forwardRef` warnings on `Login` come from React Router internally passing a ref. Wrapping the route `element` prop won't help — these are harmless React Router v6 warnings. No code change needed.
 
 ## Steps
-1. **Migration**: Update org tier to `enterprise`
-2. **Code fix**: Remove stray refs on `Login` and `LanguageSelector` routes in `App.tsx`, or wrap them in `forwardRef`
+1. Rewrite the `useEffect` in `AuthProvider` to call `getSession()` first, then subscribe to `onAuthStateChange`
+2. Remove `await` before `fetchProfile` inside the `onAuthStateChange` callback
+3. Test login flow end-to-end
 
