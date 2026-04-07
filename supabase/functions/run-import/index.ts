@@ -150,18 +150,19 @@ serve(async (req) => {
           if (table === "tasks" && data.status) {
             data.status = normalizeTaskStatus(data.status);
           }
+          if (table === "tasks" && data.priority) {
+            data.priority = data.priority.toLowerCase().trim();
+          }
           if (table === "vintages" && data.status) {
             data.status = normalizeVintageStatus(data.status);
           }
 
           // --- Entity resolution: blocks need vineyard_id ---
           if (table === "blocks") {
-            // Check if there's a vineyard_name pseudo-field
             if (data.vineyard_name && !data.vineyard_id) {
               data.vineyard_id = await resolveVineyard(supabase, orgId, data.vineyard_name, vineyardCache);
               delete data.vineyard_name;
             }
-            // If still no vineyard_id, skip this row
             if (!data.vineyard_id) {
               throw new Error("blocks: vineyard_id is required — provide a vineyard name or ID");
             }
@@ -176,6 +177,10 @@ serve(async (req) => {
             if (data.lot_name && !data.vintage_id) {
               data.vintage_id = await resolveVintage(supabase, orgId, data.lot_name, vintageCache);
               delete data.lot_name;
+            }
+            // block_name pseudo-field: resolve block to find its vineyard, not used for vintage_id
+            if (data.block_name) {
+              delete data.block_name; // informational only, not a real column
             }
             if (!data.vintage_id) {
               throw new Error("lab_samples: vintage_id is required — provide a vintage/lot name or ID");
@@ -210,7 +215,8 @@ serve(async (req) => {
           const numericFields = ["year", "tons_harvested", "brix", "ph", "ta", "va", "so2_free", "so2_total",
             "alcohol", "rs", "acres", "soil_ph", "soil_organic_matter", "size_liters", "capacity_liters",
             "amount", "batch_size", "cases", "bottles", "price", "vintage_year",
-            "row_spacing_ft", "vine_spacing_ft", "year_planted", "elevation_ft", "capacity_gallons", "gallons", "cases_projected"];
+            "row_spacing_ft", "vine_spacing_ft", "year_planted", "elevation_ft", "capacity_gallons", "gallons", "cases_projected",
+            "gdd_cumulative", "current_fill_gal"];
           for (const f of numericFields) {
             if (data[f] !== undefined) {
               const n = parseFloat(data[f]);
