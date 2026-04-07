@@ -7,15 +7,19 @@ import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import type { Mapping } from "@/pages/DataImport";
 
 const targetOptions: Record<string, string[]> = {
-  vintages: ["year", "name", "status", "harvest_date", "tons_harvested", "notes", "gallons", "cases_projected", "pick_date", "press_date", "winemaker_notes", "variety", "clone", "rootstock", "fermentation_start", "ml_complete", "bottling_target"],
-  lab_samples: ["vintage_name", "lot_name", "sampled_at", "brix", "ph", "ta", "va", "so2_free", "so2_total", "alcohol", "rs", "notes", "sampled_by", "gdd_cumulative", "block_name"],
-  blocks: ["name", "vineyard_name", "variety", "clone", "rootstock", "acres", "status", "lifecycle_stage", "soil_ph", "soil_texture", "soil_organic_matter", "row_spacing_ft", "vine_spacing_ft", "year_planted", "exposure", "elevation_ft", "irrigation", "drainage", "notes"],
+  vintages: ["year", "name", "status", "harvest_date", "tons_harvested", "notes", "gallons", "cases_projected", "pick_date", "press_date", "winemaker_notes", "variety", "clone", "rootstock", "fermentation_start", "ml_complete", "bottling_target", "external_vintage_id", "external_lot_id"],
+  lab_samples: ["vintage_name", "lot_name", "sampled_at", "brix", "ph", "ta", "va", "so2_free", "so2_total", "alcohol", "rs", "notes", "sampled_by", "gdd_cumulative", "block_name", "external_sample_id"],
+  blocks: ["name", "vineyard_name", "variety", "clone", "rootstock", "acres", "status", "lifecycle_stage", "soil_ph", "soil_texture", "soil_organic_matter", "row_spacing_ft", "vine_spacing_ft", "year_planted", "exposure", "elevation_ft", "irrigation", "drainage", "notes", "external_block_id"],
   barrels: ["barrel_id", "type", "cooperage", "toast", "size_liters", "variety", "status"],
-  fermentation_vessels: ["name", "capacity_liters", "material", "vessel_type", "status", "location", "capacity_gallons", "notes", "temp_controlled", "current_fill_gal"],
+  fermentation_vessels: ["name", "capacity_liters", "material", "vessel_type", "status", "location", "capacity_gallons", "notes", "temp_controlled", "current_fill_gal", "external_vessel_id"],
   ttb_additions: ["added_at", "addition_type", "ttb_code", "amount", "unit", "batch_size", "added_by"],
   inventory_skus: ["label", "variety", "vintage_year", "cases", "bottles", "price"],
   vineyards: ["name", "region", "acres", "notes"],
-  tasks: ["title", "due_date", "status", "instructions", "category", "priority", "assigned_to_name"],
+  tasks: ["title", "due_date", "status", "instructions", "category", "priority", "assigned_to_name", "external_task_id", "source_reference"],
+  grower_contracts: ["external_contract_id", "grower_name", "source_vineyard_name", "ava", "variety", "clone", "rootstock", "contracted_tons", "price_per_ton", "contract_value", "vintage_year", "status", "approval_status", "delivery_date", "tons_delivered", "payment_due_date", "payment_status", "contract_type", "notes"],
+  harvest_progress: ["external_progress_id", "block_name", "variety", "clone", "rootstock", "vintage_year", "acres", "expected_tons", "tons_harvested", "harvest_complete", "pick_date", "brix_at_pick", "notes"],
+  harvest_predictions: ["external_prediction_id", "block_name", "variety", "clone", "rootstock", "vintage_year", "current_brix", "current_ph", "current_ta", "brix_per_day", "target_brix", "predicted_pick_date", "days_to_target", "gdd_at_prediction", "confidence", "last_updated", "notes"],
+  pick_windows: ["external_window_id", "block_name", "variety", "clone", "rootstock", "current_brix", "target_brix_low", "target_brix_high", "current_ph", "target_ph_low", "target_ph_high", "current_ta", "brix_per_day", "days_to_window_open", "days_to_window_close", "window_open_date", "window_close_date", "window_status", "urgency", "notes"],
 };
 
 const allTargets = Object.entries(targetOptions).flatMap(([table, fields]) =>
@@ -50,6 +54,9 @@ export function MappingReview({ mappings, setMappings, isLoading, onConfirm, onB
 
   const currentValue = (m: Mapping) => m.target_table && m.target_field ? `${m.target_table}.${m.target_field}` : "unmapped";
 
+  // Detect target table for summary
+  const targetTables = [...new Set(mappings.filter(m => m.target_table).map(m => m.target_table!))];
+
   return (
     <Card>
       <CardHeader>
@@ -59,7 +66,14 @@ export function MappingReview({ mappings, setMappings, isLoading, onConfirm, onB
           </CardTitle>
           <Button variant="ghost" size="sm" onClick={onBack}><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button>
         </div>
-        <p className="text-sm text-muted-foreground">Review AI-suggested mappings and adjust as needed.</p>
+        <p className="text-sm text-muted-foreground">
+          Review AI-suggested mappings and adjust as needed.
+          {targetTables.length > 0 && (
+            <span className="ml-1">
+              Detected target{targetTables.length > 1 ? "s" : ""}: <strong>{targetTables.join(", ")}</strong>
+            </span>
+          )}
+        </p>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -84,7 +98,7 @@ export function MappingReview({ mappings, setMappings, isLoading, onConfirm, onB
                       <TableCell className="font-medium">{m.source_column}</TableCell>
                       <TableCell>
                         <Select value={currentValue(m)} onValueChange={(v) => updateMapping(i, v)}>
-                          <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="w-[260px]"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="unmapped">— Unmapped —</SelectItem>
                             {allTargets.map((t) => (

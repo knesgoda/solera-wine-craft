@@ -9,11 +9,20 @@ interface Props {
 }
 
 export function ImportReport({ result, onReset }: Props) {
+  const hasErrors = result.errors > 0;
+  const allFailed = result.imported === 0 && result.errors > 0;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
-          <CheckCircle2 className="h-5 w-5 text-green-600" /> Import Complete
+          {allFailed ? (
+            <><XCircle className="h-5 w-5 text-red-600" /> Import Failed</>
+          ) : hasErrors ? (
+            <><AlertTriangle className="h-5 w-5 text-yellow-600" /> Import Completed with Errors</>
+          ) : (
+            <><CheckCircle2 className="h-5 w-5 text-green-600" /> Import Complete</>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -39,6 +48,20 @@ export function ImportReport({ result, onReset }: Props) {
             </p>
           </div>
         </div>
+
+        {result.errorMessages && result.errorMessages.length > 0 && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm font-medium text-red-800 mb-2">Top errors:</p>
+            <ul className="text-sm text-red-700 space-y-1">
+              {result.errorMessages.slice(0, 5).map((msg, i) => (
+                <li key={i} className="flex gap-2">
+                  <span className="text-red-400">•</span>
+                  <span>{msg}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="flex justify-center pt-4">
           <Button variant="outline" onClick={onReset}>
