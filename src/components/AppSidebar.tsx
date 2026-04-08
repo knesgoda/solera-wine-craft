@@ -252,9 +252,12 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarContent className="bg-sidebar">
-        <div className={`flex items-center gap-3 px-4 py-5 ${collapsed ? "justify-center" : ""}`}>
-          <img src={soleraLogo} alt="Solera" className="h-9 w-9 shrink-0" />
-          {!collapsed && <span className="font-display text-xl font-bold text-sidebar-foreground">Solera</span>}
+        <div className={`flex items-center px-4 py-5 ${collapsed ? "justify-center" : ""}`}>
+          {collapsed ? (
+            <img src={soleraLogo} alt="Solera" className="h-9 w-9 shrink-0 object-contain" />
+          ) : (
+            <img src={soleraLogo} alt="Solera" className="h-8 w-auto shrink-0 object-contain" />
+          )}
         </div>
 
         {collapsed ? (
