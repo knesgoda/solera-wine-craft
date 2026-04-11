@@ -193,10 +193,9 @@ Deno.serve(async (req) => {
     const { data: finalState } = await sb.from("tasks").select("instructions, updated_at").eq("id", taskId).single();
 
     if (!offlineUpd && finalState) {
-      if (finalState.notes === serverNotes) {
-        // Server timestamp won — ideal behavior
+      if (finalState.instructions === serverInstructions) {
         pass("  Server timestamp wins over stale offline edit ✅");
-      } else if (finalState.notes === offlineNotes) {
+      } else if (finalState.instructions === offlineInstructions) {
         // Offline edit overwrote server — current behavior (no conflict resolution)
         log("  ⚠️  FINDING: Stale offline edit OVERWROTE server data");
         log("     Current sync engine has no conflict resolution.");
