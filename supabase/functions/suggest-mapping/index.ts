@@ -331,9 +331,11 @@ serve(async (req) => {
   try {
     const { headers, sampleRows, sourceType } = await req.json();
     const lowerHeaders = headers.map((h: string) => h.toLowerCase().trim());
+    const normalizedHeaders = headers.map((h: string) => normalizeHeader(h));
 
-    // Step 1: Detect file type
-    const detectedType = detectFileType(lowerHeaders);
+    // Step 1: Detect file type (uses normalized headers internally)
+    const detectedType = detectFileType(headers);
+    console.log("Detected file type:", detectedType, "from headers:", normalizedHeaders.join(", "));
     console.log("Detected file type:", detectedType, "from headers:", lowerHeaders.join(", "));
 
     // Step 2: Build mappings using file-type-specific aliases first
