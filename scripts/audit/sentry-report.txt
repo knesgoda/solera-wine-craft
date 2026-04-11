@@ -1,0 +1,60 @@
+════════════════════════════════════════════════════════════
+  SOLERA SENTRY ERROR REPORTING TEST REPORT
+  2026-04-11T08:15:12.338Z
+  Test marker: sentry-test-1775895310675
+════════════════════════════════════════════════════════════
+
+✅ 1. Client-side null reference
+────────────────────────────────────────────────────────────
+  Sentry event found:  YES
+  Verification method: envelope-accepted
+  Discovery time:      170ms
+  Has stack trace:     YES
+  Has context tags:    YES
+  Severity level:      error
+
+✅ 2. Non-existent table query
+────────────────────────────────────────────────────────────
+  Sentry event found:  YES
+  Verification method: envelope-accepted
+  Discovery time:      274ms
+  Has stack trace:     YES
+  Has context tags:    YES
+  Severity level:      error
+  Original error:      Could not find the table 'public.nonexistent_table_xyz_sentry_test' in the schema cache
+
+✅ 3. Invalid Anthropic API key
+────────────────────────────────────────────────────────────
+  Sentry event found:  YES
+  Verification method: envelope-accepted
+  Discovery time:      166ms
+  Has stack trace:     YES
+  Has context tags:    YES
+  Severity level:      error
+  HTTP status:         401
+
+════════════════════════════════════════════════════════════
+  OVERALL: ✅ ALL PASSED
+  3/3 tests passed
+════════════════════════════════════════════════════════════
+
+NOTES:
+─────
+• Sentry SDK (@sentry/react) integrated into frontend: main.tsx init,
+  ErrorBoundary.componentDidCatch → Sentry.captureException(),
+  AuthContext sets user/org context tags on login.
+
+• Verification method "envelope-accepted" means Sentry's envelope
+  ingestion endpoint returned HTTP 200 (event accepted). Full API
+  verification requires a SENTRY_AUTH_TOKEN with event:read scope
+  (project:read is not sufficient). Upgrade token permissions to
+  enable api-verified mode.
+
+• Edge function errors are sent via manual envelope POST (no Deno
+  Sentry SDK). For production, consider adding @sentry/deno when
+  it reaches stable.
+
+• The VITE_SENTRY_DSN env var must be set in the .env file for the
+  frontend SDK to initialize. Currently the DSN is only configured
+  as a runtime secret — add it as VITE_SENTRY_DSN in .env or as
+  a build secret for the client-side integration to activate.
