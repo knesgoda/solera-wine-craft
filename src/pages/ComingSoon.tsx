@@ -180,7 +180,7 @@ export default function ComingSoon() {
                   color: "#6B1B2A",
                 }}
               >
-                You're on the list. We'll be in touch soon — thank you.
+                You're on the list. We'll reach out before we open the doors.
               </p>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4 text-left">
