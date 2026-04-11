@@ -55,17 +55,32 @@ export default function ComingSoon() {
 
       setSuccess(true);
 
-      // Fire-and-forget notification
-      supabase.functions
-        .invoke("notify-waitlist-signup", {
+      const normalizedEmail = email.trim().toLowerCase();
+      const signupId = crypto.randomUUID();
+
+      // Fire-and-forget: confirmation to submitter + admin notification
+      Promise.all([
+        supabase.functions.invoke("send-transactional-email", {
           body: {
-            first_name: firstName,
-            email: email.trim().toLowerCase(),
-            operation_type: operationType,
-            created_at: new Date().toISOString(),
+            templateName: "waitlist-confirmation",
+            recipientEmail: normalizedEmail,
+            idempotencyKey: `waitlist-confirm-${signupId}`,
+            templateData: { firstName },
           },
-        })
-        .catch(() => {});
+        }),
+        supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "waitlist-admin-notify",
+            idempotencyKey: `waitlist-admin-${signupId}`,
+            templateData: {
+              firstName,
+              email: normalizedEmail,
+              operationType,
+              signedUpAt: new Date().toISOString(),
+            },
+          },
+        }),
+      ]).catch(() => {});
     } catch (err: any) {
       setError("Something went wrong — please try again or email kevin@solera.vin");
       console.error(err);
