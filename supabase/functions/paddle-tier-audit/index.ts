@@ -221,7 +221,7 @@ Deno.serve(async (_req) => {
     });
   } catch (err: any) {
     // Cleanup on error
-    await supabase.from("organizations").delete().eq("id", TEST_ORG_ID);
+    await cleanupOrg();
     return new Response(JSON.stringify({ error: err.message, partial_report: lines.join("\n") }), {
       status: 500, headers: { "Content-Type": "application/json" },
     });
