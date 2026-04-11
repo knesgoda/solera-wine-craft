@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { addToSyncQueue } from "@/lib/syncQueue";
 
 export default function TaskDetail() {
   const { taskId } = useParams<{ taskId: string }>();
@@ -77,6 +78,11 @@ export default function TaskDetail() {
 
   const markComplete = useMutation({
     mutationFn: async () => {
+      if (!navigator.onLine) {
+        await addToSyncQueue("tasks", "update", { id: taskId!, status: "complete", updated_at: new Date().toISOString() }, orgId!);
+        toast.info("Saved offline — will sync when you reconnect");
+        return;
+      }
       const { error } = await supabase
         .from("tasks")
         .update({ status: "complete" as any })

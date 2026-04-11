@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { addToSyncQueue } from "@/lib/syncQueue";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface LabSampleData {
   id: string;
@@ -35,6 +37,7 @@ interface Props {
 export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSample }: Props) {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const { profile } = useAuth();
   const isEditing = !!editingSample;
 
   const [sampledAt, setSampledAt] = useState(new Date().toISOString().slice(0, 16));
@@ -82,12 +85,23 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSampl
       };
 
       if (isEditing) {
+        if (!navigator.onLine) {
+          await addToSyncQueue("lab_samples", "update", { id: editingSample!.id, ...record }, profile?.org_id || "");
+          toast.info("Lab sample saved offline — will sync when you reconnect");
+          return;
+        }
         const { error } = await supabase
           .from("lab_samples")
           .update(record as any)
           .eq("id", editingSample!.id);
         if (error) throw error;
       } else {
+        if (!navigator.onLine) {
+          const offlineId = crypto.randomUUID();
+          await addToSyncQueue("lab_samples", "insert", { id: offlineId, ...record }, profile?.org_id || "");
+          toast.info("Lab sample saved offline — will sync when you reconnect");
+          return;
+        }
         const { error } = await supabase.from("lab_samples").insert(record as any);
         if (error) throw error;
 
