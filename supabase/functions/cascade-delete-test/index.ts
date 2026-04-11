@@ -239,6 +239,25 @@ Deno.serve(async (req) => {
     fail(`\nFATAL ERROR: ${e.message}`);
   }
 
+  // Cleanup: delete the trigger-created org and auth user
+  try {
+    // @ts-ignore - triggerOrgId/userId may not be in scope if early failure
+    if (typeof triggerOrgId !== "undefined" && triggerOrgId) {
+      // Clean NO ACTION children from trigger org
+      // @ts-ignore
+      await sb.from("alert_rules").delete().eq("org_id", triggerOrgId);
+      // @ts-ignore
+      await sb.from("cost_categories").delete().eq("org_id", triggerOrgId);
+      // @ts-ignore
+      await sb.from("organizations").delete().eq("id", triggerOrgId);
+    }
+    // @ts-ignore
+    if (typeof userId !== "undefined" && userId) {
+      // @ts-ignore
+      await sb.auth.admin.deleteUser(userId);
+    }
+  } catch (_) { /* best effort */ }
+
   log("");
   log(`Overall: ${allPassed ? "ALL PASSED ✅" : "SOME FAILURES ❌"}`);
 
