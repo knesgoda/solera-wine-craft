@@ -5079,6 +5079,7 @@ export type Database = {
       }
       get_facility_org_id: { Args: { _facility_id: string }; Returns: string }
       get_import_job_org_id: { Args: { _job_id: string }; Returns: string }
+      get_org_tier: { Args: { _org_id: string }; Returns: string }
       get_sheet_connection_org_id: {
         Args: { _connection_id: string }
         Returns: string
@@ -5095,6 +5096,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      org_has_tier: {
+        Args: { _min_tier: string; _org_id: string }
         Returns: boolean
       }
       seed_cost_categories: { Args: { p_org_id: string }; Returns: undefined }
