@@ -1,0 +1,20 @@
+=== Paddle Webhook Signature Validation Report ===
+Run: 2026-04-11T07:20:19.370Z
+
+[PASS] Valid signature
+  Expected: 200  Actual: 200
+  Response: {"received":true}
+
+[PASS] Tampered payload
+  Expected: 401  Actual: 401
+  Response: Invalid signature
+
+[PASS] Replayed (stale timestamp)
+  Expected: 401  Actual: 401
+  Response: Invalid signature
+
+Overall: ALL PASSED
+
+--- Security Fix Applied ---
+Added timestamp freshness check (5-minute window) to verifyPaddleSignature()
+in supabase/functions/paddle-webhook/index.ts to prevent replay attacks.
