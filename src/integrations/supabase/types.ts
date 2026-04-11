@@ -3197,6 +3197,7 @@ export type Database = {
           channel: Database["public"]["Enums"]["alert_channel"]
           created_at: string
           id: string
+          link_url: string | null
           message: string
           org_id: string
           read: boolean
@@ -3207,6 +3208,7 @@ export type Database = {
           channel?: Database["public"]["Enums"]["alert_channel"]
           created_at?: string
           id?: string
+          link_url?: string | null
           message: string
           org_id: string
           read?: boolean
@@ -3217,6 +3219,7 @@ export type Database = {
           channel?: Database["public"]["Enums"]["alert_channel"]
           created_at?: string
           id?: string
+          link_url?: string | null
           message?: string
           org_id?: string
           read?: boolean
