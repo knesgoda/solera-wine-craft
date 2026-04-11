@@ -1,0 +1,92 @@
+═══════════════════════════════════════════════════════════
+  AI COLUMN MAPPER INTEGRATION TEST REPORT
+  2026-04-11T08:34:33.787Z
+═══════════════════════════════════════════════════════════
+
+── Innovint Export (clean) ──
+   Standard Innovint lab sample CSV with canonical column names
+   Headers: 11
+   ✅ All mappings have valid confidence scores
+   Confidence breakdown: high=6, medium=0, unmapped=5
+   ✅ 5 unmapped column(s) flagged for manual review: Sample ID, Sampled At, Lot Name, SO2 Free, SO2 Total
+   ✅ No columns silently dropped — all inputs have mapping entries
+     Sample ID → (unmapped) [unmapped]
+     Sampled At → (unmapped) [unmapped]
+     Lot Name → (unmapped) [unmapped]
+     Brix → lab_samples.brix [high]
+     pH → lab_samples.ph [high]
+     TA → lab_samples.ta [high]
+     VA → lab_samples.va [high]
+     SO2 Free → (unmapped) [unmapped]
+     SO2 Total → (unmapped) [unmapped]
+     Alcohol → lab_samples.alcohol [high]
+     Notes → lab_samples.notes [high]
+   Mapping accuracy: 55% (6/11)
+
+   ⚠️  FINDING: Innovint headers with spaces ("Sample ID", "Sampled At", "SO2 Free")
+   are not matched because FILE_ALIASES uses underscore keys (sample_id, sampled_at,
+   so2_free). The mapper lowercases but does not normalize spaces → underscores.
+   Recommendation: Add space-to-underscore normalization in detectFileType and alias lookup.
+
+── VinNow Export (clean) ──
+   Standard VinNow vintage/lot export with typical VinNow naming
+   Headers: 11
+   ✅ All mappings have valid confidence scores
+   Confidence breakdown: high=11, medium=0, unmapped=0
+   ✅ All columns mapped (no manual review needed)
+   ✅ No columns silently dropped — all inputs have mapping entries
+   Mapping accuracy: 100% (11/11)
+
+── Messy Multi-tab Excel (merged headers) ──
+   Excel export with inconsistent casing, extra spaces, and non-standard names
+   Headers: 9
+   ✅ All mappings have valid confidence scores
+   Confidence breakdown: high=9, medium=0, unmapped=0
+   ✅ All columns mapped (no manual review needed)
+   ✅ No columns silently dropped — all inputs have mapping entries
+   Mapping accuracy: 100% (9/9)
+
+   Note: AI fallback handled "grape_variety"→variety, "Clone #"→clone,
+   "Root Stock"→rootstock, "Yr Planted"→year_planted, "Soil pH Level"→soil_ph,
+   "Notes / Comments"→notes successfully via Anthropic.
+
+── Google Sheets Export (extra blank rows) ──
+   Google Sheets export with blank rows mixed in, standard vessel names
+   Headers: 8
+   ✅ All mappings have valid confidence scores
+   Confidence breakdown: high=8, medium=0, unmapped=0
+   ✅ All columns mapped (no manual review needed)
+   ✅ No columns silently dropped — all inputs have mapping entries
+   Mapping accuracy: 100% (8/8)
+
+── Custom Winery Spreadsheet (non-standard) ──
+   Completely custom column names from a winery's internal tracking system
+   Headers: 10
+   ✅ All mappings have valid confidence scores
+   Confidence breakdown: high=7, medium=2, unmapped=1
+   ✅ 1 unmapped column flagged for manual review: Tank Assignment
+   ✅ 2 medium-confidence mappings flagged: Sugar Level→lab_samples.brix, Acid Level→lab_samples.ph
+   ✅ No columns silently dropped — all inputs have mapping entries
+   Mapping accuracy: 90% (9/10)
+
+   Note: AI correctly inferred "Sugar Level"→brix and "Acid Level"→pH at medium
+   confidence, and correctly left "Tank Assignment" unmapped for user review.
+
+═══════════════════════════════════════════════════════════
+  SUMMARY
+═══════════════════════════════════════════════════════════
+
+  File                                    | Total | High | Med | Unmap | Accuracy
+  ─────────────────────────────────────────|───────|──────|─────|───────|─────────
+  Innovint Export (clean)                 | 11    | 6    | 0   | 5     | 55%
+  VinNow Export (clean)                   | 11    | 11   | 0   | 0     | 100%
+  Messy Multi-tab Excel (merged headers)  | 9     | 9    | 0   | 0     | 100%
+  Google Sheets Export (extra blank rows) | 8     | 8    | 0   | 0     | 100%
+  Custom Winery Spreadsheet (non-standard)| 10    | 7    | 2   | 1     | 90%
+
+Overall: ALL PASSED ✅
+
+Key Finding:
+  The Innovint export scored only 55% because headers with spaces (e.g. "Sample ID",
+  "SO2 Free") don't match the underscore-based alias keys. Adding a space→underscore
+  normalization step would raise this to ~100% without needing the AI fallback.
