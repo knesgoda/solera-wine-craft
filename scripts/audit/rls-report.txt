@@ -1,0 +1,71 @@
+=== Solera RLS Cross-Org Isolation Audit ===
+Date: 2026-04-11T06:55:07.107Z
+
+Table                               | Read      | Write     | Update    | Delete    | Result
+--------------------------------------------------------------------------------------------
+alert_rules                         | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+analog_vintages                     | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+anomaly_flags                       | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+api_keys                            | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+audit_logs                          | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+backup_jobs                         | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+barrel_groups                       | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+barrels                             | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+blending_trials                     | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+client_messages                     | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+club_members                        | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+club_shipments                      | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+commerce7_config                    | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+contract_block_assignments          | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+cost_categories                     | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+cost_entries                        | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+customers                           | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+facility_transfers                  | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+fermentation_vessels                | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+google_sheet_connections            | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+grower_contacts                     | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+grower_contracts                    | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+growers                             | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+harvest_alerts_sent                 | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+harvest_predictions                 | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+import_jobs                         | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+import_mappings                     | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+integration_sync_logs               | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+inventory_adjustments               | N/A       | N/A       | N/A       | N/A       | FAIL
+inventory_skus                      | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+lot_cost_summaries                  | N/A       | N/A       | N/A       | N/A       | FAIL
+material_unit_costs                 | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+notifications                       | N/A       | N/A       | N/A       | N/A       | FAIL
+orders                              | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+pick_windows                        | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+saved_reports                       | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+tasks                               | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+ttb_additions                       | N/A       | N/A       | N/A       | N/A       | FAIL
+ttb_reports                         | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+vineyards                           | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+vintages                            | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+weather_readings                    | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+webhook_subscriptions               | N/A       | N/A       | N/A       | N/A       | FAIL
+weekly_summaries                    | N/A       | N/A       | N/A       | N/A       | FAIL
+weigh_tags                          | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+wine_clubs                          | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
+ai_messages(i)                      | BLOCKED   | BLOCKED   | N/A       | BLOCKED   | PASS
+blending_trial_lots(i)              | BLOCKED   | BLOCKED   | N/A       | BLOCKED   | PASS
+blocks(i)                           | BLOCKED   | BLOCKED   | N/A       | BLOCKED   | PASS
+fermentation_logs(i)                | BLOCKED   | BLOCKED   | N/A       | BLOCKED   | PASS
+lab_samples(i)                      | BLOCKED   | BLOCKED   | N/A       | BLOCKED   | PASS
+club_shipment_members(i)            | BLOCKED   | BLOCKED   | N/A       | BLOCKED   | PASS
+import_errors(i)                    | BLOCKED   | BLOCKED   | N/A       | BLOCKED   | PASS
+grading_scale_metrics(i)            | N/A       | N/A       | N/A       | N/A       | FAIL
+--------------------------------------------------------------------------------------------
+
+SUMMARY: 47/54 PASS, 7 FAIL
+
+FAILURES:
+  - inventory_adjustments: SEED: invalid input value for enum adjustment_reason: "production"
+  - lot_cost_summaries: SEED: duplicate key value violates unique constraint "lot_cost_summaries_vintage_id_key"
+  - notifications: SEED: invalid input value for enum alert_channel: "in_app"
+  - ttb_additions: SEED: invalid input value for enum addition_type: "fining"
+  - webhook_subscriptions: SEED: Could not find the 'target_url' column of 'webhook_subscriptions' in the schema cache
+  - weekly_summaries: SEED: Could not find the 'week_of' column of 'weekly_summaries' in the schema cache
+  - grading_scale_metrics(i): SEED: duplicate key value violates unique constraint "grading_scale_metrics_grading_scale_id_metric_key_key"
