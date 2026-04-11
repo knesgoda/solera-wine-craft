@@ -421,9 +421,10 @@ serve(async (req) => {
         for (const m of deterministicMappings) {
           if (m.target_table === null) {
             const lower = m.source_column.toLowerCase().trim();
-            if (tableCommonFields[lower]) {
+            const normalized = m.normalized_column;
+            if (tableCommonFields[lower] || tableCommonFields[normalized]) {
               m.target_table = detectedType;
-              m.target_field = tableCommonFields[lower];
+              m.target_field = tableCommonFields[lower] || tableCommonFields[normalized];
               m.confidence = "medium";
             }
           }
