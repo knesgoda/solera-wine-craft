@@ -1,60 +1,50 @@
 
 
-# Fix: Waitlist Form RLS Error
+# Fix: Waitlist Email Notifications
 
-## Root Cause
+## Problem
 
-In `src/pages/ComingSoon.tsx` (line 40-48), the insert chains `.select().single()`:
+Two emails should fire when someone submits the waitlist form:
+1. **Admin notification** to kevin@solera.vin with the signup details
+2. **Confirmation email** to the submitter ("You're on the list")
 
-```typescript
-const { data, error: insertError } = await supabase
-  .from("waitlist_signups")
-  .insert({ ... })
-  .select()    // ← requires SELECT permission
-  .single();   // ← requires SELECT permission
-```
+Neither works today. The admin notification calls Resend directly but fails with a 403 because the `solera.vin` domain is not verified in Resend. The confirmation email to the submitter doesn't exist at all.
 
-The SELECT RLS policy on `waitlist_signups` only allows authenticated users with the `owner` role. Anonymous visitors (all waitlist submitters) can INSERT but cannot SELECT, so the chained `.select().single()` triggers an RLS violation that surfaces as the generic error.
+## Solution
 
-## Fix
+Switch to Lovable's built-in email system, which handles delivery without needing a separate Resend domain verification.
 
-Remove `.select().single()` from the insert call. The only reason it exists is to pass `data.created_at` to the notification function — we can use `new Date().toISOString()` instead.
+### Step 1: Set up email domain
+You'll configure a sender domain (e.g., `notify.solera.vin`) through the email setup dialog. This involves adding DNS records at your domain registrar.
 
-### File: `src/pages/ComingSoon.tsx`
+### Step 2: Set up email infrastructure
+Database tables, queues, and the email processing system get created automatically.
 
-**Change lines 40-48 from:**
-```typescript
-const { data, error: insertError } = await supabase
-  .from("waitlist_signups")
-  .insert({
-    first_name: firstName,
-    email: email.trim().toLowerCase(),
-    operation_type: operationType,
-  })
-  .select()
-  .single();
-```
+### Step 3: Scaffold transactional email system
+Creates the `send-transactional-email` Edge Function and template framework.
 
-**To:**
-```typescript
-const { error: insertError } = await supabase
-  .from("waitlist_signups")
-  .insert({
-    first_name: firstName,
-    email: email.trim().toLowerCase(),
-    operation_type: operationType,
-  });
-```
+### Step 4: Create two email templates
+- **`waitlist-confirmation`** — branded confirmation to the submitter: "You're on the list. We'll reach out before we open the doors."
+- **`waitlist-admin-notify`** — admin notification with signup details (name, email, operation type, timestamp)
 
-**Change line 67 (`created_at` in notification body) from:**
-```typescript
-created_at: data.created_at,
-```
+Both use Solera brand styling (Crimson #6B1B2A, Gold #C8902A, Cream #F5F0E8, Playfair Display headings).
 
-**To:**
-```typescript
-created_at: new Date().toISOString(),
-```
+### Step 5: Update the waitlist form (`src/pages/ComingSoon.tsx`)
+After a successful insert, invoke `send-transactional-email` twice:
+1. Confirmation to the submitter
+2. Admin notification to kevin@solera.vin
 
-No database or RLS changes needed. One file, two small edits.
+### Step 6: Update `notify-waitlist-signup` Edge Function
+Replace the Resend-based `sendAdminNotification` call with the transactional email system, or remove the function entirely since the emails will be sent directly from the form.
+
+## What you'll need to do
+- Add DNS records for your email subdomain at your domain registrar (the setup dialog will show you exactly what to add)
+- Emails will start sending once DNS verification completes (can take up to 72 hours)
+
+## Files changed
+- `supabase/functions/_shared/transactional-email-templates/waitlist-confirmation.tsx` (new)
+- `supabase/functions/_shared/transactional-email-templates/waitlist-admin-notify.tsx` (new)
+- `supabase/functions/_shared/transactional-email-templates/registry.ts` (updated)
+- `src/pages/ComingSoon.tsx` (updated — add email invocations after insert)
+- `supabase/functions/notify-waitlist-signup/index.ts` (updated or removed)
 
