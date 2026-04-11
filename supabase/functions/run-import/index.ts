@@ -129,11 +129,12 @@ async function resolveBlock(
   const key = name.toLowerCase().trim();
   if (blockCache[key]) return blockCache[key];
 
-  // Try by name first (org-scoped)
+  // Filter through vineyard to enforce org isolation (service role bypasses RLS)
   const { data: byName } = await supabase
     .from("blocks")
-    .select("id, vineyard_id")
+    .select("id, vineyard_id, vineyards!inner(org_id)")
     .ilike("name", key)
+    .eq("vineyards.org_id", orgId)
     .maybeSingle();
 
   if (byName) {
@@ -150,10 +151,12 @@ async function resolveBlockByExternalId(
   const key = `ext:${externalId.toLowerCase().trim()}`;
   if (blockCache[key]) return blockCache[key];
 
+  // Filter through vineyard to enforce org isolation (service role bypasses RLS)
   const { data: existing } = await supabase
     .from("blocks")
-    .select("id")
+    .select("id, vineyards!inner(org_id)")
     .eq("external_block_id", externalId.trim())
+    .eq("vineyards.org_id", orgId)
     .maybeSingle();
 
   if (existing) {
@@ -404,8 +407,8 @@ serve(async (req) => {
           if (table === "grower_contracts") {
             if (data.grower_name && !data.grower_id) {
               data.grower_id = await resolveGrower(supabase, orgId, data.grower_name, growerCache);
-              delete data.grower_name;
             }
+            delete data.grower_name; // Always remove — not a DB column
             // Map price_per_ton → base_price_per_unit
             if (data.price_per_ton !== undefined) {
               data.base_price_per_unit = data.price_per_ton;
@@ -505,6 +508,10 @@ serve(async (req) => {
             }
             // Remove winery_name (not a real column)
             delete data.winery_name;
+
+            if (!data.grower_id) {
+              throw new Error("grower_contracts: grower_id is required — provide a grower_name or grower_id in the CSV");
+            }
           }
 
           // --- Entity resolution: fermentation_vessels name fallback ---
@@ -521,6 +528,9 @@ serve(async (req) => {
             if (!data.name) {
               const rawName = row["vessel_name"] || row["Vessel_Name"] || row["Vessel Name"] || row["vessel name"];
               if (rawName) data.name = rawName;
+            }
+            if (!data.name) {
+              throw new Error("fermentation_vessels: name is required — map a 'vessel_name' or 'name' column to fermentation_vessels.name");
             }
           }
 
@@ -568,6 +578,11 @@ serve(async (req) => {
                 continue;
               }
             }
+          }
+
+          // Required field guards
+          if (table === "tasks" && !data.title) {
+            throw new Error("tasks: title is required — map a 'title' column to tasks.title");
           }
 
           // Cast numeric fields
