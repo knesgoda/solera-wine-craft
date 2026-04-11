@@ -1,98 +1,80 @@
 
 
-# Critical Path E2E Test — Plan
+# Ask Solera Context-Awareness Test Suite — Plan
 
-## Overview
-A single Playwright test file that exercises the core Solera workflow end-to-end: signup, onboarding, vineyard+block creation, lab samples, vintage creation, ripening comparison verification, TTB addition logging, and OW-1 report export. Results are written to `/scripts/audit/critical-path-report.txt`.
+## Approach
 
-## Pre-requisite: Auto-confirm email
-The test signs up a fresh user. For this to work without email verification, auto-confirm must be enabled. I will use `cloud--configure_auth` to enable it before running the test (or verify it's already on).
+Deploy a temporary edge function `ask-solera-test` that:
+1. Seeds a test org with rich, distinctively named data
+2. Creates a test user in that org
+3. Sends all 8 questions to the `ask-solera` endpoint using the test user's auth token
+4. Parses the SSE stream to extract the full response text
+5. Validates each response against org-specific markers
+6. Outputs results to `scripts/audit/ask-solera-report.txt`
+7. Cleans up all test data
 
-## Test File
-**`tests/critical-path.spec.ts`**
+## Seed Data (Distinctive Names for Easy Grep)
 
-### Setup (beforeAll)
-- Generate a unique test email: `e2e-critical-{timestamp}@test.solera.dev`
-- Password: `TestPass123!`
+| Entity | Details |
+|---|---|
+| Org | "Ridgecrest Cellars" |
+| Vineyard | "Dundee Hills Estate" |
+| Block 1 | "Eagle's Nest" — Pinot Noir, Clone 667, 101-14 |
+| Block 2 | "Riverview" — Chardonnay, Clone 76, 3309C |
+| Block 3 | "Sunset Ridge" — Pinot Noir, Clone 777, 101-14 |
+| 2024 Vintage (Block 1) | status: in_cellar, 4.2 tons, lab: Brix=23.8, pH=3.42 |
+| 2025 Vintage (Block 2) | status: in_progress, 3.1 tons, lab: Brix=21.4, pH=3.51 |
+| 2025 Vintage (Block 3) | status: harvested, 5.0 tons, lab: Brix=22.1, pH=3.38 |
+| Vessel | "Tank 7" — stainless, 2000L, linked to 2025 Block 2 vintage |
+| SO2 Addition | 50 mL on 2025 Block 2, dated this month |
+| Tasks | 2 overdue ("Rack Block 1 barrels", "Order yeast"), 1 pending |
 
-### Step 1: Sign Up
-- Navigate to `/signup`
-- Fill: First Name, Last Name, Winery Name, Email, Password
-- Click "Create Account"
-- Wait for redirect to `/onboarding`
-- Screenshot on failure
+## Validation Per Question
 
-### Step 2: Complete Onboarding
-- Select "Small Boutique" operation type
-- Click "Continue"
-- On step 2 (modules), ensure "Vineyard Ops", "Vintage Management", and "TTB Compliance" are enabled
-- Click "Continue"
-- On step 3, click "Launch Solera"
-- Wait for redirect to `/dashboard`
+Each response is checked for at least one **org-specific marker** from the seeded data:
 
-### Step 3: Create Vineyard with 3 Blocks
-- Navigate to `/operations`
-- Click "Add Vineyard"
-- Fill name: "Willamette Estate", region: "Willamette Valley", acres: 42
-- Submit
-- Click into the vineyard
-- Add 3 blocks via the "Add Block" dialog:
-  1. "Block A" — Pinot Noir, Clone 667, Rootstock 101-14, 8 acres, Bearing stage
-  2. "Block B" — Pinot Noir, Clone 667, Rootstock 101-14, 6 acres, Bearing stage
-  3. "Block C" — Pinot Noir, Clone 667, Rootstock 101-14, 10 acres, Bearing stage
+| # | Question | Expected markers (any match = PASS) |
+|---|---|---|
+| 1 | "When should I pick Block 3?" | `Sunset Ridge`, `22.1`, `Block 3` |
+| 2 | "Brix trend for Pinot Noir" | `Eagle's Nest` or `Sunset Ridge`, `23.8` or `22.1`, `Pinot Noir` |
+| 3 | "Furthest from target Brix" | Any block name + a Brix value |
+| 4 | "Lab history for 2024 vintage" | `Eagle's Nest`, `23.8`, `3.42`, `2024` |
+| 5 | "SO2 additions this month" | `SO₂` or `SO2`, `50`, `Riverview` or `Block 2` |
+| 6 | "Compare 2024 and 2025" | `2024`, `2025`, any block name |
+| 7 | "Tank closest to target pH" | `Tank 7`, `3.51` or pH value |
+| 8 | "Tasks overdue" | `Rack Block 1` or `Order yeast` |
 
-### Step 4: Create 2025 Vintage for each Block
-- Navigate to `/vintages`
-- For each block, click "New Vintage" → year 2025, select block, harvest date 2025-09-15, tons harvested 4.2
-- Verify 3 vintages appear in the list
+A response with none of these markers is flagged as **GENERIC** (context injection failure).
 
-### Step 5: Log Lab Samples
-- For each vintage, navigate to its detail page
-- Click "Add Sample"
-- Fill Brix values: Block A → 22.1, Block B → 21.4, Block C → 23.0
-- Also fill pH: 3.45, TA: 7.2 for all
+## Additional Checks Per Response
+- **Latency**: Must complete within 8 seconds (measured from request to last SSE chunk)
+- **Non-empty**: Response text must be > 50 characters
+- **No errors**: HTTP status must be 200, no `{"error":...}` in body
 
-### Step 6: Verify Ripening Comparison
-- Navigate to `/ripening-comparison`
-- Select all 3 blocks in the block selector panel
-- Click "Compare"
-- Verify all 3 blocks render with their Brix values visible (22.1, 21.4, 23.0)
+## SSE Parsing
 
-### Step 7: Log TTB Addition
-- Navigate back to first vintage detail
-- Click the "TTB" tab
-- Click "Add" to open the NewAdditionDialog
-- Type: SO₂, Amount: 50, Unit: mL, TTB Code: optional
-- Save and verify it appears in the table
+The endpoint streams Anthropic's SSE format. The test will accumulate `content_block_delta` events to reconstruct the full text:
+```
+event: content_block_delta
+data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"..."}}
+```
 
-### Step 8: TTB OW-1 Export
-- Navigate to `/compliance/reports`
-- Click "New Report"
-- Set period start: 2025-01-01, end: 2025-12-31
-- Click "Auto-Calculate"
-- Click save/create
-- Click "Generate PDF" on the created report
-- Verify the function invocation succeeds (toast or report status updates to "ready")
-
-### Failure Handling
-- Each step wrapped in a try/catch that takes a screenshot on failure
-- Results written to `/scripts/audit/critical-path-report.txt` with PASS/FAIL per step
-- Test exits non-zero if any step fails
-
-### Cleanup
-- afterAll: use Supabase service role client to delete the test user and associated org (via `auth.admin.deleteUser`)
-
-## Files to Create/Modify
+## Files
 
 | File | Action |
 |---|---|
-| `tests/critical-path.spec.ts` | Create — the full E2E test |
-| `scripts/audit/critical-path-report.txt` | Generated output |
+| `supabase/functions/ask-solera-test/index.ts` | Create (temporary test runner) |
+| `scripts/audit/ask-solera-report.txt` | Generated output |
 
-## Technical Notes
-- The `NewVintageDialog` only allows selecting one block per vintage, so we create 3 separate vintages
-- The RipeningComparison page requires `comparing && blockIds.length >= 2` to fetch data, so we must select 2+ blocks and click compare
-- The ripening page finds vintages by `block_id`, so our vintages with `block_id` set will be found automatically
-- The OW-1 auto-calculate uses `tons_harvested` × 170 gal/ton, so our 3 vintages with 4.2 tons each = ~2142 gallons produced — this will work
-- Screenshot paths will use the step name for easy debugging
+## Execution Flow
+1. Deploy `ask-solera-test`
+2. Call it via `curl_edge_functions`
+3. Save output to report file
+4. Delete the temp function
+
+## Exit Criteria
+- All 8 responses must be non-empty and error-free
+- At least 6 of 8 must contain org-specific markers (PASS)
+- Any response flagged GENERIC is a warning; 3+ GENERIC = overall FAIL
+- Any API error = immediate FAIL
 
