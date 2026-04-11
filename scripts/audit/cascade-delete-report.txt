@@ -1,0 +1,34 @@
+═══════════════════════════════════════════════════════════
+  CASCADE DELETION TEST REPORT
+  2026-04-11T08:25:11.206Z
+═══════════════════════════════════════════════════════════
+
+Org created: cda9b4f1-063a-4523-9d1c-349bb0b0a80f
+
+Seeded Records:
+  Organization: cda9b4f1-063a-4523-9d1c-349bb0b0a80f
+  Vineyards: 1 | Blocks: 3 | Vintages: 3
+  Lab Samples: 6 | Alert Rules: 3 | Notifications: 2
+  Vessels: 1 | Fermentation Logs: 1 | Profiles: 1
+
+Pre-delete cleanup (NO ACTION tables):
+  alert_rules:    3 deleted ✅
+  notifications:  2 deleted ✅
+
+Deleting organization...
+  Organization deleted ✅
+
+Post-delete verification:
+  organizations:            0 remaining ✅ CASCADE
+  vineyards:                0 remaining ✅ CASCADE
+  blocks:                   0 remaining ✅ CASCADE (via vineyards)
+  vintages:                 0 remaining ✅ CASCADE
+  profiles:                 0 remaining ✅ CASCADE
+  fermentation_vessels:     0 remaining ✅ CASCADE
+  lab_samples:              0 remaining ✅ CASCADE (via vintages)
+  fermentation_logs:        0 remaining ✅ CASCADE (via vessels)
+
+Dangling FK check:
+  No orphaned records found ✅
+
+Overall: ALL PASSED ✅
