@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
     } else {
       // Verify it's in the DB
       const { data: taskCheck } = await sb.from("tasks").select("id, title, status").eq("id", taskId).single();
-      if (taskCheck && taskCheck.title === "Punch down Tank 4" && taskCheck.status === "completed") {
+      if (taskCheck && taskCheck.title === "Punch down Tank 4" && taskCheck.status === "complete") {
         pass("  Task synced and verified ✅");
       } else {
         fail(`  Task synced but verification failed ❌: ${JSON.stringify(taskCheck)}`);
