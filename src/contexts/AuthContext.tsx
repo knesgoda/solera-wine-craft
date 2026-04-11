@@ -20,6 +20,7 @@ interface Organization {
   id: string;
   name: string;
   tier: string | null;
+  subscription_status: string | null;
   enabled_modules: string[] | null;
   onboarding_completed: boolean;
   timezone: string | null;
