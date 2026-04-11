@@ -65,7 +65,7 @@ const COMPETITORS = [
     ],
     savingStat: "Solera Growth at $129/mo includes COGS tracking that replaces vintrace ($159+/mo) AND Xero ($25+/mo) — saving you $55+/mo and 5+ hours of manual reconciliation.",
     features: {
-      "Starting price": ["$69/mo", "Contact for pricing"],
+      "Starting price": ["$69/mo", "$184/mo"],
       "Free tier": [true, false],
       "Vineyard ops": [true, false],
       "Lab tracking": [true, true],
