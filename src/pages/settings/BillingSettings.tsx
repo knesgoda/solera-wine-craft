@@ -180,7 +180,32 @@ const BillingSettings = () => {
             <Badge className="text-sm px-3 py-1">{getTierDisplay(currentTier)}</Badge>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          {(() => {
+            const nextBilledAt = (organization as any)?.next_billed_at;
+            const subStatus = (organization as any)?.subscription_status;
+            const isCanceledOrPaused = subStatus === 'canceled' || subStatus === 'paused';
+
+            if (nextBilledAt && isCanceledOrPaused) {
+              return (
+                <p className="text-sm text-muted-foreground">
+                  Subscription {subStatus} — access continues until{' '}
+                  <strong>{new Date(nextBilledAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+                </p>
+              );
+            }
+
+            if (nextBilledAt && !isCanceledOrPaused) {
+              return (
+                <p className="text-sm text-muted-foreground">
+                  Next billing date:{' '}
+                  <strong>{new Date(nextBilledAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+                </p>
+              );
+            }
+
+            return null;
+          })()}
           {hasPaddleCustomer ? (
             <Button variant="outline" onClick={handleManageBilling}>
               <CreditCard className="h-4 w-4 mr-2" />
