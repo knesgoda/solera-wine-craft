@@ -37,15 +37,13 @@ export default function ComingSoon() {
     setSubmitting(true);
 
     try {
-      const { data, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from("waitlist_signups")
         .insert({
           first_name: firstName,
           email: email.trim().toLowerCase(),
           operation_type: operationType,
-        })
-        .select()
-        .single();
+        });
 
       if (insertError) {
         if (insertError.code === "23505") {
@@ -64,7 +62,7 @@ export default function ComingSoon() {
             first_name: firstName,
             email: email.trim().toLowerCase(),
             operation_type: operationType,
-            created_at: data.created_at,
+            created_at: new Date().toISOString(),
           },
         })
         .catch(() => {});
