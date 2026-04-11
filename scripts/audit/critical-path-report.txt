@@ -1,0 +1,23 @@
+=== Solera Critical Path E2E Report ===
+Run: 2026-04-11T07:38:00.081Z
+
+[PASS] Sign up + org creation
+  user=034a0b24-cdcb-454d-95d0-eee8db500430, org=14b9cdb2-5f3f-44df-ac9a-95c3d8e76973
+[PASS] Complete onboarding
+  small_boutique tier, modules set
+[PASS] Create vineyard + 3 blocks
+  vineyard=c00ecf3d-36bf-478f-8c86-7e1582b6da93, blocks=ee2d6335-68fe-4ae3-82b3-9ec4fab171d0,1c41ad8f-05a8-4854-b791-6ea784b652bc,2eaea17d-8cea-4ae9-8df3-1b7d5230402a
+[PASS] Create 2025 vintages
+  ids=37981cea-96bd-4feb-88b0-074cd36fc146,e7417993-5bb1-461b-9bab-44415edce389,eccb5d2a-742d-4c5b-b026-20f08440e500
+[PASS] Log lab samples
+  Brix: 22.1, 21.4, 23
+[PASS] Verify lab samples (RLS)
+  User can read 3 samples
+[PASS] Ripening comparison data
+  All 3 Brix values match: 21.4, 22.1, 23
+[PASS] Log TTB addition (SO₂ 50 mL)
+  Addition recorded and readable
+[PASS] TTB OW-1 PDF export
+  Report d86ed150-9bfe-47fb-8b7d-6c850eac6838 created, PDF generated
+
+Overall: ALL PASSED
