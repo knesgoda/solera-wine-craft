@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/react";
 import { supabase } from "@/integrations/supabase/client";
 import { setOrgTimezone } from "@/lib/timezone";
 import { setUnitSystem } from "@/lib/units";
@@ -77,6 +78,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (profileData) {
       setProfile(profileData);
 
+      // Set Sentry user context
+      Sentry.setUser({ id: profileData.id, email: profileData.email ?? undefined });
+      if (profileData.org_id) {
+        Sentry.setTag("org_id", profileData.org_id);
+      }
+
       // Apply user's language preference
       if (profileData.language && profileData.language !== i18n.language) {
         i18n.changeLanguage(profileData.language);
@@ -120,9 +127,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             promise.finally(() => setLoading(false));
           }
         } else {
-          setProfile(null);
-          setOrganization(null);
-          setAuthError(null);
+        setProfile(null);
+        setOrganization(null);
+        setAuthError(null);
+        Sentry.setUser(null);
           if (initialLoad) {
             initialLoad = false;
             setLoading(false);
