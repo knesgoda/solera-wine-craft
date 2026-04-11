@@ -108,8 +108,8 @@ Deno.serve(async (req) => {
 
     // 8. Notifications (2) — NO ACTION, must pre-delete
     const notifInserts = [
-      { org_id: orgId, user_id: profileId, title: "Test Notification 1", message: "Cascade test", type: "alert" },
-      { org_id: orgId, user_id: profileId, title: "Test Notification 2", message: "Cascade test 2", type: "info" },
+      { org_id: orgId, user_id: userId, title: "Test Notification 1", message: "Cascade test", type: "alert" },
+      { org_id: orgId, user_id: userId, title: "Test Notification 2", message: "Cascade test 2", type: "info" },
     ];
     const { data: notifs, error: nErr } = await sb.from("notifications").insert(notifInserts).select("id");
     if (nErr) throw new Error(`Notifications: ${nErr.message}`);
