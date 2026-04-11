@@ -1,0 +1,41 @@
+╔════════════════════════════════════════════════════════════╗
+║       Paddle Webhook Tier Enforcement Audit Report       ║
+╚════════════════════════════════════════════════════════════╝
+Date: 2026-04-11T05:28:18Z
+Endpoint: https://vibdxsntxwrepnkrlbdw.supabase.co/functions/v1/paddle-webhook
+Test Org: 00000000-aaaa-bbbb-cccc-000000000099
+
+── Setup: Creating test organization
+   Created: __paddle_audit_test__ | tier=hobbyist | status=none
+
+── Test: 1. subscription.created → Pro (monthly)
+   POST → HTTP 401
+   Expected: tier=small_boutique  status=active
+   Actual:   tier=hobbyist  status=none
+   Result:   ❌ FAIL — Tier mismatch. Status mismatch. HTTP 401. 
+
+── Test: 2. subscription.updated → Growth (monthly)
+   POST → HTTP 401
+   Expected: tier=mid_size  status=active
+   Actual:   tier=hobbyist  status=none
+   Result:   ❌ FAIL — Tier mismatch. Status mismatch. HTTP 401. 
+
+── Test: 3. subscription.updated → Enterprise (monthly)
+   POST → HTTP 401
+   Expected: tier=enterprise  status=active
+   Actual:   tier=hobbyist  status=none
+   Result:   ❌ FAIL — Tier mismatch. Status mismatch. HTTP 401. 
+
+── Test: 4. Downgrade: subscription.updated → Pro
+   POST → HTTP 401
+   Expected: tier=small_boutique  status=active
+   Actual:   tier=hobbyist  status=none
+   Result:   ❌ FAIL — Tier mismatch. Status mismatch. HTTP 401. 
+
+── Test: 5. subscription.canceled → hobbyist
+   POST → HTTP 401
+   Expected: tier=hobbyist  status=canceled
+   Actual:   tier=hobbyist  status=none
+   Result:   ❌ FAIL — Status mismatch. HTTP 401. 
+
+── Edge Case: Unknown price ID fallback
