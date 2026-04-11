@@ -113,9 +113,9 @@ Deno.serve(async (req) => {
     console.log("=== Test 1 ===");
     const now = new Date();
     const { error: labErr1 } = await supabase.from("lab_samples").insert([
-      { vintage_id: hilltopVintageId, brix: 22.0, ph: 3.3, sampled_at: new Date(now.getTime() - 3 * 86400000).toISOString(), org_id: orgId },
-      { vintage_id: hilltopVintageId, brix: 23.0, ph: 3.35, sampled_at: new Date(now.getTime() - 2 * 86400000).toISOString(), org_id: orgId },
-      { vintage_id: hilltopVintageId, brix: 24.5, ph: 3.4, sampled_at: new Date(now.getTime() - 1 * 86400000).toISOString(), org_id: orgId },
+      { vintage_id: hilltopVintageId, brix: 22.0, ph: 3.3, sampled_at: new Date(now.getTime() - 3 * 86400000).toISOString() },
+      { vintage_id: hilltopVintageId, brix: 23.0, ph: 3.35, sampled_at: new Date(now.getTime() - 2 * 86400000).toISOString() },
+      { vintage_id: hilltopVintageId, brix: 24.5, ph: 3.4, sampled_at: new Date(now.getTime() - 1 * 86400000).toISOString() },
     ]);
     if (labErr1) console.error(`Lab insert T1 ERROR: ${labErr1.message} / ${labErr1.details} / ${labErr1.hint}`);
 
@@ -204,9 +204,9 @@ Deno.serve(async (req) => {
     console.log("=== Test 4 ===");
     const sampleTime = new Date().toISOString();
     const { error: labErr4 } = await supabase.from("lab_samples").insert([
-      { vintage_id: hilltopVintageId, brix: 24.5, ph: 3.4, sampled_at: sampleTime, org_id: orgId },
-      { vintage_id: creeksideVintageId, brix: 20.0, ph: 3.5, sampled_at: sampleTime, org_id: orgId },
-      { vintage_id: ridgelineVintageId, brix: 22.0, ph: 3.38, sampled_at: sampleTime, org_id: orgId },
+      { vintage_id: hilltopVintageId, brix: 24.5, ph: 3.4, sampled_at: sampleTime },
+      { vintage_id: creeksideVintageId, brix: 20.0, ph: 3.5, sampled_at: sampleTime },
+      { vintage_id: ridgelineVintageId, brix: 22.0, ph: 3.38, sampled_at: sampleTime },
     ]);
     if (labErr4) console.error(`Lab insert T4 ERROR: ${labErr4.message} / ${(labErr4 as any).details}`);
 
