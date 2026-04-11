@@ -107,6 +107,7 @@ import BlogPost from "./pages/marketing/BlogPost";
 import BlogAdmin from "./pages/admin/BlogAdmin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ContactPage from "./pages/marketing/ContactPage";
+import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -130,6 +131,7 @@ const App = () => (
           <Routes>
             {/* Coming soon / waitlist - public */}
             <Route path="/coming-soon" element={<ComingSoonPage />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
             {/* Marketing routes */}
             <Route element={<MarketingLayout />}>
               <Route path="/" element={<Homepage />} />
