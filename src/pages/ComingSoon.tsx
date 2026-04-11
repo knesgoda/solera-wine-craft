@@ -69,7 +69,7 @@ export default function ComingSoon() {
         })
         .catch(() => {});
     } catch (err: any) {
-      setError("Something went wrong. Please try again.");
+      setError("Something went wrong — please try again or email kevin@solera.vin");
       console.error(err);
     } finally {
       setSubmitting(false);
