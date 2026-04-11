@@ -1,80 +1,92 @@
 
 
-# Ask Solera Context-Awareness Test Suite — Plan
+# Alert Integration Test Suite — Plan
 
-## Approach
+## Overview
 
-Deploy a temporary edge function `ask-solera-test` that:
-1. Seeds a test org with rich, distinctively named data
-2. Creates a test user in that org
-3. Sends all 8 questions to the `ask-solera` endpoint using the test user's auth token
-4. Parses the SSE stream to extract the full response text
-5. Validates each response against org-specific markers
-6. Outputs results to `scripts/audit/ask-solera-report.txt`
-7. Cleans up all test data
+Deploy a temporary edge function (`alerts-integration-test`) that seeds a test organization with blocks, vintages, vessels, and alert rules, then triggers each of the 4 alert types by calling the actual alert-processing edge functions. After each trigger, verify notifications appeared in the database and emails were attempted via Resend. Results output to `scripts/audit/alerts-report.txt`.
 
-## Seed Data (Distinctive Names for Easy Grep)
+## Architecture
+
+The test uses service-role access to seed data and query results. It calls the real deployed edge functions (`check-harvest-alerts`, `evaluate-alerts`, `detect-anomalies`) to trigger alerts — no mocking.
+
+## Seed Data
 
 | Entity | Details |
 |---|---|
-| Org | "Ridgecrest Cellars" |
-| Vineyard | "Dundee Hills Estate" |
-| Block 1 | "Eagle's Nest" — Pinot Noir, Clone 667, 101-14 |
-| Block 2 | "Riverview" — Chardonnay, Clone 76, 3309C |
-| Block 3 | "Sunset Ridge" — Pinot Noir, Clone 777, 101-14 |
-| 2024 Vintage (Block 1) | status: in_cellar, 4.2 tons, lab: Brix=23.8, pH=3.42 |
-| 2025 Vintage (Block 2) | status: in_progress, 3.1 tons, lab: Brix=21.4, pH=3.51 |
-| 2025 Vintage (Block 3) | status: harvested, 5.0 tons, lab: Brix=22.1, pH=3.38 |
-| Vessel | "Tank 7" — stainless, 2000L, linked to 2025 Block 2 vintage |
-| SO2 Addition | 50 mL on 2025 Block 2, dated this month |
-| Tasks | 2 overdue ("Rack Block 1 barrels", "Order yeast"), 1 pending |
+| Org | "Stonewall Alert Test Winery", tier: `small_boutique` |
+| User | `alert-test-{ts}@test.solera.dev` (auto-confirmed) |
+| Vineyard | "Cascade Hills" |
+| Blocks | "Hilltop" (Pinot Noir, 667, 101-14), "Creekside" (Pinot Noir, 777, 101-14), "Ridgeline" (Pinot Noir, Pommard, 3309C) |
+| Vintages | 2025 in_progress for each block |
+| Vessel | "Tank 9" — stainless, 1500L, linked to Hilltop vintage |
+| Alert rules | brix ≥ 24 (channel: both), temp_f ≥ 85 (channel: both), ripening_divergence ≥ 4.0 (channel: both) |
 
-## Validation Per Question
+## Test Cases
 
-Each response is checked for at least one **org-specific marker** from the seeded data:
+### Test 1: Harvest Window Alert
+- **Setup**: Insert 3 lab samples on Hilltop vintage with ascending Brix (22.0, 23.0, 24.5) over 3 days — current Brix ≥ 24 triggers `predictedDays = 0`
+- **Trigger**: Call `check-harvest-alerts`
+- **Verify**: Notification in `notifications` with `type = 'harvest_window'`, message contains "Hilltop" and "Cascade Hills", deep link contains `/operations/blocks/{block_id}`
 
-| # | Question | Expected markers (any match = PASS) |
-|---|---|---|
-| 1 | "When should I pick Block 3?" | `Sunset Ridge`, `22.1`, `Block 3` |
-| 2 | "Brix trend for Pinot Noir" | `Eagle's Nest` or `Sunset Ridge`, `23.8` or `22.1`, `Pinot Noir` |
-| 3 | "Furthest from target Brix" | Any block name + a Brix value |
-| 4 | "Lab history for 2024 vintage" | `Eagle's Nest`, `23.8`, `3.42`, `2024` |
-| 5 | "SO2 additions this month" | `SO₂` or `SO2`, `50`, `Riverview` or `Block 2` |
-| 6 | "Compare 2024 and 2025" | `2024`, `2025`, any block name |
-| 7 | "Tank closest to target pH" | `Tank 7`, `3.51` or pH value |
-| 8 | "Tasks overdue" | `Rack Block 1` or `Order yeast` |
+### Test 2: Brix Threshold Alert
+- **Setup**: Already have brix ≥ 24 rule from seed
+- **Trigger**: Call `evaluate-alerts` with `{ type: "lab_sample", record: { vintage_id, brix: 24.5, ph: 3.4, ta: 7.0 } }`
+- **Verify**: Notification in `notifications` with `type = 'alert'`, message contains "Brix" and "24.5" and "≥ 24"
 
-A response with none of these markers is flagged as **GENERIC** (context injection failure).
+### Test 3: Fermentation Temperature Spike
+- **Setup**: Already have temp_f ≥ 85 rule
+- **Trigger**: Call `evaluate-alerts` with `{ type: "fermentation_log", record: { vessel_id, temp_f: 92 } }`
+- **Verify**: Notification with message containing "Temperature" and "92"
 
-## Additional Checks Per Response
-- **Latency**: Must complete within 8 seconds (measured from request to last SSE chunk)
-- **Non-empty**: Response text must be > 50 characters
-- **No errors**: HTTP status must be 200, no `{"error":...}` in body
+### Test 4: Ripening Divergence
+- **Setup**: Insert lab samples: Hilltop Brix=24.5, Creekside Brix=20.0, Ridgeline Brix=22.0 — spread of 4.5 > threshold 4.0
+- **Trigger**: Call `evaluate-alerts` with `{ type: "lab_sample", record: { vintage_id: ridgeline_vintage_id, brix: 22.0 } }`
+- **Verify**: Notification with message containing "divergence", "Pinot Noir", spread value
 
-## SSE Parsing
+## Verification Per Alert
 
-The endpoint streams Anthropic's SSE format. The test will accumulate `content_block_delta` events to reconstruct the full text:
+1. **In-app notification**: Query `notifications` table for the test user, filtered by `created_at` after test start. Verify message content contains expected keywords.
+2. **Email delivery**: Query Resend API (`GET https://api.resend.com/emails?limit=10`) using `RESEND_API_KEY` to check recent emails sent to the test email. If Resend list API not available (it requires specific plan), verify the edge function returned `success: true` / `alertsFired > 0` as proxy for email attempt.
+3. **Deep link**: For harvest alerts, verify the notification message or email HTML contains the block path. For divergence, verify link to `/ripening-comparison`. For threshold alerts, verify link to `/dashboard`.
+
+## Report Format
+
 ```
-event: content_block_delta
-data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"..."}}
+═══════════════════════════════════════════════════════════
+  SOLERA ALERT INTEGRATION TEST REPORT
+  {timestamp}
+═══════════════════════════════════════════════════════════
+
+Test 1: Harvest Window Alert
+  Notification: ✅ PASS | Contains "Hilltop", "Cascade Hills"
+  Email attempt: ✅ PASS | Function returned alertsSent=1
+  Deep link: ✅ PASS | Contains /operations/blocks/{id}
+
+Test 2: Brix Threshold Alert
+  ...
 ```
+
+## Known Issue: `link_url` Column
+
+The `evaluate-alerts` function inserts `link_url` into the `notifications` table, but this column does not appear in the generated types. The test will check if the column exists and flag it if missing — deep link verification for threshold/divergence alerts will use the function response and email HTML as fallback.
 
 ## Files
 
 | File | Action |
 |---|---|
-| `supabase/functions/ask-solera-test/index.ts` | Create (temporary test runner) |
-| `scripts/audit/ask-solera-report.txt` | Generated output |
+| `supabase/functions/alerts-integration-test/index.ts` | Create (temporary) |
+| `scripts/audit/alerts-report.txt` | Generated output |
 
-## Execution Flow
-1. Deploy `ask-solera-test`
-2. Call it via `curl_edge_functions`
-3. Save output to report file
-4. Delete the temp function
+## Cleanup
+
+- Delete test user via `auth.admin.deleteUser`
+- Delete test org (cascades to blocks, vintages, vessels, rules, notifications)
+- Remove temp edge function after execution
 
 ## Exit Criteria
-- All 8 responses must be non-empty and error-free
-- At least 6 of 8 must contain org-specific markers (PASS)
-- Any response flagged GENERIC is a warning; 3+ GENERIC = overall FAIL
-- Any API error = immediate FAIL
+
+- All 4 alert types produce in-app notifications: required
+- All 4 edge function calls return success (proxy for email attempt): required
+- Any FAIL → exit non-zero
 
