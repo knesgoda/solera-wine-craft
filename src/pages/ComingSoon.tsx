@@ -25,6 +25,7 @@ export default function ComingSoon() {
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [operationType, setOperationType] = useState("");
+  const [honeypot, setHoneypot] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
