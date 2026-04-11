@@ -88,12 +88,14 @@ const INDIRECT: { t: string; fk: string; pk: string; c?: Record<string, unknown>
   { t: "lab_samples", fk: "vintage_id", pk: "__VIN_A__", c: { sampled_at: "2099-01-01T12:00:00Z" } },
   { t: "club_shipment_members", fk: "shipment_id", pk: "__SH_A__", c: { member_id: "__CM_A__" } },
   { t: "import_errors", fk: "job_id", pk: "__IJ_A__", c: { row_number: 1 } },
-  { t: "grading_scale_metrics", fk: "grading_scale_id", pk: "__GS_A__", c: { metric_key: "brix", metric_name: "Brix", direction: "higher_is_better", org_id: "__OA__" } },
+  { t: "grading_scale_metrics", fk: "grading_scale_id", pk: "__GS_A__", c: { metric_key: "ph", metric_name: "pH", direction: "lower_is_better", org_id: "__OA__" } },
 ];
 
 async function seed(orgId: string, p: string) {
   const v = uuid(); ids[`__VIN_${p}__`] = v;
   await svc.from("vintages").insert({ id: v, org_id: orgId, year: 2098 });
+  const v2 = uuid(); ids[`__VIN_${p}2__`] = v2;
+  await svc.from("vintages").insert({ id: v2, org_id: orgId, year: 2097 });
 
   const vy = uuid(); ids[`__VY_${p}__`] = vy;
   await svc.from("vineyards").insert({ id: vy, org_id: orgId, name: `${p}Vy` });
