@@ -38,6 +38,10 @@ async function verifyPaddleSignature(rawBody: string, signature: string, secret:
   const h1 = parts["h1"];
   if (!ts || !h1) return false;
 
+  // Reject signatures older than 5 minutes to prevent replay attacks
+  const age = Math.floor(Date.now() / 1000) - Number(ts);
+  if (age > 300) return false;
+
   const signedPayload = `${ts}:${rawBody}`;
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
