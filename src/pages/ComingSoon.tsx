@@ -69,7 +69,7 @@ export default function ComingSoon() {
         })
         .catch(() => {});
     } catch (err: any) {
-      setError("Something went wrong. Please try again.");
+      setError("Something went wrong — please try again or email kevin@solera.vin");
       console.error(err);
     } finally {
       setSubmitting(false);
@@ -180,7 +180,7 @@ export default function ComingSoon() {
                   color: "#6B1B2A",
                 }}
               >
-                You're on the list. We'll be in touch soon — thank you.
+                You're on the list. We'll reach out before we open the doors.
               </p>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4 text-left">
