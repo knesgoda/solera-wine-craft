@@ -1,4 +1,7 @@
-import { corsHeaders } from "@supabase/supabase-js/cors";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 const WEBHOOK_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/paddle-webhook`;
 const SECRET = Deno.env.get("PADDLE_NOTIFICATION_WEBHOOK_SECRET")!;
