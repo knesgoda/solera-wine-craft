@@ -475,6 +475,17 @@ IMPORTANT RULES:
 - If the file has "contract_id" and "grower_name", map to grower_contracts table
 - "vineyard" or "vineyard_name" in a blocks file should map to blocks.vineyard_name
 - "block_id" as a source header should map to the external_block_id of the target table, NOT to a UUID
+- Headers may use spaces instead of underscores (e.g. "SO2 Free" = so2_free, "Sample ID" = sample_id)
+
+Common header aliases to map deterministically:
+- "so2 free" / "free so2" / "free_so2" → lab_samples.so2_free
+- "so2 total" / "total so2" / "total_so2" → lab_samples.so2_total
+- "harvest date" / "harvest_date" / "pick date" / "pick_date" → vintages.harvest_date
+- "variety" / "grape variety" / "grape_variety" / "varietal" → blocks.variety
+- "clone number" / "clone #" / "clone" → blocks.clone
+- "root stock" / "rootstock" / "root_stock" → blocks.rootstock
+- "tons harvested" / "tons" / "harvest tons" / "harvest_tons" → vintages.tons_harvested
+- "sample id" / "sample_id" → lab_samples.external_sample_id (system-generated, skip if user wants auto-ID)
 
 For each source column, return:
 - source_column: the original header name
