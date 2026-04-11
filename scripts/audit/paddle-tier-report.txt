@@ -1,0 +1,71 @@
+╔════════════════════════════════════════════════════════════╗
+║       Paddle Webhook Tier Enforcement Audit Report       ║
+╚════════════════════════════════════════════════════════════╝
+Date: 2026-04-11T05:29:19Z
+Endpoint: https://vibdxsntxwrepnkrlbdw.supabase.co/functions/v1/paddle-webhook
+Test Org: 00000000-aaaa-bbbb-cccc-000000000099
+
+── Setup: Creating test organization
+   Created: __paddle_audit_test__ | tier=hobbyist | status=none
+
+── Test: 1. subscription.created → Pro (monthly)
+   POST → HTTP 200
+   Expected: tier=small_boutique  status=active
+   Actual:   tier=small_boutique  status=active
+   Result:   ✅ PASS
+
+── Test: 2. subscription.updated → Growth (monthly)
+   POST → HTTP 200
+   Expected: tier=mid_size  status=active
+   Actual:   tier=mid_size  status=active
+   Result:   ✅ PASS
+
+── Test: 3. subscription.updated → Enterprise (monthly)
+   POST → HTTP 200
+   Expected: tier=enterprise  status=active
+   Actual:   tier=enterprise  status=active
+   Result:   ✅ PASS
+
+── Test: 4. Downgrade: subscription.updated → Pro
+   POST → HTTP 200
+   Expected: tier=small_boutique  status=active
+   Actual:   tier=small_boutique  status=active
+   Result:   ✅ PASS
+
+── Test: 5. subscription.canceled → hobbyist
+   POST → HTTP 200
+   Expected: tier=hobbyist  status=canceled
+   Actual:   tier=hobbyist  status=canceled
+   Result:   ✅ PASS
+
+── Edge Case: Unknown price ID fallback
+   POST → HTTP 200
+   Resulting tier: small_boutique
+   ⚠️  GAP CONFIRMED: Unknown price ID silently upgrades org to Pro.
+   Recommendation: Reject or default to 'hobbyist' for unknown price IDs.
+
+── RLS Gap Check: Tier-gated table access
+   cost_entries RLS checks org_id membership, NOT tier.
+   ⚠️  A user in a hobbyist org can query cost_entries with a valid session.
+   This confirms gating is UI-only — no server-side tier enforcement.
+
+════════════════════════════════════════════════════════════
+SUMMARY
+════════════════════════════════════════════════════════════
+Total: 5 | Passed: 5 | Failed: 0
+  ✅ 1. subscription.created → Pro (monthly)
+  ✅ 2. subscription.updated → Growth (monthly)
+  ✅ 3. subscription.updated → Enterprise (monthly)
+  ✅ 4. Downgrade: subscription.updated → Pro
+  ✅ 5. subscription.canceled → hobbyist
+
+KNOWN GAPS:
+  1. No server-side (RLS) tier enforcement — gating is UI-only
+  2. Unknown price IDs default to small_boutique instead of hobbyist
+  3. subscription_status (past_due, paused) not checked by UI
+  4. Cellar & Sales routes lack route-level TierGate wrappers
+  5. User count limits not enforced server-side
+  6. Cancellation clears paddle_subscription_id — late events silently fail
+
+── Cleanup: Deleting test organization
+   Done.
