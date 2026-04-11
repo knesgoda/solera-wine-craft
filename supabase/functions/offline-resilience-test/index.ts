@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       user_id: userId, org_id: TEST_ORG_ID,
-      email: authUser.user.email,
+      email: testEmail, auto_org_id: autoOrgId,
       vineyard_id: vy!.id, block_id: blk!.id,
       vintage_id: vnt!.id, task_id: tsk!.id,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
