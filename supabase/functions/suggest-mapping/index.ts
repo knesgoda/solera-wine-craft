@@ -336,27 +336,31 @@ serve(async (req) => {
     // Step 1: Detect file type (uses normalized headers internally)
     const detectedType = detectFileType(headers);
     console.log("Detected file type:", detectedType, "from headers:", normalizedHeaders.join(", "));
-    console.log("Detected file type:", detectedType, "from headers:", lowerHeaders.join(", "));
 
     // Step 2: Build mappings using file-type-specific aliases first
     const aliasMap = detectedType ? FILE_ALIASES[detectedType] || {} : {};
     const deterministicMappings: any[] = [];
     let deterministicCount = 0;
 
-    for (const originalHeader of headers) {
+    for (let i = 0; i < headers.length; i++) {
+      const originalHeader = headers[i];
       const lower = originalHeader.toLowerCase().trim();
+      const normalized = normalizedHeaders[i];
 
-      // Try file-type-specific alias first
-      let alias = aliasMap[lower];
+      // Try file-type-specific alias with both raw lowercase and normalized forms
+      let alias = aliasMap[lower] || aliasMap[normalized];
+
+      // Try extra normalized aliases (e.g. free_so2, grape_variety)
+      if (!alias) alias = EXTRA_NORMALIZED_ALIASES[normalized];
 
       // Fall back to global alias ONLY if no file type was detected
-      // This prevents headers like block_id from leaking into unrelated tables
-      if (!alias && !detectedType) alias = GLOBAL_ALIASES[lower];
+      if (!alias && !detectedType) alias = GLOBAL_ALIASES[lower] || GLOBAL_ALIASES[normalized];
 
       if (alias) {
         const [table, field] = alias.split(".");
         deterministicMappings.push({
           source_column: originalHeader,
+          normalized_column: normalized,
           target_table: table,
           target_field: field,
           confidence: "high",
@@ -365,6 +369,7 @@ serve(async (req) => {
       } else {
         deterministicMappings.push({
           source_column: originalHeader,
+          normalized_column: normalized,
           target_table: null,
           target_field: null,
           confidence: "unmapped",
