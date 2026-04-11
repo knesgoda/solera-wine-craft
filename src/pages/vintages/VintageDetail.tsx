@@ -170,7 +170,12 @@ export default function VintageDetail() {
   }
 
   if (!vintage) {
-    return <div className="p-6 text-center"><p className="text-muted-foreground">Vintage not found.</p></div>;
+    return (
+      <div className="flex flex-col items-center justify-center p-8 text-center">
+        <p className="text-muted-foreground">This vintage isn't available offline.</p>
+        <p className="text-sm text-muted-foreground mt-1">Connect to the internet to load vintage details.</p>
+      </div>
+    );
   }
 
   const currentIdx = statusOrder.indexOf(vintage.status);
@@ -403,7 +408,7 @@ export default function VintageDetail() {
         <TabsContent value="additions">
           <TtbAdditionsTab
             vintageId={vintageId!}
-            vintageYear={vintage.year}
+            vintageYear={vintage?.year}
             wineryName={organization?.name || "Winery"}
           />
         </TabsContent>
