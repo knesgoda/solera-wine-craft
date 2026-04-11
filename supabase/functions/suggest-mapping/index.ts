@@ -248,6 +248,32 @@ const FILE_ALIASES: Record<string, Record<string, string>> = {
   },
 };
 
+// ── Header normalization ──────────────────────────────────────────────────
+// Converts "SO2 Free", "Harvest Date", "Clone #" → "so2_free", "harvest_date", "clone"
+function normalizeHeader(header: string): string {
+  return header
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-z0-9_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+}
+
+// ── Extra aliases for common Innovint / third-party spaced headers ────────
+// These are added to the normalized lookup so "so2 free" → "so2_free" hits the alias map
+const EXTRA_NORMALIZED_ALIASES: Record<string, string> = {
+  free_so2: "lab_samples.so2_free",
+  total_so2: "lab_samples.so2_total",
+  grape_variety: "blocks.variety",
+  varietal: "blocks.variety",
+  clone_number: "blocks.clone",
+  harvest_tons: "vintages.tons_harvested",
+  tons: "vintages.tons_harvested",
+  root_stock: "blocks.rootstock",
+  pick_date: "vintages.harvest_date",
+};
+
 // ── File-type detection via header signatures ──────────────────────────────
 // Each entry: [fileType, requiredHeaders (need ≥ matchThreshold), matchThreshold]
 const FILE_SIGNATURES: [string, string[], number][] = [
@@ -271,9 +297,10 @@ const FILE_SIGNATURES: [string, string[], number][] = [
 ];
 
 function detectFileType(headers: string[]): string | null {
-  const lowerHeaders = new Set(headers.map(h => h.toLowerCase().trim()));
+  // Use normalized headers for matching so "SO2 Free" → "so2_free" hits signatures
+  const normalizedSet = new Set(headers.map(normalizeHeader));
   for (const [fileType, signatures, threshold] of FILE_SIGNATURES) {
-    const matches = signatures.filter(s => lowerHeaders.has(s));
+    const matches = signatures.filter(s => normalizedSet.has(s));
     if (matches.length >= threshold) return fileType;
   }
   return null;
