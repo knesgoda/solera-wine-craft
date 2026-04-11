@@ -1,0 +1,23 @@
+=== Custom Crush Client Isolation Report ===
+Run: 2026-04-11T07:28:57.656Z
+
+[PASS] RLS: Client A cannot see Client B vintages
+  Expected: 0 rows  Actual: 0 rows
+[PASS] RLS: Client A cannot see Client B lab samples
+  Expected: 0 rows  Actual: 0 rows
+[PASS] RLS: Client A cannot see Client B messages
+  Expected: 0 rows  Actual: 0 rows
+[PASS] Sanity: Client A can see own vintage
+  Expected: 1 row  Actual: 1 rows
+[PASS] Edge: generate-coa blocked for other client's vintage
+  Expected: 403  Actual: 403
+[PASS] Edge: send-client-message blocked for other client's org
+  Expected: 403  Actual: 403
+[PASS] Sanity: generate-coa works for own vintage
+  Expected: 200  Actual: 200
+
+Overall: ALL PASSED
+
+--- Fixes Applied ---
+1. generate-coa: Added auth check verifying caller is facility user OR client owner of the vintage
+2. send-client-message: Added ownership check verifying caller belongs to target client_org_id
