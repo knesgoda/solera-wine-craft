@@ -307,7 +307,7 @@ Test ${i + 1}: ${r.name}
         await supabase.from("notifications").delete().eq("org_id", orgId);
         await supabase.from("harvest_alerts_sent").delete().eq("org_id", orgId);
         await supabase.from("anomaly_flags").delete().eq("org_id", orgId);
-        await supabase.from("lab_samples").delete().eq("org_id", orgId);
+        await supabase.from("lab_samples").delete().in("vintage_id", [hilltopVintageId, creeksideVintageId, ridgelineVintageId]);
         await supabase.from("fermentation_vessels").delete().eq("org_id", orgId);
         await supabase.from("alert_rules").delete().eq("org_id", orgId);
         await supabase.from("cost_entries").delete().eq("org_id", orgId);
