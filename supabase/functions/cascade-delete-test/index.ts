@@ -35,14 +35,25 @@ Deno.serve(async (req) => {
     ids.organizations = [orgId];
     log(`Org created: ${orgId}`);
 
-    // 2. Create test user + profile (via auth so handle_new_user doesn't fire for our org)
-    // Instead, directly insert profile
-    const profileId = crypto.randomUUID();
-    const { error: profErr } = await sb.from("profiles").insert({
-      id: profileId, email: "cascade-test@test.local", first_name: "Test", last_name: "Cascade", org_id: orgId
+    // 2. Create auth user (handle_new_user trigger will create its own org+profile, so we
+    //    need to reassign the profile to our test org afterwards)
+    const { data: authUser, error: authErr } = await sb.auth.admin.createUser({
+      email: `cascade-test-${Date.now()}@test.local`,
+      password: "TestPass123!",
+      email_confirm: true,
+      user_metadata: { first_name: "Test", last_name: "Cascade", winery_name: "Trigger Org" },
     });
-    if (profErr) throw new Error(`Profile: ${profErr.message}`);
-    ids.profiles = [profileId];
+    if (authErr) throw new Error(`Auth user: ${authErr.message}`);
+    const userId = authUser.user.id;
+
+    // The trigger created a separate org + profile. Move profile to our test org.
+    // First find the trigger-created org so we can clean it up later.
+    const { data: triggerProfile } = await sb.from("profiles").select("org_id").eq("id", userId).single();
+    const triggerOrgId = triggerProfile?.org_id;
+
+    const { error: profUpd } = await sb.from("profiles").update({ org_id: orgId }).eq("id", userId);
+    if (profUpd) throw new Error(`Profile reassign: ${profUpd.message}`);
+    ids.profiles = [userId];
 
     // 3. Vineyard
     const { data: vineyard, error: vyErr } = await sb.from("vineyards").insert({
