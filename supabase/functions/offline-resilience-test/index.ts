@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     if (blkErr) return new Response(JSON.stringify({ error: "block: " + blkErr.message }), { status: 500, headers: corsHeaders });
 
     const { data: vnt, error: vntErr } = await supabase.from("vintages")
-      .insert({ org_id: TEST_ORG_ID, year: 2025, block_id: blk!.id, status: "fermenting" })
+      .insert({ org_id: TEST_ORG_ID, year: 2025, block_id: blk!.id, status: "in_cellar" })
       .select("id").single();
     if (vntErr) return new Response(JSON.stringify({ error: "vintage: " + vntErr.message }), { status: 500, headers: corsHeaders });
 
