@@ -184,6 +184,19 @@ export default function ComingSoon() {
               </p>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4 text-left">
+                {/* Honeypot — hidden from real users */}
+                <div className="absolute opacity-0 -z-10" aria-hidden="true">
+                  <label htmlFor="company">Company</label>
+                  <input
+                    id="company"
+                    name="company"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={honeypot}
+                    onChange={(e) => setHoneypot(e.target.value)}
+                  />
+                </div>
                 <div>
                   <Label
                     htmlFor="firstName"
