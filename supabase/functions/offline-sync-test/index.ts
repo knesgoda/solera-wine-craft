@@ -70,10 +70,9 @@ Deno.serve(async (req) => {
       title: "Punch down Tank 4",
       category: "Fermentation",
       priority: "high",
-      status: "completed",
+      status: "complete",
       assigned_to: userId,
       due_date: new Date().toISOString().slice(0, 10),
-      completed_at: new Date().toISOString(),
     };
 
     const { error: taskErr } = await sb.from("tasks").insert(taskData as any);
