@@ -62,14 +62,14 @@ Deno.serve(async (req) => {
     // Create vintages for each client
     const { data: vintageA, error: vaErr } = await supabase.from("vintages").insert({
       org_id: ids.org_id, block_id: ids.block_id, year: 2099,
-      client_org_id: ids.client_a_id, status: "fermenting",
+      client_org_id: ids.client_a_id, status: "in_cellar",
     }).select().single();
     if (vaErr || !vintageA) throw new Error(`VintageA insert failed: ${vaErr?.message}`);
     ids.vintage_a_id = vintageA.id;
 
     const { data: vintageB, error: vbErr } = await supabase.from("vintages").insert({
       org_id: ids.org_id, block_id: ids.block_id, year: 2098,
-      client_org_id: ids.client_b_id, status: "fermenting",
+      client_org_id: ids.client_b_id, status: "in_cellar",
     }).select().single();
     if (vbErr || !vintageB) throw new Error(`VintageB insert failed: ${vbErr?.message}`);
     ids.vintage_b_id = vintageB.id;
