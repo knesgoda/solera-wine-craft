@@ -208,6 +208,44 @@ const FILE_ALIASES: Record<string, Record<string, string>> = {
     source_reference: "tasks.source_reference",
     notes: "tasks.instructions",
   },
+  barrels: {
+    barrel_id: "barrels.barrel_id",
+    type: "barrels.type",
+    barrel_type: "barrels.type",
+    cooperage: "barrels.cooperage",
+    toast: "barrels.toast",
+    size_liters: "barrels.size_liters",
+    variety: "barrels.variety",
+    status: "barrels.status",
+  },
+  inventory_skus: {
+    label: "inventory_skus.label",
+    sku_label: "inventory_skus.label",
+    variety: "inventory_skus.variety",
+    vintage_year: "inventory_skus.vintage_year",
+    year: "inventory_skus.vintage_year",
+    cases: "inventory_skus.cases",
+    bottles: "inventory_skus.bottles",
+    price: "inventory_skus.price",
+  },
+  vineyards: {
+    name: "vineyards.name",
+    vineyard_name: "vineyards.name",
+    region: "vineyards.region",
+    acres: "vineyards.acres",
+    notes: "vineyards.notes",
+  },
+  ttb_additions: {
+    added_at: "ttb_additions.added_at",
+    addition_date: "ttb_additions.added_at",
+    addition_type: "ttb_additions.addition_type",
+    type: "ttb_additions.addition_type",
+    ttb_code: "ttb_additions.ttb_code",
+    amount: "ttb_additions.amount",
+    unit: "ttb_additions.unit",
+    batch_size: "ttb_additions.batch_size",
+    added_by: "ttb_additions.added_by",
+  },
 };
 
 // ── File-type detection via header signatures ──────────────────────────────
@@ -224,6 +262,12 @@ const FILE_SIGNATURES: [string, string[], number][] = [
   ["tasks", ["due_date", "assigned_to", "priority", "task_id", "instructions"], 2],
   ["blocks", ["vineyard", "vineyard_name", "acres", "year_planted", "soil_ph", "elevation_ft", "block_id", "block_name"], 2],
   ["vintages", ["harvest_date", "tons_harvested", "winemaker_notes", "vintage_id", "lot_id", "press_date", "fermentation_start", "bottling_target"], 2],
+  // These four placed after established tables to avoid false-positive priority issues
+  // (e.g. vineyards is after blocks since blocks CSVs also contain vineyard_name)
+  ["barrels", ["barrel_id", "cooperage", "toast", "size_liters"], 2],
+  ["inventory_skus", ["label", "cases", "bottles", "sku_label", "vintage_year"], 2],
+  ["vineyards", ["vineyard_name", "region", "coordinates"], 2],
+  ["ttb_additions", ["addition_type", "ttb_code", "added_at", "addition_date", "batch_size", "added_by"], 2],
 ];
 
 function detectFileType(headers: string[]): string | null {
@@ -321,21 +365,31 @@ serve(async (req) => {
     // If we matched at least 40% of headers deterministically, use that
     // (lowered from 60% since file-type-aware aliases are more precise)
     if (deterministicCount / headers.length >= 0.4) {
-      // For remaining unmapped columns in a detected file type, try common field names
+      // For remaining unmapped columns in a detected file type, try common field names.
+      // Only fields that actually exist on each table are included to prevent invalid mappings.
       if (detectedType) {
-        const commonFields: Record<string, string> = {
-          variety: "variety", clone: "clone", rootstock: "rootstock",
-          notes: "notes", vintage_year: "vintage_year", acres: "acres",
-          pick_date: "pick_date", winery_name: "winery_name",
-          tons_harvested: "tons_harvested", last_updated: "last_updated",
-          name: "name", status: "status",
+        const COMMON_FIELDS_BY_TABLE: Record<string, Record<string, string>> = {
+          blocks:               { variety: "variety", clone: "clone", rootstock: "rootstock", notes: "notes", acres: "acres", name: "name", status: "status" },
+          lab_samples:          { notes: "notes" }, // variety/clone/rootstock stripped in run-import; do not map
+          vintages:             { variety: "variety", clone: "clone", rootstock: "rootstock", notes: "notes", vintage_year: "year", acres: "acres", pick_date: "pick_date", tons_harvested: "tons_harvested", name: "name", status: "status" },
+          grower_contracts:     { variety: "variety", clone: "clone", rootstock: "rootstock", notes: "notes", vintage_year: "vintage_year", status: "status" },
+          harvest_progress:     { variety: "variety", clone: "clone", rootstock: "rootstock", notes: "notes", vintage_year: "vintage_year", acres: "acres", tons_harvested: "tons_harvested", pick_date: "pick_date" },
+          harvest_predictions:  { variety: "variety", clone: "clone", rootstock: "rootstock", notes: "notes", vintage_year: "vintage_year", last_updated: "last_updated" },
+          pick_windows:         { variety: "variety", clone: "clone", rootstock: "rootstock", notes: "notes" },
+          fermentation_vessels: { notes: "notes", name: "name", status: "status" },
+          tasks:                { status: "status" }, // notes→instructions already in FILE_ALIASES
+          barrels:              { variety: "variety", status: "status" },
+          inventory_skus:       { variety: "variety", vintage_year: "vintage_year" },
+          vineyards:            { notes: "notes", acres: "acres", name: "name" },
+          ttb_additions:        { added_by: "added_by" },
         };
+        const tableCommonFields = COMMON_FIELDS_BY_TABLE[detectedType] ?? {};
         for (const m of deterministicMappings) {
           if (m.target_table === null) {
             const lower = m.source_column.toLowerCase().trim();
-            if (commonFields[lower]) {
+            if (tableCommonFields[lower]) {
               m.target_table = detectedType;
-              m.target_field = commonFields[lower];
+              m.target_field = tableCommonFields[lower];
               m.confidence = "medium";
             }
           }
