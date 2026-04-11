@@ -74,9 +74,9 @@ Deno.serve(async (req) => {
 
     // 5. Vintages (3, one per block)
     const vintageInserts = blocks!.map((b, i) => ({
-      lot_number: `CASCADE-TEST-${i + 1}`,
+      name: `Cascade Test Lot ${i + 1}`,
       variety: blockInserts[i].variety,
-      vintage_year: 2025,
+      year: 2025,
       org_id: orgId,
       block_id: b.id,
     }));
