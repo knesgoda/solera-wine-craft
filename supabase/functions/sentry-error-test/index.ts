@@ -306,6 +306,7 @@ function buildReport(results: any[], marker: string, allPass: boolean): string {
       lines.push(`  Error: ${r.error}`);
     } else {
       lines.push(`  Sentry event found:  ${r.sentryFound ? "YES" : "NO"}`);
+      lines.push(`  Verification method: ${r.method ?? "unknown"}`);
       lines.push(`  Discovery time:      ${r.elapsedMs}ms`);
       lines.push(`  Has stack trace:     ${r.hasStackTrace ? "YES" : "NO"}`);
       lines.push(`  Has context tags:    ${r.hasTags ? "YES" : "NO"}`);
