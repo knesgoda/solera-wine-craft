@@ -1,92 +1,45 @@
 
 
-# Alert Integration Test Suite — Plan
+# Sentry Integration + Error Reporting Test — Plan
 
-## Overview
+## Current State
 
-Deploy a temporary edge function (`alerts-integration-test`) that seeds a test organization with blocks, vintages, vessels, and alert rules, then triggers each of the 4 alert types by calling the actual alert-processing edge functions. After each trigger, verify notifications appeared in the database and emails were attempted via Resend. Results output to `scripts/audit/alerts-report.txt`.
+- **No Sentry SDK** installed (client or server)
+- **No Sentry secrets** configured (`SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_DSN` are all missing)
+- `ErrorBoundary` only logs to `console.error` — no external error reporting
+- Edge functions have no error tracking beyond console logs
 
-## Architecture
+## What's Needed Before the Test Can Work
 
-The test uses service-role access to seed data and query results. It calls the real deployed edge functions (`check-harvest-alerts`, `evaluate-alerts`, `detect-anomalies`) to trigger alerts — no mocking.
+### Phase 1: Sentry Integration (prerequisite)
 
-## Seed Data
+1. **Install `@sentry/react`** in the frontend
+2. **Initialize Sentry** in `src/main.tsx` with the DSN from environment
+3. **Update `ErrorBoundary`** to call `Sentry.captureException()` in `componentDidCatch`
+4. **Add user/org context** — after auth, call `Sentry.setUser({ id, email })` and `Sentry.setTag('org_id', orgId)`
+5. **Add Sentry to edge functions** — use `@sentry/deno` or manual `fetch` to the Sentry envelope endpoint for server-side errors
+6. **Configure secrets** — user must provide:
+   - `SENTRY_DSN` (for error reporting)
+   - `SENTRY_AUTH_TOKEN` (for the test to query the Sentry API)
+   - `SENTRY_ORG` and `SENTRY_PROJECT` (for API queries)
 
-| Entity | Details |
-|---|---|
-| Org | "Stonewall Alert Test Winery", tier: `small_boutique` |
-| User | `alert-test-{ts}@test.solera.dev` (auto-confirmed) |
-| Vineyard | "Cascade Hills" |
-| Blocks | "Hilltop" (Pinot Noir, 667, 101-14), "Creekside" (Pinot Noir, 777, 101-14), "Ridgeline" (Pinot Noir, Pommard, 3309C) |
-| Vintages | 2025 in_progress for each block |
-| Vessel | "Tank 9" — stainless, 1500L, linked to Hilltop vintage |
-| Alert rules | brix ≥ 24 (channel: both), temp_f ≥ 85 (channel: both), ripening_divergence ≥ 4.0 (channel: both) |
+### Phase 2: Error Reporting Test
 
-## Test Cases
+Once Sentry is integrated, deploy a temporary edge function (`sentry-error-test`) that:
 
-### Test 1: Harvest Window Alert
-- **Setup**: Insert 3 lab samples on Hilltop vintage with ascending Brix (22.0, 23.0, 24.5) over 3 days — current Brix ≥ 24 triggers `predictedDays = 0`
-- **Trigger**: Call `check-harvest-alerts`
-- **Verify**: Notification in `notifications` with `type = 'harvest_window'`, message contains "Hilltop" and "Cascade Hills", deep link contains `/operations/blocks/{block_id}`
+1. **Client-side null ref**: Seed a vintage, call `ask-solera` with a crafted payload that triggers a caught exception, verify it appears in Sentry via API polling
+2. **Non-existent table query**: Execute `supabase.from('nonexistent_table_xyz').select('*')` in the edge function, catch and report to Sentry
+3. **Invalid Anthropic key**: Call `ask-solera` with a deliberately bad auth header, verify the 401 error is captured
 
-### Test 2: Brix Threshold Alert
-- **Setup**: Already have brix ≥ 24 rule from seed
-- **Trigger**: Call `evaluate-alerts` with `{ type: "lab_sample", record: { vintage_id, brix: 24.5, ph: 3.4, ta: 7.0 } }`
-- **Verify**: Notification in `notifications` with `type = 'alert'`, message contains "Brix" and "24.5" and "≥ 24"
+For each error, poll `GET https://sentry.io/api/0/projects/{org}/{project}/events/` with the `SENTRY_AUTH_TOKEN` for up to 30 seconds looking for matching error messages.
 
-### Test 3: Fermentation Temperature Spike
-- **Setup**: Already have temp_f ≥ 85 rule
-- **Trigger**: Call `evaluate-alerts` with `{ type: "fermentation_log", record: { vessel_id, temp_f: 92 } }`
-- **Verify**: Notification with message containing "Temperature" and "92"
+## Decision Required
 
-### Test 4: Ripening Divergence
-- **Setup**: Insert lab samples: Hilltop Brix=24.5, Creekside Brix=20.0, Ridgeline Brix=22.0 — spread of 4.5 > threshold 4.0
-- **Trigger**: Call `evaluate-alerts` with `{ type: "lab_sample", record: { vintage_id: ridgeline_vintage_id, brix: 22.0 } }`
-- **Verify**: Notification with message containing "divergence", "Pinot Noir", spread value
+Since Sentry isn't set up yet, we have two options:
 
-## Verification Per Alert
+**Option A**: I integrate Sentry into Solera first (Phase 1), then write the test (Phase 2). This is the full solution but requires you to provide Sentry credentials.
 
-1. **In-app notification**: Query `notifications` table for the test user, filtered by `created_at` after test start. Verify message content contains expected keywords.
-2. **Email delivery**: Query Resend API (`GET https://api.resend.com/emails?limit=10`) using `RESEND_API_KEY` to check recent emails sent to the test email. If Resend list API not available (it requires specific plan), verify the edge function returned `success: true` / `alertsFired > 0` as proxy for email attempt.
-3. **Deep link**: For harvest alerts, verify the notification message or email HTML contains the block path. For divergence, verify link to `/ripening-comparison`. For threshold alerts, verify link to `/dashboard`.
+**Option B**: I write the test as a specification/script that will work once Sentry is added, but skip the integration itself. The test would fail immediately with a clear "Sentry not configured" message until you add the integration.
 
-## Report Format
-
-```
-═══════════════════════════════════════════════════════════
-  SOLERA ALERT INTEGRATION TEST REPORT
-  {timestamp}
-═══════════════════════════════════════════════════════════
-
-Test 1: Harvest Window Alert
-  Notification: ✅ PASS | Contains "Hilltop", "Cascade Hills"
-  Email attempt: ✅ PASS | Function returned alertsSent=1
-  Deep link: ✅ PASS | Contains /operations/blocks/{id}
-
-Test 2: Brix Threshold Alert
-  ...
-```
-
-## Known Issue: `link_url` Column
-
-The `evaluate-alerts` function inserts `link_url` into the `notifications` table, but this column does not appear in the generated types. The test will check if the column exists and flag it if missing — deep link verification for threshold/divergence alerts will use the function response and email HTML as fallback.
-
-## Files
-
-| File | Action |
-|---|---|
-| `supabase/functions/alerts-integration-test/index.ts` | Create (temporary) |
-| `scripts/audit/alerts-report.txt` | Generated output |
-
-## Cleanup
-
-- Delete test user via `auth.admin.deleteUser`
-- Delete test org (cascades to blocks, vintages, vessels, rules, notifications)
-- Remove temp edge function after execution
-
-## Exit Criteria
-
-- All 4 alert types produce in-app notifications: required
-- All 4 edge function calls return success (proxy for email attempt): required
-- Any FAIL → exit non-zero
+I recommend **Option A** — do you have a Sentry project set up, or should I guide you through creating one? I'll need the DSN, auth token, org slug, and project slug to proceed.
 
