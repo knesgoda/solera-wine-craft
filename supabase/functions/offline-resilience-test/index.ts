@@ -28,8 +28,9 @@ Deno.serve(async (req) => {
     });
 
     // Create test user
+    const testEmail = `offline-test-${Date.now()}@test.solera.dev`;
     const { data: authUser, error: authErr } = await supabase.auth.admin.createUser({
-      email: `offline-test-${Date.now()}@test.solera.dev`,
+      email: testEmail,
       password: "TestPass123!",
       email_confirm: true,
       user_metadata: { first_name: "Offline", last_name: "Tester", winery_name: "__offline_test__" },
@@ -38,29 +39,40 @@ Deno.serve(async (req) => {
 
     const userId = authUser.user.id;
 
+    // Wait for trigger to create profile
+    await new Promise(r => setTimeout(r, 2000));
+
+    // Get the auto-created org and delete it later, reassign to test org
+    const { data: profileRow } = await supabase.from("profiles").select("org_id").eq("id", userId).single();
+    const autoOrgId = profileRow?.org_id;
+
     // Update profile to our test org
     await supabase.from("profiles").update({ org_id: TEST_ORG_ID }).eq("id", userId);
 
     // Vineyard → Block → Vintage → Task
-    const { data: vy } = await supabase.from("vineyards")
+    const { data: vy, error: vyErr } = await supabase.from("vineyards")
       .insert({ org_id: TEST_ORG_ID, name: "Offline Vineyard", region: "Sonoma", acres: 20 })
       .select("id").single();
+    if (vyErr) return new Response(JSON.stringify({ error: "vineyard: " + vyErr.message }), { status: 500, headers: corsHeaders });
 
-    const { data: blk } = await supabase.from("blocks")
+    const { data: blk, error: blkErr } = await supabase.from("blocks")
       .insert({ vineyard_id: vy!.id, name: "Block Offline", variety: "Merlot", acres: 5 })
       .select("id").single();
+    if (blkErr) return new Response(JSON.stringify({ error: "block: " + blkErr.message }), { status: 500, headers: corsHeaders });
 
-    const { data: vnt } = await supabase.from("vintages")
+    const { data: vnt, error: vntErr } = await supabase.from("vintages")
       .insert({ org_id: TEST_ORG_ID, year: 2025, block_id: blk!.id, status: "fermenting" })
       .select("id").single();
+    if (vntErr) return new Response(JSON.stringify({ error: "vintage: " + vntErr.message }), { status: 500, headers: corsHeaders });
 
-    const { data: tsk } = await supabase.from("tasks")
+    const { data: tsk, error: tskErr } = await supabase.from("tasks")
       .insert({
         org_id: TEST_ORG_ID, title: "Offline Spray Task", status: "pending",
         assigned_to: userId, block_id: blk!.id,
         due_date: new Date().toISOString().slice(0, 10),
       } as any)
       .select("id").single();
+    if (tskErr) return new Response(JSON.stringify({ error: "task: " + tskErr.message }), { status: 500, headers: corsHeaders });
 
     return new Response(JSON.stringify({
       user_id: userId, org_id: TEST_ORG_ID,
