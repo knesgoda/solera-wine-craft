@@ -1,5 +1,5 @@
 === Solera RLS Cross-Org Isolation Audit ===
-Date: 2026-04-11T06:57:57.745Z
+Date: 2026-04-11T07:06:28.892Z
 
 Table                               | Read      | Write     | Update    | Delete    | Result
 --------------------------------------------------------------------------------------------
@@ -40,12 +40,12 @@ orders                              | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKE
 pick_windows                        | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
 saved_reports                       | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
 tasks                               | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
-ttb_additions                       | N/A       | N/A       | N/A       | N/A       | FAIL
+ttb_additions                       | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
 ttb_reports                         | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
 vineyards                           | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
 vintages                            | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
 weather_readings                    | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
-webhook_subscriptions               | N/A       | N/A       | N/A       | N/A       | FAIL
+webhook_subscriptions               | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
 weekly_summaries                    | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
 weigh_tags                          | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
 wine_clubs                          | BLOCKED   | BLOCKED   | BLOCKED   | BLOCKED   | PASS
@@ -59,8 +59,4 @@ import_errors(i)                    | BLOCKED   | BLOCKED   | N/A       | BLOCKE
 grading_scale_metrics(i)            | BLOCKED   | BLOCKED   | N/A       | BLOCKED   | PASS
 --------------------------------------------------------------------------------------------
 
-SUMMARY: 52/54 PASS, 2 FAIL
-
-FAILURES:
-  - ttb_additions: SEED: invalid input value for enum addition_unit: "g_l"
-  - webhook_subscriptions: SEED: null value in column "secret" of relation "webhook_subscriptions" violates not-null constraint
+SUMMARY: 54/54 PASS, 0 FAIL
