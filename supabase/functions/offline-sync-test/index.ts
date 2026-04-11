@@ -167,9 +167,9 @@ Deno.serve(async (req) => {
     log("── TEST 3: Conflict resolution — server timestamp wins ──");
 
     // Step A: Server updates the task with a recent timestamp
-    const serverNotes = "Server update at " + new Date().toISOString();
+    const serverInstructions = "Server update at " + new Date().toISOString();
     const { error: serverUpd } = await sb.from("tasks").update({
-      notes: serverNotes,
+      instructions: serverInstructions,
       updated_at: new Date().toISOString(),
     } as any).eq("id", taskId);
     if (serverUpd) {
@@ -179,22 +179,18 @@ Deno.serve(async (req) => {
     }
 
     // Fetch the server's updated_at
-    const { data: serverState } = await sb.from("tasks").select("notes, updated_at").eq("id", taskId).single();
-    const serverUpdatedAt = serverState?.updated_at;
+    const { data: serverState } = await sb.from("tasks").select("instructions, updated_at").eq("id", taskId).single();
 
     // Step B: Simulate an offline update with an OLDER timestamp
-    // (This is what flushSyncQueue does — a plain .update())
     const staleTimestamp = new Date(Date.now() - 3600_000).toISOString(); // 1 hour ago
-    const offlineNotes = "Stale offline edit from 1 hour ago";
+    const offlineInstructions = "Stale offline edit from 1 hour ago";
 
-    // The current sync engine does a plain update — no timestamp check.
-    // This means the offline edit WILL overwrite server data.
     const { error: offlineUpd } = await sb.from("tasks").update({
-      notes: offlineNotes,
+      instructions: offlineInstructions,
       updated_at: staleTimestamp,
     } as any).eq("id", taskId);
 
-    const { data: finalState } = await sb.from("tasks").select("notes, updated_at").eq("id", taskId).single();
+    const { data: finalState } = await sb.from("tasks").select("instructions, updated_at").eq("id", taskId).single();
 
     if (!offlineUpd && finalState) {
       if (finalState.notes === serverNotes) {
