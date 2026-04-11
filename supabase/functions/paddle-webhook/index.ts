@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
         await supabase.from("organizations").update({
           paddle_customer_id: customerId,
           paddle_subscription_id: subId,
-          tier,
+          tier: resolvedTier,
           subscription_status: status,
           next_billed_at: nextBilledAt,
           trial_ends_at: status === "trialing" ? (currentBillingPeriod.ends_at || null) : null,
@@ -143,8 +143,8 @@ Deno.serve(async (req) => {
         // Admin notification
         const orgInfo = await getOrgInfo(supabase, orgId);
         sendAdminNotification(
-          `New subscription: ${orgInfo.name} → ${TIER_LABELS[tier] || tier}`,
-          `Organization: ${orgInfo.name}\nNew Tier: ${TIER_LABELS[tier] || tier}\nStatus: ${status}`
+          `New subscription: ${orgInfo.name} → ${TIER_LABELS[resolvedTier] || resolvedTier}`,
+          `Organization: ${orgInfo.name}\nNew Tier: ${TIER_LABELS[resolvedTier] || resolvedTier}\nStatus: ${status}`
         ).catch(() => {});
         break;
       }
@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
         const oldTier = oldOrg.tier;
 
         const updateData: any = {
-          tier,
+          tier: resolvedTier,
           subscription_status: status,
           next_billed_at: nextBilledAt,
           scheduled_change: scheduledChange,
@@ -167,10 +167,10 @@ Deno.serve(async (req) => {
         }
 
         // Admin notification if tier changed
-        if (oldTier !== tier) {
+        if (oldTier !== resolvedTier) {
           sendAdminNotification(
-            `Subscription updated: ${oldOrg.name} changed from ${TIER_LABELS[oldTier] || oldTier} to ${TIER_LABELS[tier] || tier}`,
-            `Organization: ${oldOrg.name}\nPrevious Tier: ${TIER_LABELS[oldTier] || oldTier}\nNew Tier: ${TIER_LABELS[tier] || tier}\nStatus: ${status}`
+            `Subscription updated: ${oldOrg.name} changed from ${TIER_LABELS[oldTier] || oldTier} to ${TIER_LABELS[resolvedTier] || resolvedTier}`,
+            `Organization: ${oldOrg.name}\nPrevious Tier: ${TIER_LABELS[oldTier] || oldTier}\nNew Tier: ${TIER_LABELS[resolvedTier] || resolvedTier}\nStatus: ${status}`
           ).catch(() => {});
         }
         break;
