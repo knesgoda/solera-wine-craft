@@ -1,26 +1,60 @@
 
 
-# Waitlist Copy Updates
+# Fix: Waitlist Form RLS Error
 
-The audit fixes from the previous implementation already resolved the three main issues (pricing tier mismatch, vintrace pricing, honeypot). Two small copy changes remain on the waitlist form:
+## Root Cause
 
-## Changes
+In `src/pages/ComingSoon.tsx` (line 40-48), the insert chains `.select().single()`:
 
-### 1. Update error message (ComingSoon.tsx, line 72)
-Current: `"Something went wrong. Please try again."`
-New: `"Something went wrong — please try again or email kevin@solera.vin"`
+```typescript
+const { data, error: insertError } = await supabase
+  .from("waitlist_signups")
+  .insert({ ... })
+  .select()    // ← requires SELECT permission
+  .single();   // ← requires SELECT permission
+```
 
-### 2. Update success message (ComingSoon.tsx, line 183)
-Current: `"You're on the list. We'll be in touch soon — thank you."`
-New: `"You're on the list. We'll reach out before we open the doors."`
+The SELECT RLS policy on `waitlist_signups` only allows authenticated users with the `owner` role. Anonymous visitors (all waitlist submitters) can INSERT but cannot SELECT, so the chained `.select().single()` triggers an RLS violation that surfaces as the generic error.
 
-## Already Confirmed (no changes needed)
-- All CTA buttons route to `/coming-soon` — no dead links
-- Duplicate email check works via Postgres unique constraint (code 23505)
-- Blog posts render with `prose prose-lg`, `remarkGfm`, and `@tailwindcss/typography`
-- Competitor pricing matches research (Innovint $149, Ekos $279, Commerce7 $299 + fees, WineDirect $149 + 4.5%, vintrace $184)
-- No placeholder content on any marketing page
+## Fix
 
-## Files modified
-- `src/pages/ComingSoon.tsx` — two string changes only
+Remove `.select().single()` from the insert call. The only reason it exists is to pass `data.created_at` to the notification function — we can use `new Date().toISOString()` instead.
+
+### File: `src/pages/ComingSoon.tsx`
+
+**Change lines 40-48 from:**
+```typescript
+const { data, error: insertError } = await supabase
+  .from("waitlist_signups")
+  .insert({
+    first_name: firstName,
+    email: email.trim().toLowerCase(),
+    operation_type: operationType,
+  })
+  .select()
+  .single();
+```
+
+**To:**
+```typescript
+const { error: insertError } = await supabase
+  .from("waitlist_signups")
+  .insert({
+    first_name: firstName,
+    email: email.trim().toLowerCase(),
+    operation_type: operationType,
+  });
+```
+
+**Change line 67 (`created_at` in notification body) from:**
+```typescript
+created_at: data.created_at,
+```
+
+**To:**
+```typescript
+created_at: new Date().toISOString(),
+```
+
+No database or RLS changes needed. One file, two small edits.
 
