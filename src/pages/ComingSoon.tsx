@@ -33,6 +33,7 @@ export default function ComingSoon() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (honeypot) return; // bot trap
     setSubmitting(true);
 
     try {
