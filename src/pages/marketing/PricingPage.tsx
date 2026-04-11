@@ -226,9 +226,15 @@ export default function PricingPage() {
     navigate("/coming-soon");
   };
 
+  const TIER_TO_PADDLE: Record<string, string> = {
+    pro: "small_boutique",
+    growth: "mid_size",
+  };
+
   const getPrice = (tierKey: string): string => {
     if (tierKey === "hobbyist") return "Free";
-    const priceConfig = PADDLE_PRICES[tierKey as keyof typeof PADDLE_PRICES];
+    const paddleKey = TIER_TO_PADDLE[tierKey] || tierKey;
+    const priceConfig = PADDLE_PRICES[paddleKey as keyof typeof PADDLE_PRICES];
     if (!priceConfig) return "";
     const priceId = annual && "annual" in priceConfig
       ? (priceConfig as any).annual
