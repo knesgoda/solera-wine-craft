@@ -20,15 +20,46 @@ Deno.serve(async (req) => {
     const { data: { user } } = await anonClient.auth.getUser();
     if (!user) throw new Error("Unauthorized");
 
+    // --- Verify caller belongs to the target client_org_id ---
+    const { data: callerClient } = await supabase
+      .from("client_users")
+      .select("client_org_id")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    if (!callerClient || callerClient.client_org_id !== client_org_id) {
+      // Also allow facility users who own the parent org
+      const { data: clientOrg } = await supabase
+        .from("client_orgs")
+        .select("parent_org_id")
+        .eq("id", client_org_id)
+        .single();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("org_id")
+        .eq("id", user.id)
+        .single();
+
+      if (!clientOrg || !profile || profile.org_id !== clientOrg.parent_org_id) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+    // --- End ownership check ---
+
     // Get client org to find org_id
     const { data: clientOrg } = await supabase.from("client_orgs").select("parent_org_id").eq("id", client_org_id).single();
     if (!clientOrg) throw new Error("Client org not found");
+
+    // Determine sender_type
+    const senderType = callerClient ? "client" : "facility";
 
     // Insert message
     const { error } = await supabase.from("client_messages").insert({
       org_id: clientOrg.parent_org_id,
       client_org_id,
-      sender_type: "client",
+      sender_type: senderType,
       sender_id: user.id,
       message,
     });
@@ -36,7 +67,7 @@ Deno.serve(async (req) => {
 
     // Notify org owner via email (if Resend is configured)
     const resendKey = Deno.env.get("RESEND_API_KEY");
-    if (resendKey) {
+    if (resendKey && senderType === "client") {
       const { data: profiles } = await supabase.from("profiles").select("email").eq("org_id", clientOrg.parent_org_id).limit(1);
       const ownerEmail = profiles?.[0]?.email;
       if (ownerEmail) {
@@ -58,8 +89,10 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: (e as Error).message }), {
-      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const msg = (e as Error).message;
+    const status = msg === "Unauthorized" ? 401 : 400;
+    return new Response(JSON.stringify({ error: msg }), {
+      status, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

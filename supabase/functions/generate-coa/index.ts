@@ -12,15 +12,37 @@ Deno.serve(async (req) => {
     const { vintage_id } = await req.json();
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
+    // --- Authorization check ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("Unauthorized");
+    const anonClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user } } = await anonClient.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
     const { data: vintage } = await supabase.from("vintages").select("*, blocks(name, vineyards(name))").eq("id", vintage_id).single();
     if (!vintage) throw new Error("Vintage not found");
+
+    // Check caller is facility user for this org OR client user for this vintage's client_org_id
+    const { data: profile } = await supabase.from("profiles").select("org_id").eq("id", user.id).single();
+    const { data: clientUser } = await supabase.from("client_users").select("client_org_id").eq("auth_user_id", user.id).single();
+
+    const isFacilityUser = profile?.org_id === vintage.org_id;
+    const isClientOwner = clientUser?.client_org_id != null && vintage.client_org_id === clientUser.client_org_id;
+
+    if (!isFacilityUser && !isClientOwner) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // --- End authorization check ---
 
     const { data: labSamples } = await supabase.from("lab_samples").select("*").eq("vintage_id", vintage_id).order("sampled_at", { ascending: false });
     const { data: trials } = await supabase.from("blending_trials").select("*, blending_trial_lots(*)").eq("vintage_id", vintage_id).eq("finalized", true);
 
     const latestLab = labSamples?.[0];
 
-    // Build a simple HTML-based COA (in production, use jsPDF)
     const coaHtml = `
       <html><body style="font-family:sans-serif;padding:40px;">
       <h1>Certificate of Analysis</h1>
@@ -54,7 +76,6 @@ Deno.serve(async (req) => {
       </body></html>
     `;
 
-    // Store as HTML document (clients can print to PDF)
     const fileName = `coa_${vintage.year}_${vintage_id.slice(0, 8)}.html`;
     const clientOrgId = vintage.client_org_id || "facility";
 
@@ -73,8 +94,10 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: (e as Error).message }), {
-      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const msg = (e as Error).message;
+    const status = msg === "Unauthorized" ? 401 : 400;
+    return new Response(JSON.stringify({ error: msg }), {
+      status, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
