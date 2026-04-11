@@ -57,8 +57,16 @@ Deno.serve(async (_req) => {
     return data;
   }
 
-  async function setupOrg() {
+  async function cleanupOrg() {
+    // Delete child rows that triggers may have created
+    await supabase.from("alert_rules").delete().eq("org_id", TEST_ORG_ID);
+    await supabase.from("cost_categories").delete().eq("org_id", TEST_ORG_ID);
+    await supabase.from("backup_jobs").delete().eq("org_id", TEST_ORG_ID);
     await supabase.from("organizations").delete().eq("id", TEST_ORG_ID);
+  }
+
+  async function setupOrg() {
+    await cleanupOrg();
     const { error } = await supabase.from("organizations").insert({
       id: TEST_ORG_ID,
       name: "__paddle_audit_test__",
