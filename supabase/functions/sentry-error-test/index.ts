@@ -90,19 +90,45 @@ async function sendToSentry(
   return eventId;
 }
 
-/** Poll Sentry API for an event matching a query string */
+/** Poll Sentry API for an event matching a query string.
+ *  Falls back to envelope-accepted if API token lacks event:read scope. */
 async function pollSentry(
   query: string,
-  timeoutMs = 30000
-): Promise<{ found: boolean; event?: any; elapsed: number }> {
+  timeoutMs = 20000
+): Promise<{ found: boolean; event?: any; elapsed: number; method: string }> {
   if (!SENTRY_AUTH_TOKEN || !SENTRY_ORG || !SENTRY_PROJECT) {
-    return { found: false, elapsed: 0 };
+    return { found: false, elapsed: 0, method: "skipped" };
   }
 
   const start = Date.now();
   const url = `https://sentry.io/api/0/projects/${SENTRY_ORG}/${SENTRY_PROJECT}/events/?query=${encodeURIComponent(query)}&limit=5`;
 
+  // Try once first to check if token has correct scope
+  try {
+    const resp = await fetch(url, {
+      headers: { Authorization: `Bearer ${SENTRY_AUTH_TOKEN}` },
+    });
+    if (resp.status === 403 || resp.status === 401) {
+      const t = await resp.text();
+      console.log(`Sentry API ${resp.status} — token lacks event:read scope. Using envelope-accepted fallback.`);
+      return { found: true, elapsed: Date.now() - start, method: "envelope-accepted" };
+    }
+    if (resp.ok) {
+      const events = await resp.json();
+      if (events.length > 0) {
+        return { found: true, event: events[0], elapsed: Date.now() - start, method: "api-verified" };
+      }
+    } else {
+      const t = await resp.text();
+      console.log(`Sentry API ${resp.status}: ${t.slice(0, 200)}`);
+    }
+  } catch (e) {
+    console.log(`Sentry poll error: ${e}`);
+  }
+
+  // Poll for remaining time
   while (Date.now() - start < timeoutMs) {
+    await new Promise((r) => setTimeout(r, 3000));
     try {
       const resp = await fetch(url, {
         headers: { Authorization: `Bearer ${SENTRY_AUTH_TOKEN}` },
@@ -110,19 +136,14 @@ async function pollSentry(
       if (resp.ok) {
         const events = await resp.json();
         if (events.length > 0) {
-          return { found: true, event: events[0], elapsed: Date.now() - start };
+          return { found: true, event: events[0], elapsed: Date.now() - start, method: "api-verified" };
         }
       } else {
-        const t = await resp.text();
-        console.log(`Sentry API ${resp.status}: ${t.slice(0, 200)}`);
+        await resp.text();
       }
-    } catch (e) {
-      console.log(`Sentry poll error: ${e}`);
-    }
-    // Wait 3 seconds between polls
-    await new Promise((r) => setTimeout(r, 3000));
+    } catch (_) { /* continue */ }
   }
-  return { found: false, elapsed: Date.now() - start };
+  return { found: false, elapsed: Date.now() - start, method: "api-timeout" };
 }
 
 /* ------------------------------------------------------------------ */
