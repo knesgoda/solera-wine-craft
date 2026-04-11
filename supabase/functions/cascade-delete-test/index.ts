@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
 
     // 7. Alert rules (3) — NO ACTION, must pre-delete
     const alertInserts = [
-      { org_id: orgId, parameter: "brix" as const, operator: "gte" as const, threshold: 24, channel: "in_app" as const },
+      { org_id: orgId, parameter: "brix" as const, operator: "gte" as const, threshold: 24, channel: "email" as const },
       { org_id: orgId, parameter: "ph" as const, operator: "lte" as const, threshold: 3.2, channel: "email" as const },
       { org_id: orgId, parameter: "ta" as const, operator: "gte" as const, threshold: 8, channel: "both" as const },
     ];
