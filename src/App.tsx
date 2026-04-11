@@ -175,11 +175,11 @@ const App = () => (
               <Route path="/growers/intake/new" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><WeighTagForm /></TierGate>} />
               <Route path="/growers/intake/:id" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><WeighTagDetail /></TierGate>} />
               <Route path="/growers/:id" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerDetail /></TierGate>} />
-              <Route path="/cellar" element={<CellarDashboard />} />
-              <Route path="/cellar/vessels/:vesselId" element={<VesselDetail />} />
-              <Route path="/cellar/barrels" element={<BarrelInventory />} />
-              <Route path="/cellar/blending" element={<BlendingTrials />} />
-              <Route path="/cellar/blending/:trialId" element={<TrialDetail />} />
+              <Route path="/cellar" element={<TierGate requiredTier="small_boutique" featureName="Cellar Management"><CellarDashboard /></TierGate>} />
+              <Route path="/cellar/vessels/:vesselId" element={<TierGate requiredTier="small_boutique" featureName="Cellar Management"><VesselDetail /></TierGate>} />
+              <Route path="/cellar/barrels" element={<TierGate requiredTier="small_boutique" featureName="Cellar Management"><BarrelInventory /></TierGate>} />
+              <Route path="/cellar/blending" element={<TierGate requiredTier="small_boutique" featureName="Cellar Management"><BlendingTrials /></TierGate>} />
+              <Route path="/cellar/blending/:trialId" element={<TierGate requiredTier="small_boutique" featureName="Cellar Management"><TrialDetail /></TierGate>} />
               <Route path="/ask-solera" element={<GrowthTierGate><AskSolera /></GrowthTierGate>} />
               <Route path="/sales" element={<Navigate to="/inventory" replace />} />
               <Route path="/reports" element={<Reports />} />
@@ -191,15 +191,15 @@ const App = () => (
               <Route path="/costs/lot/:vintageId" element={<GrowthTierGate><LotCostDetail /></GrowthTierGate>} />
               <Route path="/costs/materials" element={<GrowthTierGate><MaterialPrices /></GrowthTierGate>} />
               <Route path="/costs/settings" element={<GrowthTierGate><CostCategorySettings /></GrowthTierGate>} />
-              <Route path="/inventory" element={<InventoryList />} />
-              <Route path="/inventory/:skuId" element={<SkuDetail />} />
-              <Route path="/orders" element={<OrderList />} />
-              <Route path="/orders/:orderId" element={<OrderDetail />} />
-              <Route path="/customers" element={<CustomerList />} />
-              <Route path="/customers/:customerId" element={<CustomerDetail />} />
-              <Route path="/club" element={<ClubList />} />
-              <Route path="/club/:clubId" element={<ClubDetail />} />
-              <Route path="/club/shipments" element={<ClubShipments />} />
+              <Route path="/inventory" element={<TierGate requiredTier="small_boutique" featureName="Inventory Management"><InventoryList /></TierGate>} />
+              <Route path="/inventory/:skuId" element={<TierGate requiredTier="small_boutique" featureName="Inventory Management"><SkuDetail /></TierGate>} />
+              <Route path="/orders" element={<TierGate requiredTier="small_boutique" featureName="Order Management"><OrderList /></TierGate>} />
+              <Route path="/orders/:orderId" element={<TierGate requiredTier="small_boutique" featureName="Order Management"><OrderDetail /></TierGate>} />
+              <Route path="/customers" element={<TierGate requiredTier="small_boutique" featureName="Customer Management"><CustomerList /></TierGate>} />
+              <Route path="/customers/:customerId" element={<TierGate requiredTier="small_boutique" featureName="Customer Management"><CustomerDetail /></TierGate>} />
+              <Route path="/club" element={<TierGate requiredTier="small_boutique" featureName="Wine Club"><ClubList /></TierGate>} />
+              <Route path="/club/:clubId" element={<TierGate requiredTier="small_boutique" featureName="Wine Club"><ClubDetail /></TierGate>} />
+              <Route path="/club/shipments" element={<TierGate requiredTier="small_boutique" featureName="Wine Club"><ClubShipments /></TierGate>} />
               <Route path="/clients" element={<ClientList />} />
               <Route path="/clients/:clientId" element={<ClientDetail />} />
               <Route path="/settings" element={<Navigate to="/settings/billing" replace />} />
