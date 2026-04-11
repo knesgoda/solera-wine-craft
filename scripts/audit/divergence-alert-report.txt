@@ -1,0 +1,29 @@
+═══════════════════════════════════════════════════════════
+  RIPENING DIVERGENCE ALERT TEST REPORT
+  2026-04-11T08:32:17.357Z
+═══════════════════════════════════════════════════════════
+
+Setup: org (small_boutique), vineyard, 3 blocks, 3 vintages, divergence rule
+  Block Alpha → Vintage 9f43224f-a25a-44ea-8035-30e35adb8c3d
+  Block Beta  → Vintage eae42565-20a9-40a4-bfef-521f24836817
+  Block Gamma → Vintage 1e93d90c-15bf-49d1-abda-961fd347825e
+  Rule: brix_spread_threshold = 4.0
+
+── TEST 1: Divergence alert fires (5.2° spread > 4.0° threshold) ──
+  Inserted 3 lab samples: Brix 24.8, 21.5, 19.6 (spread = 5.2)
+  evaluate-alerts returned: 1 alert(s) fired ✅
+  Notification created ✅
+  Message contains block names, Brix values, and spread ✅
+  Link URL points to ripening comparison page ✅
+  Message: Ripening divergence alert: Cabernet Sauvignon blocks show 5.2° Brix spread.
+           Block Alpha (Clone — / Rootstock —) at 24.8° vs Block Gamma (Clone — / Rootstock —) at 19.6°.
+  Rule last_triggered_at updated ✅
+
+── TEST 2: 24-hour cooldown prevents duplicate alert ──
+  Inserted second batch of lab samples (still divergent)
+  Cooldown active: 0 alerts fired ✅
+  Notification count unchanged (1) ✅
+
+Cleanup: all test data removed ✅
+
+Overall: ALL PASSED ✅
