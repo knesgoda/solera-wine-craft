@@ -108,7 +108,18 @@ Deno.serve(async (req) => {
     const status = data.status;
     const items = data.items || [];
     const priceId = items[0]?.price?.id;
-    const tier = priceId ? (PRICE_TO_TIER[priceId] || "small_boutique") : "small_boutique";
+    const tier = priceId ? PRICE_TO_TIER[priceId] : undefined;
+
+    // Reject unknown price IDs — do not default to any tier
+    if (priceId && !tier) {
+      console.error(`Unknown Paddle price ID: ${priceId}`);
+      return new Response(JSON.stringify({ error: "Unknown price ID", price_id: priceId }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const resolvedTier = tier || "hobbyist";
     const nextBilledAt = data.next_billed_at || null;
     const scheduledChange = data.scheduled_change || null;
     const currentBillingPeriod = data.current_billing_period || {};
@@ -178,7 +189,6 @@ Deno.serve(async (req) => {
         await supabase.from("organizations").update({
           tier: "hobbyist",
           subscription_status: "canceled",
-          paddle_subscription_id: null,
           next_billed_at: null,
           scheduled_change: null,
           cancelled_at: new Date().toISOString(),

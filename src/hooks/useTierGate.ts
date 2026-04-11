@@ -22,7 +22,11 @@ export const TIER_LIMITS: Record<string, { users: number; vineyards: number; blo
 
 export function useTierGate(requiredTier: TierName) {
   const { organization } = useAuth();
-  const currentTier = organization?.tier || "hobbyist";
+  const subStatus = organization?.subscription_status;
+  // Treat non-active subscriptions as hobbyist
+  const isActiveSubscription = subStatus === "active" || subStatus === "trialing";
+  const storedTier = organization?.tier || "hobbyist";
+  const currentTier = isActiveSubscription ? storedTier : "hobbyist";
   const currentIdx = TIER_ORDER.indexOf(currentTier);
   const requiredIdx = TIER_ORDER.indexOf(requiredTier);
   const allowed = currentIdx >= requiredIdx;
