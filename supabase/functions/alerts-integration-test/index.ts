@@ -39,14 +39,9 @@ Deno.serve(async (req) => {
 
   try {
     // ── CHECK: link_url column on notifications ──────────
-    const { data: colCheck } = await supabase.rpc("", {}).catch(() => ({ data: null }));
-    // Direct query via PostgREST won't work for information_schema, check by trying an insert
-    const linkUrlExists = await (async () => {
-      // Try a dry-run-like approach: we'll note the issue and test around it
-      return false; // We know from our query it doesn't exist
-    })();
-    if (!linkUrlExists) {
-      knownIssues.push("KNOWN BUG: `link_url` column missing from notifications table. evaluate-alerts inserts with link_url field, causing silent insert failures. Notifications from evaluate-alerts will not be persisted.");
+    // We know from schema inspection that link_url doesn't exist on notifications table
+    knownIssues.push("KNOWN BUG: `link_url` column missing from notifications table. evaluate-alerts inserts with link_url field, causing silent insert failures. Notifications from evaluate-alerts will not be persisted.");
+    {
     }
 
     // ── SEED ──────────────────────────────────────────────
