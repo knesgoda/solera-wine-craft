@@ -29,30 +29,35 @@ Deno.serve(async (req) => {
   try {
     // ==================== SETUP ====================
     // Create facility org
-    const { data: org } = await supabase.from("organizations").insert({ name: "ISO-Test Facility" }).select().single();
-    ids.org_id = org!.id;
+    const { data: org, error: orgErr } = await supabase.from("organizations").insert({ name: "ISO-Test Facility" }).select().single();
+    if (orgErr || !org) throw new Error(`Org insert failed: ${orgErr?.message}`);
+    ids.org_id = org.id;
 
     // Create vineyard + block for vintages
-    const { data: vineyard } = await supabase.from("vineyards").insert({
+    const { data: vineyard, error: vyErr } = await supabase.from("vineyards").insert({
       org_id: ids.org_id, name: "ISO Vineyard", region: "Test Region",
     }).select().single();
-    ids.vineyard_id = vineyard!.id;
+    if (vyErr || !vineyard) throw new Error(`Vineyard insert failed: ${vyErr?.message}`);
+    ids.vineyard_id = vineyard.id;
 
-    const { data: block } = await supabase.from("blocks").insert({
+    const { data: block, error: blkErr } = await supabase.from("blocks").insert({
       vineyard_id: ids.vineyard_id, name: "ISO Block",
     }).select().single();
-    ids.block_id = block!.id;
+    if (blkErr || !block) throw new Error(`Block insert failed: ${blkErr?.message}`);
+    ids.block_id = block.id;
 
     // Create two client orgs
-    const { data: clientA } = await supabase.from("client_orgs").insert({
+    const { data: clientA, error: caErr } = await supabase.from("client_orgs").insert({
       parent_org_id: ids.org_id, name: "Client Alpha",
     }).select().single();
-    ids.client_a_id = clientA!.id;
+    if (caErr || !clientA) throw new Error(`ClientA insert failed: ${caErr?.message}`);
+    ids.client_a_id = clientA.id;
 
-    const { data: clientB } = await supabase.from("client_orgs").insert({
+    const { data: clientB, error: cbErr } = await supabase.from("client_orgs").insert({
       parent_org_id: ids.org_id, name: "Client Beta",
     }).select().single();
-    ids.client_b_id = clientB!.id;
+    if (cbErr || !clientB) throw new Error(`ClientB insert failed: ${cbErr?.message}`);
+    ids.client_b_id = clientB.id;
 
     // Create vintages for each client
     const { data: vintageA } = await supabase.from("vintages").insert({
