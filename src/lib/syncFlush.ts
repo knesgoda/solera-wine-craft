@@ -16,13 +16,14 @@ export async function flushSyncQueue(): Promise<number> {
         const { id: recordId, ...rest } = item.data;
 
         // Timestamp-based conflict resolution: skip if server is newer
-        const { data: serverRecord } = await supabase
+        const { data: serverRecord } = await (supabase
           .from(item.table as any)
           .select("updated_at")
           .eq("id", recordId)
-          .single();
+          .single() as any);
 
-        if (serverRecord?.updated_at && new Date(serverRecord.updated_at).getTime() > item.timestamp) {
+        const serverUpdatedAt = (serverRecord as any)?.updated_at;
+        if (serverUpdatedAt && new Date(serverUpdatedAt).getTime() > item.timestamp) {
           toast.warning(`Offline change to ${item.table} was skipped — a newer version exists`);
           await clearSyncQueueItem(item.id!);
           continue;
