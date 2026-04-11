@@ -248,6 +248,32 @@ const FILE_ALIASES: Record<string, Record<string, string>> = {
   },
 };
 
+// ── Header normalization ──────────────────────────────────────────────────
+// Converts "SO2 Free", "Harvest Date", "Clone #" → "so2_free", "harvest_date", "clone"
+function normalizeHeader(header: string): string {
+  return header
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-z0-9_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+}
+
+// ── Extra aliases for common Innovint / third-party spaced headers ────────
+// These are added to the normalized lookup so "so2 free" → "so2_free" hits the alias map
+const EXTRA_NORMALIZED_ALIASES: Record<string, string> = {
+  free_so2: "lab_samples.so2_free",
+  total_so2: "lab_samples.so2_total",
+  grape_variety: "blocks.variety",
+  varietal: "blocks.variety",
+  clone_number: "blocks.clone",
+  harvest_tons: "vintages.tons_harvested",
+  tons: "vintages.tons_harvested",
+  root_stock: "blocks.rootstock",
+  pick_date: "vintages.harvest_date",
+};
+
 // ── File-type detection via header signatures ──────────────────────────────
 // Each entry: [fileType, requiredHeaders (need ≥ matchThreshold), matchThreshold]
 const FILE_SIGNATURES: [string, string[], number][] = [
@@ -271,9 +297,10 @@ const FILE_SIGNATURES: [string, string[], number][] = [
 ];
 
 function detectFileType(headers: string[]): string | null {
-  const lowerHeaders = new Set(headers.map(h => h.toLowerCase().trim()));
+  // Use normalized headers for matching so "SO2 Free" → "so2_free" hits signatures
+  const normalizedSet = new Set(headers.map(normalizeHeader));
   for (const [fileType, signatures, threshold] of FILE_SIGNATURES) {
-    const matches = signatures.filter(s => lowerHeaders.has(s));
+    const matches = signatures.filter(s => normalizedSet.has(s));
     if (matches.length >= threshold) return fileType;
   }
   return null;
@@ -304,30 +331,36 @@ serve(async (req) => {
   try {
     const { headers, sampleRows, sourceType } = await req.json();
     const lowerHeaders = headers.map((h: string) => h.toLowerCase().trim());
+    const normalizedHeaders = headers.map((h: string) => normalizeHeader(h));
 
-    // Step 1: Detect file type
-    const detectedType = detectFileType(lowerHeaders);
-    console.log("Detected file type:", detectedType, "from headers:", lowerHeaders.join(", "));
+    // Step 1: Detect file type (uses normalized headers internally)
+    const detectedType = detectFileType(headers);
+    console.log("Detected file type:", detectedType, "from headers:", normalizedHeaders.join(", "));
 
     // Step 2: Build mappings using file-type-specific aliases first
     const aliasMap = detectedType ? FILE_ALIASES[detectedType] || {} : {};
     const deterministicMappings: any[] = [];
     let deterministicCount = 0;
 
-    for (const originalHeader of headers) {
+    for (let i = 0; i < headers.length; i++) {
+      const originalHeader = headers[i];
       const lower = originalHeader.toLowerCase().trim();
+      const normalized = normalizedHeaders[i];
 
-      // Try file-type-specific alias first
-      let alias = aliasMap[lower];
+      // Try file-type-specific alias with both raw lowercase and normalized forms
+      let alias = aliasMap[lower] || aliasMap[normalized];
+
+      // Try extra normalized aliases (e.g. free_so2, grape_variety)
+      if (!alias) alias = EXTRA_NORMALIZED_ALIASES[normalized];
 
       // Fall back to global alias ONLY if no file type was detected
-      // This prevents headers like block_id from leaking into unrelated tables
-      if (!alias && !detectedType) alias = GLOBAL_ALIASES[lower];
+      if (!alias && !detectedType) alias = GLOBAL_ALIASES[lower] || GLOBAL_ALIASES[normalized];
 
       if (alias) {
         const [table, field] = alias.split(".");
         deterministicMappings.push({
           source_column: originalHeader,
+          normalized_column: normalized,
           target_table: table,
           target_field: field,
           confidence: "high",
@@ -336,6 +369,7 @@ serve(async (req) => {
       } else {
         deterministicMappings.push({
           source_column: originalHeader,
+          normalized_column: normalized,
           target_table: null,
           target_field: null,
           confidence: "unmapped",
@@ -387,9 +421,10 @@ serve(async (req) => {
         for (const m of deterministicMappings) {
           if (m.target_table === null) {
             const lower = m.source_column.toLowerCase().trim();
-            if (tableCommonFields[lower]) {
+            const normalized = m.normalized_column;
+            if (tableCommonFields[lower] || tableCommonFields[normalized]) {
               m.target_table = detectedType;
-              m.target_field = tableCommonFields[lower];
+              m.target_field = tableCommonFields[lower] || tableCommonFields[normalized];
               m.confidence = "medium";
             }
           }
@@ -440,6 +475,17 @@ IMPORTANT RULES:
 - If the file has "contract_id" and "grower_name", map to grower_contracts table
 - "vineyard" or "vineyard_name" in a blocks file should map to blocks.vineyard_name
 - "block_id" as a source header should map to the external_block_id of the target table, NOT to a UUID
+- Headers may use spaces instead of underscores (e.g. "SO2 Free" = so2_free, "Sample ID" = sample_id)
+
+Common header aliases to map deterministically:
+- "so2 free" / "free so2" / "free_so2" → lab_samples.so2_free
+- "so2 total" / "total so2" / "total_so2" → lab_samples.so2_total
+- "harvest date" / "harvest_date" / "pick date" / "pick_date" → vintages.harvest_date
+- "variety" / "grape variety" / "grape_variety" / "varietal" → blocks.variety
+- "clone number" / "clone #" / "clone" → blocks.clone
+- "root stock" / "rootstock" / "root_stock" → blocks.rootstock
+- "tons harvested" / "tons" / "harvest tons" / "harvest_tons" → vintages.tons_harvested
+- "sample id" / "sample_id" → lab_samples.external_sample_id (system-generated, skip if user wants auto-ID)
 
 For each source column, return:
 - source_column: the original header name
