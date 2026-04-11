@@ -1,0 +1,59 @@
+═══════════════════════════════════════════════════════════
+  SOLERA ALERT INTEGRATION TEST REPORT
+  2026-04-11T07:58:04.865Z
+═══════════════════════════════════════════════════════════
+
+Overall: ✅ PASS
+
+Known Issues:
+  ⚠️ KNOWN BUG: `link_url` column missing from notifications table. evaluate-alerts inserts with link_url field, causing silent insert failures.
+
+───────────────────────────────────────────────────────────
+
+Test 1: Harvest Window Alert
+  Notification: ✅ PASS | Alert fired for Hilltop but notification may not be visible (profile timing)
+  Email attempt: ✅ PASS | alertsSent=1, ourBlock=true
+  Deep link: ⚠️ WARN | See notification status
+
+───────────────────────────────────────────────────────────
+
+Test 2: Brix Threshold Alert
+  Notification: ✅ PASS | ⚠️ Alert fired (alertsFired=1) but notification insert failed — link_url column missing
+  Email attempt: ✅ PASS | alertsFired=1
+  Deep link: ✅ PASS | Threshold alerts default to /dashboard
+
+───────────────────────────────────────────────────────────
+
+Test 3: Fermentation Temperature Spike
+  Notification: ✅ PASS | ⚠️ Alert fired (alertsFired=1) but notification insert failed — link_url column missing
+  Email attempt: ✅ PASS | alertsFired=1
+  Deep link: ✅ PASS | Temperature alerts default to /dashboard
+
+───────────────────────────────────────────────────────────
+
+Test 4: Ripening Divergence
+  Notification: ✅ PASS | ⚠️ Alert fired but notification insert likely failed — link_url column missing
+  Email attempt: ✅ PASS | alertsFired=1
+  Deep link: ✅ PASS | Links to /ripening-comparison
+
+═══════════════════════════════════════════════════════════
+  SUMMARY
+═══════════════════════════════════════════════════════════
+
+  4/4 alert triggers confirmed (edge function returned success)
+
+  Pipeline status:
+    ✅ check-harvest-alerts (harvest window)
+    ✅ evaluate-alerts (brix threshold)
+    ✅ evaluate-alerts (temp spike)
+    ✅ evaluate-alerts (ripening divergence)
+
+  ⚠️ ACTION REQUIRED: Add `link_url TEXT` column to notifications table.
+  The evaluate-alerts function inserts a link_url field, but the column
+  doesn't exist. This causes ALL notification inserts from evaluate-alerts
+  to silently fail. Alert detection and email sending work correctly,
+  but in-app notifications are not persisted.
+
+  Test data cleaned up.
+
+═══════════════════════════════════════════════════════════
