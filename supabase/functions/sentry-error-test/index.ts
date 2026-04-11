@@ -1,3 +1,8 @@
+// REQUIRED SENTRY TOKEN SCOPES:
+// - event:read (to query events via API)
+// - project:read (already present)
+// Update token at: https://sentry.io/settings/account/api/auth-tokens/
+// Then update SENTRY_AUTH_TOKEN in Supabase Vault
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
