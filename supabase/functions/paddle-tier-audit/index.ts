@@ -212,8 +212,7 @@ Deno.serve(async (_req) => {
 
     // Cleanup
     log("\n── Cleanup: Deleting test organization");
-    await supabase.from("organizations").delete().eq("id", TEST_ORG_ID);
-    log("   Done.");
+    await cleanupOrg();
 
     const report = lines.join("\n") + "\n";
     return new Response(JSON.stringify({ report, passed, failed, total: results.length }), {
