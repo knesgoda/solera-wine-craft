@@ -222,8 +222,51 @@ export default function PricingPage() {
     fetchPrices();
   }, []);
 
-  const handleCheckout = async (_tierKey: string) => {
-    navigate("/coming-soon");
+  const handleCheckout = async (tierKey: string) => {
+    if (tierKey === "hobbyist") {
+      navigate("/signup");
+      return;
+    }
+
+    // If user is logged in and already has a subscription, send them to billing settings
+    if (user && organization) {
+      navigate("/settings/billing");
+      return;
+    }
+
+    // If user is logged in but no subscription, open Paddle inline checkout
+    if (user && organization?.id) {
+      const paddleKey = TIER_TO_PADDLE[tierKey] || tierKey;
+      const priceConfig = PADDLE_PRICES[paddleKey as keyof typeof PADDLE_PRICES];
+      if (!priceConfig) return;
+      const priceId = annual && "annual" in priceConfig
+        ? (priceConfig as any).annual
+        : priceConfig.monthly;
+
+      try {
+        const paddle = await getPaddle();
+        if (!paddle) {
+          navigate("/settings/billing");
+          return;
+        }
+        paddle.Checkout.open({
+          items: [{ priceId, quantity: 1 }],
+          customer: { email: user.email || "" },
+          customData: { org_id: organization.id },
+          settings: {
+            successUrl: `${window.location.origin}/settings/billing?checkout=success`,
+            theme: "light",
+            locale: "en",
+          },
+        });
+      } catch {
+        navigate("/settings/billing");
+      }
+      return;
+    }
+
+    // Not logged in — send to signup
+    navigate("/signup");
   };
 
   const TIER_TO_PADDLE: Record<string, string> = {
