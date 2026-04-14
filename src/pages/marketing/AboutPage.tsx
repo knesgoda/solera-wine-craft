@@ -38,7 +38,13 @@ export default function AboutPage() {
               I fell in love with wine under an old oak tree in the Santa Ynez Valley in 2005. A glass of Pinot Noir, the late afternoon light through the leaves, and something clicked that never unclicked.
             </p>
             <p>
-              Twenty years later I'd watched the wine industry I loved struggle with software that hadn't kept pace with the world. Winemakers making million-dollar decisions with spreadsheets. Harvest windows missed because data lived in three different places. Small boutique wineries priced out of the tools that big operations took for granted.
+              Turns out it runs deeper than I thought. My dad's family came over from Austria in the late 1800s. His great-grandfather George bought 30 acres of vineyard in St. Helena in 1920 and farmed Napa Valley through Prohibition. When the government made selling wine illegal, he grew prunes and peaches, shipped carloads of grapes to family back in Montana, and kept the land alive by sheer stubbornness. Napa County still has the deeds. He sold in 1936. Gone three years later.
+            </p>
+            <p>
+              I found out about all of this while I was already building Solera. Which felt like something.
+            </p>
+            <p>
+              Twenty years after that oak tree, I'd watched the industry I loved fall behind. Winemakers making million-dollar decisions with spreadsheets. Harvest windows missed because the data lived in three different apps. Small boutique wineries priced out of tools that big operations took for granted.
             </p>
             <p>
               In 2021 I made an Albariño in honor of my grandmother, who passed that year. It won two silver medals and a gold. It also took me two weeks to reconcile the lab data in Excel afterward.
