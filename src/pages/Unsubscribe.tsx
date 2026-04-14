@@ -17,7 +17,7 @@ export default function Unsubscribe() {
 
     const validate = async () => {
       try {
-        const supabaseUrl = (supabase as any).supabaseUrl || import.meta.env.VITE_SUPABASE_URL;
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const res = await fetch(
           `${supabaseUrl}/functions/v1/handle-email-unsubscribe?token=${token}`,
