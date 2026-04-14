@@ -80,7 +80,7 @@ export default function ComingSoon() {
             },
           },
         }),
-      ]).catch(() => {});
+      ]).catch((err) => console.error("[waitlist] email send failed:", err));
     } catch (err: any) {
       setError("Something went wrong — please try again or email kevin@solera.vin");
       console.error(err);
