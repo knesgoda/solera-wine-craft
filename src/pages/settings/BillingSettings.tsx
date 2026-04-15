@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, CreditCard, ArrowRight, Info, Loader2 } from "lucide-react";
+import { Check, CreditCard, ArrowRight, Info, Loader2, Copy, Gift, Users, Calendar } from "lucide-react";
 import { getTierDisplay } from "@/hooks/useTierGate";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -13,6 +13,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
 
 const PLANS = [
   {
@@ -260,6 +261,11 @@ const BillingSettings = () => {
         })}
       </div>
 
+      {/* Referral Program — Pro and Growth only */}
+      {(currentTier === "small_boutique" || currentTier === "mid_size") && (
+        <ReferralSection userId={user?.id} />
+      )}
+
       <AlertDialog open={!!downgradeTarget} onOpenChange={(open) => !open && setDowngradeTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -285,5 +291,84 @@ const BillingSettings = () => {
     </div>
   );
 };
+
+function ReferralSection({ userId }: { userId?: string }) {
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [stats, setStats] = useState({ total: 0, converted: 0, daysEarned: 0 });
+
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      // Get user's referral code
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("referral_code")
+        .eq("id", userId)
+        .single();
+      if (profile?.referral_code) setReferralCode(profile.referral_code);
+
+      // Get referral stats
+      const { data: referrals } = await supabase
+        .from("referrals")
+        .select("status, credit_days_earned")
+        .eq("referrer_user_id", userId);
+
+      if (referrals) {
+        const total = referrals.length;
+        const converted = referrals.filter((r: any) => r.status === "converted").length;
+        const daysEarned = referrals.reduce((sum: number, r: any) => sum + (r.credit_days_earned || 0), 0);
+        setStats({ total, converted, daysEarned });
+      }
+    })();
+  }, [userId]);
+
+  const referralLink = referralCode ? `solera.vin/join?ref=${referralCode}` : "";
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(`https://${referralLink}`);
+    toast({ title: "Copied!", description: "Referral link copied to clipboard." });
+  };
+
+  if (!referralCode) return null;
+
+  return (
+    <Card className="border-none shadow-md">
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Gift className="h-5 w-5 text-secondary" />
+          <CardTitle className="font-display text-lg">Referral Program</CardTitle>
+        </div>
+        <CardDescription>
+          Share your link. When someone signs up and converts to a paid Pro or Growth plan, you earn 30 free days (up to 180 max).
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Input readOnly value={referralLink} className="font-mono text-sm" />
+          <Button variant="outline" size="icon" onClick={copyLink}>
+            <Copy className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center p-3 bg-muted rounded-lg">
+            <Users className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+            <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+            <p className="text-xs text-muted-foreground">Referred</p>
+          </div>
+          <div className="text-center p-3 bg-muted rounded-lg">
+            <Check className="h-4 w-4 mx-auto mb-1 text-secondary" />
+            <p className="text-2xl font-bold text-foreground">{stats.converted}</p>
+            <p className="text-xs text-muted-foreground">Converted</p>
+          </div>
+          <div className="text-center p-3 bg-muted rounded-lg">
+            <Calendar className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+            <p className="text-2xl font-bold text-foreground">{stats.daysEarned}</p>
+            <p className="text-xs text-muted-foreground">Days Earned</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default BillingSettings;
