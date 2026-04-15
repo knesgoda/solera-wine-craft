@@ -3609,6 +3609,7 @@ export type Database = {
           last_name: string | null
           org_id: string | null
           push_subscription: Json | null
+          referral_code: string | null
           role: string
           updated_at: string
         }
@@ -3623,6 +3624,7 @@ export type Database = {
           last_name?: string | null
           org_id?: string | null
           push_subscription?: Json | null
+          referral_code?: string | null
           role?: string
           updated_at?: string
         }
@@ -3637,6 +3639,7 @@ export type Database = {
           last_name?: string | null
           org_id?: string | null
           push_subscription?: Json | null
+          referral_code?: string | null
           role?: string
           updated_at?: string
         }
@@ -3743,6 +3746,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referrals: {
+        Row: {
+          converted_at: string | null
+          created_at: string
+          credit_days_earned: number
+          id: string
+          referral_code: string
+          referred_user_id: string | null
+          referrer_user_id: string
+          status: Database["public"]["Enums"]["referral_status"]
+        }
+        Insert: {
+          converted_at?: string | null
+          created_at?: string
+          credit_days_earned?: number
+          id?: string
+          referral_code: string
+          referred_user_id?: string | null
+          referrer_user_id: string
+          status?: Database["public"]["Enums"]["referral_status"]
+        }
+        Update: {
+          converted_at?: string | null
+          created_at?: string
+          credit_days_earned?: number
+          id?: string
+          referral_code?: string
+          referred_user_id?: string | null
+          referrer_user_id?: string
+          status?: Database["public"]["Enums"]["referral_status"]
+        }
+        Relationships: []
       }
       roadmap_items: {
         Row: {
@@ -5361,6 +5397,7 @@ export type Database = {
         | "net_90"
         | "on_delivery"
         | "custom"
+      referral_status: "pending" | "signed_up" | "converted"
       sheet_module: "vintage_lab" | "tasks" | "inventory"
       sso_provider: "okta" | "azure_ad" | "google_workspace" | "generic_saml"
       sync_schedule: "manual" | "hourly" | "daily"
@@ -5643,6 +5680,7 @@ export const Constants = {
         "on_delivery",
         "custom",
       ],
+      referral_status: ["pending", "signed_up", "converted"],
       sheet_module: ["vintage_lab", "tasks", "inventory"],
       sso_provider: ["okta", "azure_ad", "google_workspace", "generic_saml"],
       sync_schedule: ["manual", "hourly", "daily"],

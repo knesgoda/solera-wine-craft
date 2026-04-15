@@ -18,6 +18,9 @@ const TIER_LABELS: Record<string, string> = {
   enterprise: "Enterprise",
 };
 
+const REFERRAL_ELIGIBLE_TIERS = ['small_boutique', 'mid_size'];
+const MAX_REFERRAL_CREDIT_DAYS = 180;
+
 function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
   let result = 0;
@@ -38,7 +41,6 @@ async function verifyPaddleSignature(rawBody: string, signature: string, secret:
   const h1 = parts["h1"];
   if (!ts || !h1) return false;
 
-  // Reject signatures older than 5 minutes to prevent replay attacks
   const age = Math.floor(Date.now() / 1000) - Number(ts);
   if (age > 300) return false;
 
@@ -70,6 +72,87 @@ async function getOrgInfo(supabase: any, orgId?: string, subId?: string, custome
   if (!query) return { name: "Unknown", tier: "unknown" };
   const { data } = await query;
   return data || { name: "Unknown", tier: "unknown" };
+}
+
+// --- Referral conversion helper ---
+async function processReferralConversion(supabase: any, orgId: string, newTier: string) {
+  if (!REFERRAL_ELIGIBLE_TIERS.includes(newTier)) return;
+
+  // Find org owner
+  const { data: ownerProfile } = await supabase
+    .from("profiles")
+    .select("id, email, first_name")
+    .eq("org_id", orgId)
+    .limit(1)
+    .single();
+
+  if (!ownerProfile) return;
+
+  // Check for a signed_up referral row for this user
+  const { data: referral } = await supabase
+    .from("referrals")
+    .select("id, referrer_user_id, referral_code")
+    .eq("referred_user_id", ownerProfile.id)
+    .eq("status", "signed_up")
+    .limit(1)
+    .single();
+
+  if (!referral) return;
+
+  // Check referrer's total credits
+  const { data: creditRows } = await supabase
+    .from("referrals")
+    .select("credit_days_earned")
+    .eq("referrer_user_id", referral.referrer_user_id)
+    .eq("status", "converted");
+
+  const currentTotal = (creditRows || []).reduce(
+    (sum: number, r: any) => sum + (r.credit_days_earned || 0),
+    0
+  );
+
+  const creditToAward = currentTotal + 30 <= MAX_REFERRAL_CREDIT_DAYS ? 30 : Math.max(0, MAX_REFERRAL_CREDIT_DAYS - currentTotal);
+
+  // Update referral row
+  await supabase
+    .from("referrals")
+    .update({
+      status: "converted",
+      converted_at: new Date().toISOString(),
+      credit_days_earned: creditToAward,
+    })
+    .eq("id", referral.id);
+
+  // Send email to referrer
+  if (creditToAward > 0) {
+    const { data: referrerProfile } = await supabase
+      .from("profiles")
+      .select("email, first_name")
+      .eq("id", referral.referrer_user_id)
+      .single();
+
+    if (referrerProfile?.email) {
+      const newTotal = currentTotal + creditToAward;
+      try {
+        await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "referral-conversion",
+            recipientEmail: referrerProfile.email,
+            idempotencyKey: `referral-convert-${referral.id}`,
+            templateData: {
+              referrerName: referrerProfile.first_name || undefined,
+              creditDays: creditToAward,
+              totalBalance: newTotal,
+            },
+          },
+        });
+      } catch (e) {
+        console.error("Failed to send referral conversion email:", e);
+      }
+    }
+  } else {
+    console.log(`Referral ${referral.id} converted but referrer at credit cap (${currentTotal}/${MAX_REFERRAL_CREDIT_DAYS})`);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -114,7 +197,7 @@ Deno.serve(async (req) => {
     const priceId = items[0]?.price?.id;
     const tier = priceId ? PRICE_TO_TIER[priceId] : undefined;
 
-    // Reject unknown price IDs — do not default to any tier
+    // Reject unknown price IDs
     if (priceId && !tier) {
       console.error(`Unknown Paddle price ID: ${priceId}`);
       return new Response(JSON.stringify({ error: "Unknown price ID", price_id: priceId }), {
@@ -141,8 +224,11 @@ Deno.serve(async (req) => {
           subscription_status: status,
           next_billed_at: nextBilledAt,
           trial_ends_at: status === "trialing" ? (currentBillingPeriod.ends_at || null) : null,
-          cancelled_at: null, // Clear cancelled_at on reactivation
+          cancelled_at: null,
         } as any).eq("id", orgId);
+
+        // Process referral conversion
+        await processReferralConversion(supabase, orgId, resolvedTier);
 
         // Admin notification
         const orgInfo = await getOrgInfo(supabase, orgId);
@@ -164,10 +250,24 @@ Deno.serve(async (req) => {
           next_billed_at: nextBilledAt,
           scheduled_change: scheduledChange,
         };
+        
+        let resolvedOrgId = orgId;
         if (orgId) {
           await supabase.from("organizations").update(updateData).eq("id", orgId);
         } else {
           await supabase.from("organizations").update(updateData).eq("paddle_subscription_id", subId);
+          // Resolve org_id for referral processing
+          const { data: orgRow } = await supabase
+            .from("organizations")
+            .select("id")
+            .eq("paddle_subscription_id", subId)
+            .single();
+          resolvedOrgId = orgRow?.id;
+        }
+
+        // Process referral conversion on upgrade (Hobbyist → Pro/Growth)
+        if (resolvedOrgId && oldTier !== resolvedTier && REFERRAL_ELIGIBLE_TIERS.includes(resolvedTier)) {
+          await processReferralConversion(supabase, resolvedOrgId, resolvedTier);
         }
 
         // Admin notification if tier changed
@@ -183,7 +283,6 @@ Deno.serve(async (req) => {
       case "subscription.canceled": {
         const cancelOrg = await getOrgInfo(supabase, undefined, subId);
 
-        // Get the org ID before clearing subscription
         const { data: cancelOrgRow } = await supabase
           .from("organizations")
           .select("id, name, created_at")
@@ -198,7 +297,7 @@ Deno.serve(async (req) => {
           cancelled_at: new Date().toISOString(),
         } as any).eq("id", cancelOrgRow?.id);
 
-        // Trigger cancellation auto-export (fire-and-forget)
+        // Trigger cancellation auto-export
         if (cancelOrgRow?.id) {
           try {
             const { data: cancelJob, error: cancelJobErr } = await supabase
@@ -213,7 +312,6 @@ Deno.serve(async (req) => {
               .single();
 
             if (!cancelJobErr && cancelJob) {
-              // Fire process-backup — it will handle email sending on completion
               fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/process-backup`, {
                 method: "POST",
                 headers: {
@@ -234,7 +332,6 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Calculate tenure for admin notification
         const customerSince = cancelOrgRow?.created_at
           ? new Date(cancelOrgRow.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
           : "Unknown";
@@ -272,7 +369,6 @@ Deno.serve(async (req) => {
           } as any).eq("paddle_customer_id", customerId);
         }
 
-        // Admin notification for payment failure
         const failOrg = await getOrgInfo(supabase, undefined, undefined, customerId);
         const errorDetail = data.payments?.[0]?.error_code || data.status || "Unknown error";
         sendAdminNotification(

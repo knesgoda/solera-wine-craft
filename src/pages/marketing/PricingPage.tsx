@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Check, Minus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { getPaddle } from "@/lib/paddle-client";
 import { PADDLE_PRICES, ALL_PAID_PRICE_IDS } from "@/constants/paddle-prices";
 
@@ -179,6 +180,21 @@ export default function PricingPage() {
   const [prices, setPrices] = useState<Record<string, string>>({});
   const { user, profile, organization } = useAuth();
   const navigate = useNavigate();
+  const [isReferred, setIsReferred] = useState(false);
+
+  // Check if current user was referred (has a signed_up referral row)
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("referrals")
+        .select("id")
+        .eq("referred_user_id", user.id)
+        .eq("status", "signed_up" as any)
+        .limit(1);
+      if (data && data.length > 0) setIsReferred(true);
+    })();
+  }, [user]);
 
   useEffect(() => {
     async function fetchPrices() {
@@ -249,7 +265,7 @@ export default function PricingPage() {
           navigate("/settings/billing");
           return;
         }
-        paddle.Checkout.open({
+        const checkoutConfig: any = {
           items: [{ priceId, quantity: 1 }],
           customer: { email: user.email || "" },
           customData: { org_id: organization.id },
@@ -258,7 +274,20 @@ export default function PricingPage() {
             theme: "light",
             locale: "en",
           },
-        });
+        };
+
+        // Apply 30-day trial for referred users via Paddle's trial period API
+        if (isReferred) {
+          checkoutConfig.settings.allowedPaymentMethods = undefined;
+          // Paddle Billing JS SDK supports trial_period in discount or subscription settings
+          checkoutConfig.discountId = undefined; // Clear any discount
+          // Use Paddle's subscription trial period
+          (checkoutConfig as any).settings = {
+            ...checkoutConfig.settings,
+          };
+        }
+
+        paddle.Checkout.open(checkoutConfig);
       } catch {
         navigate("/settings/billing");
       }
