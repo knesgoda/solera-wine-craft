@@ -119,6 +119,13 @@ const queryClient = new QueryClient({
   },
 });
 
+// Redirect /join?ref=XXXXX to /signup?ref=XXXXX
+const JoinRedirect = () => {
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get("ref");
+  return <Navigate to={ref ? `/signup?ref=${ref}` : "/signup"} replace />;
+};
+
 const App = () => (
   <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
@@ -132,6 +139,7 @@ const App = () => (
             {/* Coming soon / waitlist - public */}
             <Route path="/coming-soon" element={<ComingSoonPage />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route path="/join" element={<JoinRedirect />} />
             {/* Marketing routes */}
             <Route element={<MarketingLayout />}>
               <Route path="/" element={<Homepage />} />

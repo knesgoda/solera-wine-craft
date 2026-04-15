@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, Navigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,18 +8,47 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "sonner";
 import soleraLogo from "@/assets/solera-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
+import { Badge } from "@/components/ui/badge";
 
 const Signup = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const inviteCode = searchParams.get("invite");
+  const refCode = searchParams.get("ref");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [wineryName, setWineryName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [referrerName, setReferrerName] = useState<string | null>(null);
+  const [validRef, setValidRef] = useState(false);
+
+  useEffect(() => {
+    if (!refCode) return;
+    // Validate referral code — must belong to a Pro or Growth user
+    (async () => {
+      const { data: refProfile } = await supabase
+        .from("profiles")
+        .select("id, first_name, org_id")
+        .eq("referral_code", refCode)
+        .single();
+
+      if (!refProfile) return;
+
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("tier")
+        .eq("id", refProfile.org_id)
+        .single();
+
+      if (org && (org.tier === "small_boutique" || org.tier === "mid_size")) {
+        setValidRef(true);
+        setReferrerName(refProfile.first_name || null);
+      }
+    })();
+  }, [refCode]);
 
   if (!authLoading && user) return <Navigate to="/dashboard" replace />;
 
@@ -36,6 +65,7 @@ const Signup = () => {
             first_name: firstName,
             last_name: lastName,
             winery_name: wineryName,
+            ...(validRef && refCode ? { referral_code: refCode } : {}),
           },
           emailRedirectTo: window.location.origin,
         },
@@ -52,6 +82,29 @@ const Signup = () => {
           });
         } catch (inviteErr) {
           console.error("Invite activation failed:", inviteErr);
+        }
+      }
+
+      // Create referral row if valid ref code
+      if (validRef && refCode) {
+        try {
+          // Look up the referrer's user id from their referral code
+          const { data: referrerProfile } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("referral_code", refCode)
+            .single();
+
+          if (referrerProfile) {
+            await supabase.from("referrals").insert({
+              referrer_user_id: referrerProfile.id,
+              referred_user_id: authData.user.id,
+              referral_code: refCode,
+              status: "signed_up" as any,
+            });
+          }
+        } catch (refErr) {
+          console.error("Referral tracking failed:", refErr);
         }
       }
 
@@ -86,6 +139,11 @@ const Signup = () => {
           </div>
           <CardTitle className="text-3xl font-display text-primary">Create Your Account</CardTitle>
           <CardDescription>Start managing your winery with Solera</CardDescription>
+          {validRef && (
+            <Badge variant="secondary" className="mx-auto">
+              🎉 {referrerName ? `${referrerName} referred you` : "Referred"} — 30 days free on any paid plan
+            </Badge>
+          )}
         </CardHeader>
         <form onSubmit={handleSignup}>
           <CardContent className="space-y-4">
