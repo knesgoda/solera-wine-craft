@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, FlaskConical, FileText, AlertTriangle, MoreVertical, Pencil, Trash2, CalendarIcon } from "lucide-react";
+import { ArrowLeft, Loader2, FlaskConical, FileText, AlertTriangle, MoreVertical, Pencil, Trash2, CalendarIcon, Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { FormattedDateTime } from "@/components/timezone";
 import { useState } from "react";
 import { NewLabSampleDialog, type LabSampleData } from "@/components/vintages/NewLabSampleDialog";
+import { QuickCaptureDialog } from "@/components/import/QuickCaptureDialog";
 import { LabChart } from "@/components/vintages/LabChart";
 import { LabChartWithComparison } from "@/components/vintages/LabChartWithComparison";
 import { TtbAdditionsTab } from "@/components/vintages/TtbAdditionsTab";
