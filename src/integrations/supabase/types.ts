@@ -1918,8 +1918,10 @@ export type Database = {
           brix: number | null
           created_at: string
           id: string
+          import_source: string | null
           logged_at: string
           notes: string | null
+          source_image_id: string | null
           temp_f: number | null
           vessel_id: string
           vintage_id: string | null
@@ -1928,8 +1930,10 @@ export type Database = {
           brix?: number | null
           created_at?: string
           id?: string
+          import_source?: string | null
           logged_at?: string
           notes?: string | null
+          source_image_id?: string | null
           temp_f?: number | null
           vessel_id: string
           vintage_id?: string | null
@@ -1938,8 +1942,10 @@ export type Database = {
           brix?: number | null
           created_at?: string
           id?: string
+          import_source?: string | null
           logged_at?: string
           notes?: string | null
+          source_image_id?: string | null
           temp_f?: number | null
           vessel_id?: string
           vintage_id?: string | null
@@ -2534,6 +2540,47 @@ export type Database = {
           },
         ]
       }
+      handwritten_import_sessions: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          org_id: string
+          page_count: number
+          rows_accepted: number
+          rows_rejected: number
+          storage_object_ids: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          org_id: string
+          page_count?: number
+          rows_accepted?: number
+          rows_rejected?: number
+          storage_object_ids?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          org_id?: string
+          page_count?: number
+          rows_accepted?: number
+          rows_rejected?: number
+          storage_object_ids?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handwritten_import_sessions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       harvest_alerts_sent: {
         Row: {
           block_id: string
@@ -3081,6 +3128,7 @@ export type Database = {
           external_sample_id: string | null
           gdd_cumulative: number | null
           id: string
+          import_source: string | null
           notes: string | null
           offline_queued: boolean
           ph: number | null
@@ -3089,6 +3137,7 @@ export type Database = {
           sampled_by: string | null
           so2_free: number | null
           so2_total: number | null
+          source_image_id: string | null
           ta: number | null
           va: number | null
           vintage_id: string
@@ -3101,6 +3150,7 @@ export type Database = {
           external_sample_id?: string | null
           gdd_cumulative?: number | null
           id?: string
+          import_source?: string | null
           notes?: string | null
           offline_queued?: boolean
           ph?: number | null
@@ -3109,6 +3159,7 @@ export type Database = {
           sampled_by?: string | null
           so2_free?: number | null
           so2_total?: number | null
+          source_image_id?: string | null
           ta?: number | null
           va?: number | null
           vintage_id: string
@@ -3121,6 +3172,7 @@ export type Database = {
           external_sample_id?: string | null
           gdd_cumulative?: number | null
           id?: string
+          import_source?: string | null
           notes?: string | null
           offline_queued?: boolean
           ph?: number | null
@@ -3129,6 +3181,7 @@ export type Database = {
           sampled_by?: string | null
           so2_free?: number | null
           so2_total?: number | null
+          source_image_id?: string | null
           ta?: number | null
           va?: number | null
           vintage_id?: string
