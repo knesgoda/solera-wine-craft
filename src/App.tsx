@@ -18,6 +18,7 @@ import ComingSoonPage from "./pages/ComingSoon";
 import AskSolera from "./pages/AskSolera";
 import Reports from "./pages/Reports";
 import DataImport from "./pages/DataImport";
+import HandwrittenImport from "./pages/import/HandwrittenImport";
 import ReportsBuilder from "./pages/ReportsBuilder";
 import CellarDashboard from "./pages/cellar/CellarDashboard";
 import VesselDetail from "./pages/cellar/VesselDetail";
@@ -195,6 +196,7 @@ const App = () => (
               <Route path="/reports" element={<Reports />} />
               <Route path="/reports/builder" element={<GrowthTierGate><ReportsBuilder /></GrowthTierGate>} />
               <Route path="/data-import" element={<DataImport />} />
+              <Route path="/import/handwritten" element={<HandwrittenImport />} />
               <Route path="/analytics/analog" element={<GrowthTierGate><AnalogExplorer /></GrowthTierGate>} />
               <Route path="/costs" element={<GrowthTierGate><CostOverview /></GrowthTierGate>} />
               <Route path="/costs/dashboard" element={<GrowthTierGate><CogsDashboard /></GrowthTierGate>} />
