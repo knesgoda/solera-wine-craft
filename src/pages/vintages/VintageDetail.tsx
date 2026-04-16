@@ -42,6 +42,7 @@ export default function VintageDetail() {
   const [labDialogOpen, setLabDialogOpen] = useState(false);
   const [editingSample, setEditingSample] = useState<LabSampleData | null>(null);
   const [deletingSampleId, setDeletingSampleId] = useState<string | null>(null);
+  const [captureOpen, setCaptureOpen] = useState(false);
   const [isEditingVintage, setIsEditingVintage] = useState(false);
   const [showDeleteVintage, setShowDeleteVintage] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
@@ -357,7 +358,12 @@ export default function VintageDetail() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Sample Log</CardTitle>
-                <Button size="sm" onClick={() => setLabDialogOpen(true)}>Add Sample</Button>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setCaptureOpen(true)}>
+                    <Camera className="h-4 w-4 mr-1" /> Scan
+                  </Button>
+                  <Button size="sm" onClick={() => setLabDialogOpen(true)}>Add Sample</Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
