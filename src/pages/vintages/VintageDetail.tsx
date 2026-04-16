@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, FlaskConical, FileText, AlertTriangle, MoreVertical, Pencil, Trash2, CalendarIcon } from "lucide-react";
+import { ArrowLeft, Loader2, FlaskConical, FileText, AlertTriangle, MoreVertical, Pencil, Trash2, CalendarIcon, Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { FormattedDateTime } from "@/components/timezone";
 import { useState } from "react";
 import { NewLabSampleDialog, type LabSampleData } from "@/components/vintages/NewLabSampleDialog";
+import { QuickCaptureDialog } from "@/components/import/QuickCaptureDialog";
 import { LabChart } from "@/components/vintages/LabChart";
 import { LabChartWithComparison } from "@/components/vintages/LabChartWithComparison";
 import { TtbAdditionsTab } from "@/components/vintages/TtbAdditionsTab";
@@ -41,6 +42,7 @@ export default function VintageDetail() {
   const [labDialogOpen, setLabDialogOpen] = useState(false);
   const [editingSample, setEditingSample] = useState<LabSampleData | null>(null);
   const [deletingSampleId, setDeletingSampleId] = useState<string | null>(null);
+  const [captureOpen, setCaptureOpen] = useState(false);
   const [isEditingVintage, setIsEditingVintage] = useState(false);
   const [showDeleteVintage, setShowDeleteVintage] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
@@ -356,7 +358,12 @@ export default function VintageDetail() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Sample Log</CardTitle>
-                <Button size="sm" onClick={() => setLabDialogOpen(true)}>Add Sample</Button>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setCaptureOpen(true)}>
+                    <Camera className="h-4 w-4 mr-1" /> Scan
+                  </Button>
+                  <Button size="sm" onClick={() => setLabDialogOpen(true)}>Add Sample</Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -431,6 +438,7 @@ export default function VintageDetail() {
         onOpenChange={(open) => { setLabDialogOpen(open); if (!open) setEditingSample(null); }}
         editingSample={editingSample}
       />
+      <QuickCaptureDialog open={captureOpen} onOpenChange={setCaptureOpen} vintageId={vintageId} />
 
       <AlertDialog open={!!deletingSampleId} onOpenChange={(open) => { if (!open) setDeletingSampleId(null); }}>
         <AlertDialogContent>

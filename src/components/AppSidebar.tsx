@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Grape, Wine, Warehouse, Bot, Upload, Settings, ClipboardList, Cylinder, Beaker,
   Bell, ShieldAlert, CloudSun, FileSpreadsheet, FileText, PenTool, TrendingUp, Star, BarChart3, Package,
   Store, ShoppingBag, Users, Plug, GlassWater, Truck, Building2, Scale, FileCheck, Shield, Key,
-  CreditCard, ScrollText, MessageSquare, Lock, ChevronRight, Wheat, DollarSign,
+  CreditCard, ScrollText, MessageSquare, Lock, ChevronRight, Wheat, DollarSign, Camera,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -114,6 +114,7 @@ const NAV_GROUPS: NavGroupConfig[] = [
     icon: Upload,
     items: [
       { title: "Data Import", tKey: "nav.dataMigration", url: "/data-import", icon: Upload },
+      { title: "Handwritten Notes", url: "/import/handwritten", icon: Camera },
       { title: "Notifications", tKey: "nav.notifications", url: "/notifications", icon: Bell },
     ],
   },
