@@ -438,6 +438,7 @@ export default function VintageDetail() {
         onOpenChange={(open) => { setLabDialogOpen(open); if (!open) setEditingSample(null); }}
         editingSample={editingSample}
       />
+      <QuickCaptureDialog open={captureOpen} onOpenChange={setCaptureOpen} vintageId={vintageId} />
 
       <AlertDialog open={!!deletingSampleId} onOpenChange={(open) => { if (!open) setDeletingSampleId(null); }}>
         <AlertDialogContent>
