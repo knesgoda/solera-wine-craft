@@ -1,81 +1,89 @@
 
 
-# Referral Program — Revised Plan
+# Handwritten Notes Digitization — Implementation Plan
 
-## Two Changes Addressed
+## Summary
+Add a feature that lets users photograph handwritten lab notebook pages, extract structured winemaking data via Claude Vision, review/edit the results in a confidence-coded table, and import accepted rows into existing database tables.
 
-### 1. Trial extension via Paddle API (not just customData)
+## Adjustments from the PDF
 
-The previous plan assumed passing trial info in `customData` would magically apply a 30-day trial. It won't — Paddle requires explicitly setting a trial period on the subscription. The fix: when creating a subscription checkout for a referred user, use Paddle's `trial_period` field on the subscription creation API call (or apply a pre-configured discount). Specifically:
-
-- In the **Signup flow**, when a valid referral code is detected, store the referral code in the user's profile metadata.
-- In the **PricingPage checkout**, when opening `paddle.Checkout.open()`, pass `settings.trialPeriod: { frequency: 30, interval: 'day' }` — this is Paddle's client-side Checkout API for setting a trial directly on the subscription. This ensures the 30-day trial is applied at the Paddle level, not just stored.
-- Fallback: If Paddle's inline checkout doesn't support `trialPeriod` directly, create the subscription server-side via the `paddle-subscription` edge function using Paddle's API with `trial_period` set, then redirect the user to the checkout URL.
-
-### 2. Handle upgrades (subscription.updated), not just subscription.created
-
-A referred user may sign up as Hobbyist (free) and upgrade later. That fires `subscription.updated`, not `subscription.created`. The referral conversion logic must run on **both** events:
-
-- `subscription.created` — direct paid signup
-- `subscription.updated` — upgrade from Hobbyist to Pro/Growth
-
-In both cases: check if the user has a `referrals` row with `status = 'signed_up'`, the new tier is Pro or Growth (not Enterprise), and if so, mark as converted and credit the referrer.
+The PDF references a `task_completions` table and `org_members` table — neither exists in this project. We will skip `task_completions` columns and use `profiles.org_id` for RLS instead of `org_members`. The PDF also calls for the Anthropic API directly; since `ANTHROPIC_API_KEY` is already configured as a secret, this is ready to go.
 
 ---
 
-## Full Revised Plan
+## Step 1 — Database & Storage
 
-### Database Migration
+**Migration SQL:**
 
-1. Create `referral_status` enum: `pending`, `signed_up`, `converted`
-2. Create `referrals` table with columns as specified (id, referrer_user_id, referred_user_id, referral_code, status, credit_days_earned, created_at, converted_at)
-3. RLS: users can SELECT their own rows (referrer or referred)
-4. Add `referral_code text unique` to `profiles`
-5. Update `handle_new_user()` trigger to generate an 8-char code: `substr(md5(gen_random_uuid()::text), 1, 8)` and store in `profiles.referral_code`
+1. Add `import_source text` and `source_image_id uuid` columns to `lab_samples` and `fermentation_logs` (skip `task_completions` — table doesn't exist)
 
-### Edge Function: paddle-webhook (update existing)
+2. Create `handwritten_import_sessions` table:
+   - `id`, `org_id` (FK organizations), `created_by` (FK auth.users), `created_at`, `page_count`, `rows_accepted`, `rows_rejected`, `storage_object_ids uuid[]`
+   - RLS: org members can manage sessions where `org_id = get_user_org_id(auth.uid())`
 
-Add a shared helper function `processReferralConversion(supabase, userId, newTier)` called from **both** `subscription.created` and `subscription.updated`:
+3. Create private storage bucket `handwritten-imports` with org-scoped RLS (path starts with `org_id/`)
 
-- Look up `referrals` row where `referred_user_id = userId` and `status = 'signed_up'`
-- If found and `newTier` is `small_boutique` or `mid_size`:
-  - Update row: `status = 'converted'`, `converted_at = now()`, `credit_days_earned = 30`
-  - Query referrer's total credits (`SUM(credit_days_earned)` across all rows); cap at 180
-  - If cap not exceeded, send referral conversion email to referrer via `send-transactional-email`
-  - If cap reached, still mark converted but set `credit_days_earned = 0` and note in logs
+## Step 2 — Edge Function: `extract-handwritten-notes`
 
-To find the `referred_user_id` from the webhook: look up the org's owner via `profiles` where `org_id` matches.
+- New function at `supabase/functions/extract-handwritten-notes/index.ts`
+- Accepts `imageBase64`, `mimeType`, `orgId`, `sessionId`
+- Calls Anthropic Messages API with `claude-sonnet-4-20250514` and the winemaking extraction system prompt from the PDF
+- Parses response JSON (strips markdown fences), returns structured array with per-field confidence scores
+- Does NOT write to the database — extraction only
 
-### Email Template: referral-conversion
+## Step 3 — Review Screen (`/import/handwritten`)
 
-- New file: `supabase/functions/_shared/transactional-email-templates/referral-conversion.tsx`
-- Subject: "Your referral just went paid — you earned 30 free days"
-- Body: congratulations, current credit balance
-- Register in `registry.ts`
+- New page component `src/pages/import/HandwrittenImport.tsx`
+- **Desktop**: split panel — image viewer left, review table right
+- **Mobile**: image collapsible at top, card-based rows below
+- Image viewer with zoom (mouse wheel / pinch), re-upload button, page tabs for multi-page sessions
+- Review table columns: Date, Block, Variety, Vintage, Brix, pH, TA, Temp, Vessel, Notes, Action
+- **Confidence color coding**: ≥0.85 white, ≥0.70 yellow (#FFF9C4) with warning icon, <0.70 red (#FFEBEE) with alert icon
+- All cells editable inline on click
+- Row actions: Accept (checkmark), Edit (pencil), Reject (X — strikethrough)
+- Bulk actions: "Accept All" (skips rows with red cells), "Reject All"
+- Row count summary bar
+- Destination selectors: Vintage dropdown and Block dropdown (fuzzy-matched from extraction)
+- Submit button: inserts accepted rows into `lab_samples` / `fermentation_logs` with `import_source = 'handwritten_photo'` and `source_image_id`
+- Updates the `handwritten_import_sessions` row with final counts
 
-### Frontend: Signup Page
+## Step 4 — Sidebar & Routing
 
-- Read `ref` query param
-- Look up the referral code in `profiles` table, verify the referrer's org is Pro or Growth tier
-- After successful signup, insert a `referrals` row with `status: 'signed_up'`
-- Store `ref` code in user metadata so the webhook can trace it
+- Add "Handwritten Notes" nav item under the "Data" group in `AppSidebar.tsx` with a Camera icon
+- Add route `/import/handwritten` in `App.tsx`
 
-### Frontend: PricingPage Checkout
+## Step 5 — Mobile Quick-Capture on Lab Samples
 
-- When a referred user (has a `referrals` row as `referred_user_id`) initiates checkout, pass `settings: { trialPeriod: { frequency: 30, interval: 'day' } }` to `paddle.Checkout.open()` — this applies the trial at the Paddle API level
-- If the Paddle JS SDK version doesn't support `trialPeriod` in checkout settings, fall back to creating the subscription server-side via the Paddle API with `trial_period` set
+- On `VintageDetail.tsx` lab samples section, add a camera icon button next to "+ New Sample"
+- Tapping opens a bottom sheet (mobile) / modal (desktop) with:
+  - "Take Photo" (camera capture input)
+  - "Upload Image" (file picker: JPG, PNG, HEIC, PDF)
+  - "Scan Multiple Pages" toggle (Pro+ gated)
+- After capture: upload to `handwritten-imports` bucket, call edge function, navigate to `/import/handwritten` with session loaded
 
-### Frontend: BillingSettings
+## Step 6 — Import History & Provenance
 
-- Add "Referral Program" section, visible only for Pro (`small_boutique`) and Growth (`mid_size`) tiers
-- Show: referral link (`solera.vin/join?ref=CODE`), copy button, stats (sent, converted, days earned, remaining)
-- Query `referrals` table filtered by `referrer_user_id`
+- Add "Import History" section in the Data Import page showing `handwritten_import_sessions` records
+- Each entry: date, pages, accepted/rejected counts, user, "View Images" lightbox, "Re-process" button (Growth+ gated)
+- In lab samples list views, show a camera icon badge on records where `import_source = 'handwritten_photo'`
 
-### Routing
+## Step 7 — Tier Enforcement
 
-- Add `/join` route that redirects to `/signup?ref=XXXXX`
+| Feature | Tier |
+|---|---|
+| Single-page import | All (Hobbyist+) |
+| Multi-page batch | Pro+ (`small_boutique`) |
+| Re-process existing | Growth+ (`mid_size`) |
 
-### Fix: process-email-queue TypeScript errors
+Use existing `useTierGate` hook and `TierGate` component pattern. Show upgrade prompts with pricing for gated features.
 
-- Add explicit `any` type annotations to `.map()` and `.filter()` callbacks
+---
+
+## Technical Details
+
+- **Files created**: `src/pages/import/HandwrittenImport.tsx`, `src/components/import/HandwrittenReviewTable.tsx`, `src/components/import/QuickCaptureDialog.tsx`, `supabase/functions/extract-handwritten-notes/index.ts`
+- **Files modified**: `src/App.tsx` (route), `src/components/AppSidebar.tsx` (nav item), `src/pages/vintages/VintageDetail.tsx` (camera button), `src/pages/DataImport.tsx` (import history section)
+- **DB migration**: new table, two ALTER TABLE statements, storage bucket + policies
+- **Secrets needed**: `ANTHROPIC_API_KEY` — already configured
+- **No changes** to `supabase/config.toml`, `client.ts`, or `types.ts`
 
