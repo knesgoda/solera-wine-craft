@@ -101,8 +101,6 @@ export default function HandwrittenImport() {
 
       setSessionId(session.id);
       setImageUrl(filePath);
-      const { data: signedData } = await supabase.storage.from("handwritten-imports").createSignedUrl(filePath, 3600);
-      if (signedData?.signedUrl) setSignedImageUrl(signedData.signedUrl);
 
       setExtractedRows(
         (extraction.rows || []).map((r: any) => ({
