@@ -54,17 +54,23 @@ export default function HandwrittenImport() {
   });
 
   const [signedImageUrl, setSignedImageUrl] = useState<string | null>(null);
-  // Get signed URL for the image
-  useState(() => {
-    if (imageUrl) {
-      supabase.storage
-        .from("handwritten-imports")
-        .createSignedUrl(imageUrl, 3600)
-        .then(({ data }) => {
-          if (data?.signedUrl) setSignedImageUrl(data.signedUrl);
-        });
+  // Get signed URL for the image — refetch whenever imageUrl changes (e.g. on re-upload)
+  useEffect(() => {
+    if (!imageUrl) {
+      setSignedImageUrl(null);
+      return;
     }
-  });
+    let cancelled = false;
+    supabase.storage
+      .from("handwritten-imports")
+      .createSignedUrl(imageUrl, 3600)
+      .then(({ data }) => {
+        if (!cancelled && data?.signedUrl) setSignedImageUrl(data.signedUrl);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [imageUrl]);
 
   const handleUpload = async (file: File) => {
     if (!orgId || !profile) return;
