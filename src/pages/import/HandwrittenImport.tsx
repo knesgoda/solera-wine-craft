@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,17 +54,23 @@ export default function HandwrittenImport() {
   });
 
   const [signedImageUrl, setSignedImageUrl] = useState<string | null>(null);
-  // Get signed URL for the image
-  useState(() => {
-    if (imageUrl) {
-      supabase.storage
-        .from("handwritten-imports")
-        .createSignedUrl(imageUrl, 3600)
-        .then(({ data }) => {
-          if (data?.signedUrl) setSignedImageUrl(data.signedUrl);
-        });
+  // Get signed URL for the image — refetch whenever imageUrl changes (e.g. on re-upload)
+  useEffect(() => {
+    if (!imageUrl) {
+      setSignedImageUrl(null);
+      return;
     }
-  });
+    let cancelled = false;
+    supabase.storage
+      .from("handwritten-imports")
+      .createSignedUrl(imageUrl, 3600)
+      .then(({ data }) => {
+        if (!cancelled && data?.signedUrl) setSignedImageUrl(data.signedUrl);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [imageUrl]);
 
   const handleUpload = async (file: File) => {
     if (!orgId || !profile) return;
@@ -95,8 +101,6 @@ export default function HandwrittenImport() {
 
       setSessionId(session.id);
       setImageUrl(filePath);
-      const { data: signedData } = await supabase.storage.from("handwritten-imports").createSignedUrl(filePath, 3600);
-      if (signedData?.signedUrl) setSignedImageUrl(signedData.signedUrl);
 
       setExtractedRows(
         (extraction.rows || []).map((r: any) => ({
