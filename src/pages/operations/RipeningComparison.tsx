@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,8 +45,10 @@ export interface ChartDataPoint {
 
 const RipeningComparison = () => {
   const { profile } = useAuth();
+  const [searchParams] = useSearchParams();
   const [selectedBlocks, setSelectedBlocks] = useState<SelectedBlock[]>([]);
   const [comparing, setComparing] = useState(false);
+  const [autoSelected, setAutoSelected] = useState(false);
 
   // Fetch all blocks with vineyard info
   const { data: allBlocks, isLoading: blocksLoading } = useQuery({
@@ -71,7 +74,38 @@ const RipeningComparison = () => {
     enabled: !!profile?.org_id,
   });
 
-  // When comparing, fetch lab samples + GDD for selected blocks
+  // Pre-select blocks from ?blocks=id1,id2 query param (e.g. divergence alert deep links)
+  useEffect(() => {
+    if (autoSelected || !allBlocks?.length) return;
+    const param = searchParams.get("blocks");
+    if (!param) return;
+    const ids = param.split(",").map((s) => s.trim()).filter(Boolean);
+    if (!ids.length) return;
+    const matched = ids
+      .map((id, i) => {
+        const b = allBlocks.find((x) => x.id === id);
+        if (!b) return null;
+        return {
+          id: b.id,
+          name: b.name,
+          variety: b.variety,
+          clone: b.clone,
+          rootstock: b.rootstock,
+          vineyardId: b.vineyard_id,
+          vineyardName: b.vineyard_name,
+          vineyardCoordinates: b.vineyard_coordinates,
+          color: COMPARISON_COLORS[i % COMPARISON_COLORS.length],
+        } as SelectedBlock;
+      })
+      .filter(Boolean) as SelectedBlock[];
+    if (matched.length >= 2) {
+      setSelectedBlocks(matched);
+      setComparing(true);
+    } else if (matched.length > 0) {
+      setSelectedBlocks(matched);
+    }
+    setAutoSelected(true);
+  }, [allBlocks, searchParams, autoSelected]);
   const blockIds = selectedBlocks.map((b) => b.id);
   const { data: comparisonData, isLoading: dataLoading } = useQuery({
     queryKey: ["ripening-comparison-data", blockIds],
