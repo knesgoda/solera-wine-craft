@@ -4,12 +4,12 @@ import App from "./App.tsx";
 import "./index.css";
 import "./lib/i18n"; // Initialize i18n before app renders
 
-// Initialize Sentry error tracking
+// Initialize Sentry error tracking (production only)
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
-if (!SENTRY_DSN) {
+if (import.meta.env.PROD && !SENTRY_DSN) {
   console.warn('[Solera] VITE_SENTRY_DSN is not set — Sentry error reporting is disabled');
 }
-if (SENTRY_DSN) {
+if (SENTRY_DSN && import.meta.env.PROD) {
   Sentry.init({
     dsn: SENTRY_DSN,
     environment: import.meta.env.MODE,
