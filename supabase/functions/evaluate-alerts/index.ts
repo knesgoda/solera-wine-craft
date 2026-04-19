@@ -147,7 +147,7 @@ async function checkDivergenceRules(
         channel: rule.channel,
         actualValue: spread,
         message,
-        linkUrl: "https://solera.vin/ripening-comparison",
+        linkUrl: `https://solera.vin/ripening-comparison?blocks=${fastest.blockId},${slowest.blockId}`,
       });
     }
   }

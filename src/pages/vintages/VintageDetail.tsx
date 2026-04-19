@@ -374,8 +374,16 @@ export default function VintageDetail() {
                   {labSamples.map((s: any) => (
                     <div key={s.id} className="border border-border rounded-lg p-3 relative">
                       <div className="flex items-start justify-between">
-                        <p className="text-sm font-medium text-foreground mb-1">
+                        <p className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
                           <FormattedDateTime date={s.sampled_at} format="short" />
+                          {s.import_source === "handwritten_photo" && (
+                            <Camera
+                              className="h-3.5 w-3.5 text-muted-foreground"
+                              aria-label="Imported from handwritten notes"
+                            >
+                              <title>Imported from handwritten notes</title>
+                            </Camera>
+                          )}
                         </p>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
