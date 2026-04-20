@@ -51,7 +51,9 @@ export default function PrivacyPage() {
           </p>
           <p>
             <strong>Cookies:</strong> We use essential cookies for authentication and session management. We use analytics
-            cookies to understand how the Platform is used. We do not use advertising cookies or trackers.
+            cookies (Google Analytics 4) to understand how the Platform is used. These analytics cookies, along with
+            self-hosted fonts (Google Fonts) and on-error session replay (Sentry), are only loaded after you grant
+            consent through our cookie banner. We do not use advertising cookies or trackers.
           </p>
 
           <h2>3. How We Use Your Information</h2>
@@ -78,7 +80,11 @@ export default function PrivacyPage() {
           <p>We share your data only with:</p>
           <ul>
             <li>
-              <strong>Paddle.com</strong> — payment processing as Merchant of Record.
+              <strong>Paddle.com</strong> — primary payment processor and Merchant of Record (subscriptions, billing).
+            </li>
+            <li>
+              <strong>Stripe</strong> — wine club checkout sessions only (legacy path; receives customer email,
+              shipping address, and selected club tier).
             </li>
             <li>
               <strong>Anthropic</strong> — AI query processing (your data is not retained for training).
@@ -91,6 +97,32 @@ export default function PrivacyPage() {
             </li>
             <li>
               <strong>Open-Meteo</strong> — weather data requests (we send vineyard coordinates only, no personal information).
+            </li>
+            <li>
+              <strong>Tomorrow.io</strong> — Enterprise-tier weather and forecast data (vineyard coordinates only).
+            </li>
+            <li>
+              <strong>Commerce7, WineDirect, Shopify</strong> — only when you connect these e-commerce platforms in
+              Integrations. We send and receive customer, order, and product data using credentials you provide.
+            </li>
+            <li>
+              <strong>QuickBooks (Intuit)</strong> — only when you connect QuickBooks. We send COGS journal entries
+              and account names using OAuth tokens you authorise.
+            </li>
+            <li>
+              <strong>ShipCompliant</strong> — only when you connect it for DTC compliance reporting. We send shipment
+              and customer data required for state alcohol-shipping compliance.
+            </li>
+            <li>
+              <strong>Google Analytics 4 (Google LLC)</strong> — anonymised page views, referrer, IP-derived
+              geography, and session metrics. Loaded only after cookie consent.
+            </li>
+            <li>
+              <strong>Google Fonts (Google LLC)</strong> — display typography. Loaded only after cookie consent.
+            </li>
+            <li>
+              <strong>Sentry</strong> — production error tracking and on-error session replay (with all text and
+              media masked). Loaded only after cookie consent.
             </li>
           </ul>
           <p>
@@ -132,7 +164,9 @@ export default function PrivacyPage() {
               <strong>Correct</strong> inaccurate data by editing your records in the Platform.
             </li>
             <li>
-              <strong>Delete</strong> your account and request data deletion by contacting{" "}
+              <strong>Delete</strong> your account and all associated data self-serve from{" "}
+              <em>Settings → Facilities → Delete Account</em>. Owners type the organization name to confirm; a final
+              data export is generated automatically. For assistance you may also contact{" "}
               <a href="mailto:support@solera.vin">support@solera.vin</a>.
             </li>
             <li>
