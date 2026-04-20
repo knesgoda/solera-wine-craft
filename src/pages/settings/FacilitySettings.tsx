@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import DataBackupSection from "@/components/settings/DataBackupSection";
+import DeleteAccountSection from "@/components/settings/DeleteAccountSection";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -258,6 +259,8 @@ export default function FacilitySettings() {
           <p className="text-sm text-muted-foreground">User assignment is managed per-facility. Navigate to each facility to manage its team members.</p>
         </CardContent>
       </Card>
+
+      <DeleteAccountSection />
     </div>
   );
 }
