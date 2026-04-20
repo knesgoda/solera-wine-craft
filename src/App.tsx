@@ -109,6 +109,7 @@ import BlogAdmin from "./pages/admin/BlogAdmin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ContactPage from "./pages/marketing/ContactPage";
 import Unsubscribe from "./pages/Unsubscribe";
+import { CookieConsentBanner } from "./components/CookieConsentBanner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -249,6 +250,7 @@ const App = () => (
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <CookieConsentBanner />
           </ImpersonationProvider>
         </AuthProvider>
       </BrowserRouter>

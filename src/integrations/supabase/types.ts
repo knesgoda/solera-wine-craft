@@ -1682,6 +1682,48 @@ export type Database = {
           },
         ]
       }
+      data_deletion_requests: {
+        Row: {
+          completed_at: string | null
+          error_message: string | null
+          id: string
+          metadata_json: Json | null
+          org_id: string | null
+          org_name_snapshot: string
+          org_tier_snapshot: string | null
+          requested_at: string
+          requested_by_email: string
+          requested_by_user_id: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata_json?: Json | null
+          org_id?: string | null
+          org_name_snapshot: string
+          org_tier_snapshot?: string | null
+          requested_at?: string
+          requested_by_email: string
+          requested_by_user_id?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata_json?: Json | null
+          org_id?: string | null
+          org_name_snapshot?: string
+          org_tier_snapshot?: string | null
+          requested_at?: string
+          requested_by_email?: string
+          requested_by_user_id?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
