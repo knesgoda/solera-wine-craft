@@ -1,10 +1,11 @@
 import { useOutletContext } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { toast } from "@/hooks/use-toast";
 
 export default function ClientDocuments() {
   const { clientUser } = useOutletContext<{ clientUser: any }>();
@@ -19,9 +20,15 @@ export default function ClientDocuments() {
     enabled: !!clientUser?.client_org_id,
   });
 
-  const getPublicUrl = (name: string) => {
-    const { data } = supabase.storage.from("client-documents").getPublicUrl(`${clientUser.client_org_id}/${name}`);
-    return data.publicUrl;
+  const openSignedUrl = async (name: string) => {
+    const { data, error } = await supabase.storage
+      .from("client-documents")
+      .createSignedUrl(`${clientUser.client_org_id}/${name}`, 3600);
+    if (error || !data?.signedUrl) {
+      toast({ title: "Could not open document", description: error?.message ?? "Unknown error", variant: "destructive" });
+      return;
+    }
+    window.open(data.signedUrl, "_blank");
   };
 
   return (
@@ -42,7 +49,7 @@ export default function ClientDocuments() {
                       <p className="text-xs text-muted-foreground">{format(new Date(doc.created_at), "MMM d, yyyy")}</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => window.open(getPublicUrl(doc.name), "_blank")}>
+                  <Button variant="ghost" size="icon" onClick={() => openSignedUrl(doc.name)}>
                     <Download className="h-4 w-4" />
                   </Button>
                 </div>

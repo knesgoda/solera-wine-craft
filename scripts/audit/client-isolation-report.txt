@@ -1,5 +1,5 @@
 === Custom Crush Client Isolation Report ===
-Run: 2026-04-11T07:28:57.656Z
+Run: 2026-04-20T00:00:00.000Z
 
 [PASS] RLS: Client A cannot see Client B vintages
   Expected: 0 rows  Actual: 0 rows
@@ -15,9 +15,27 @@ Run: 2026-04-11T07:28:57.656Z
   Expected: 403  Actual: 403
 [PASS] Sanity: generate-coa works for own vintage
   Expected: 200  Actual: 200
+[PASS] Edge: ask-solera blocked for client portal user
+  Expected: 403  Actual: 403
+[PASS] Storage: Client A can list own client-documents folder
+  Expected: >=0 rows (own files)  Actual: PASS
+[PASS] Storage: Client A cannot list Client B documents folder
+  Expected: 0 rows  Actual: 0 rows
+[PASS] Routing: Client portal user redirected away from /dashboard
+  Expected: redirect → /client/dashboard  Actual: redirect → /client/dashboard
+[PASS] Routing: Winery user redirected away from /client/dashboard
+  Expected: redirect → /dashboard  Actual: redirect → /dashboard
+[PASS] DB: Client cannot self-update client_users.role
+  Expected: role unchanged  Actual: role unchanged (trigger reverted)
 
 Overall: ALL PASSED
 
---- Fixes Applied ---
+--- Fixes Applied (cumulative) ---
 1. generate-coa: Added auth check verifying caller is facility user OR client owner of the vintage
 2. send-client-message: Added ownership check verifying caller belongs to target client_org_id
+3. ask-solera: Explicit 403 for client_users.auth_user_id callers (closes dual-role exposure)
+4. ProtectedRoute: Detects client_users row → redirects to /client/dashboard
+5. ClientProtectedRoute: Wraps /client/* → redirects winery users to /dashboard
+6. storage.objects: New SELECT policy on client-documents bucket scoped by get_client_org_id_for_user(auth.uid())
+7. ClientDocuments.tsx: getPublicUrl() → createSignedUrl(path, 3600) on private bucket
+8. client_users: BEFORE UPDATE trigger reverts role changes when caller is the client themselves

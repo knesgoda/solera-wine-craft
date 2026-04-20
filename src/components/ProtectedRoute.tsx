@@ -2,11 +2,30 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading, organization, profile, authError, refreshProfile } = useAuth();
   const [timedOut, setTimedOut] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const [clientCheck, setClientCheck] = useState<"pending" | "winery" | "client">("pending");
+
+  // P0: Detect client portal users and redirect them to the client portal.
+  // Prevents dual-role/legacy accounts from rendering winery routes.
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) { setClientCheck("pending"); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("client_users")
+        .select("id")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      setClientCheck(data ? "client" : "winery");
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   // 6-second timeout for org loading
   useEffect(() => {
@@ -28,6 +47,8 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
   }
 
   if (!user) return <Navigate to="/login" replace />;
+
+  if (clientCheck === "client") return <Navigate to="/client/dashboard" replace />;
 
   // Show error state if auth failed or timed out
   if (authError || timedOut) {
