@@ -272,6 +272,21 @@ serve(async (req) => {
       throw new Error("Unauthorized");
     }
 
+    // P0: Reject client portal users — Ask Solera is winery-only.
+    // This prevents dual-role accounts from reading full winery context via the client session.
+    const { data: clientUserRow } = await serviceClient
+      .from("client_users")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+    if (clientUserRow) {
+      console.warn(`ask-solera blocked: caller ${user.id} is a client portal user`);
+      return new Response(
+        JSON.stringify({ error: "Ask Solera is not available from the client portal." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Get user org
     const { data: profile } = await serviceClient
       .from("profiles")
