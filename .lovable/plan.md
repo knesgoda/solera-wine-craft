@@ -1,77 +1,60 @@
 
 
-## Tier Enforcement Diagnostic Report
+## Ask Solera AI Handler Diagnostic
 
-### 1. The four recognized tier values
+**File:** `supabase/functions/ask-solera/index.ts`
 
-Defined in `src/hooks/useTierGate.ts` line 13 and `src/lib/tier-access.ts` line 1:
+### 1. Org-specific data injected into the system prompt
 
-```ts
-TIER_ORDER = ["hobbyist", "small_boutique", "mid_size", "enterprise"]
-```
+The `buildWineryContext()` function (lines 10–252) injects:
 
-Display names (line 5–10): Hobbyist → **Pro** (small_boutique) → **Growth** (mid_size) → Enterprise.
+- Organization name, type, tier
+- Active vintages (planned, in_progress, harvested, in_cellar) with latest lab data per vintage — Brix, pH, TA, VA, Free/Total SO₂, Alcohol, RS
+- Vineyards and active blocks (variety, clone, rootstock, lifecycle stage, acres) plus latest cumulative GDD per vineyard
+- Fermentation vessels (material, capacity, current contents) with latest fermentation log (Brix, temp)
+- Filled barrels grouped by cooperage/toast/type
+- Tasks: open/overdue and recently completed (last 30 days)
+- Weather summary (last 30 days): avg high/low, precip, GDD accumulated
+- TTB additions (last 30 days)
+- Recent lab samples (last 10)
+- Active alert rule thresholds
+- Unresolved anomaly flags (last 10)
 
-The DB function `org_has_tier(_org_id, _min_tier)` (in `db-functions`) recognizes the same four values.
+All injected into the **system** field of the Anthropic request (line 316), not the user message.
 
-### 2. Client-side vs server-side enforcement
+### 2. Cross-org data leakage risk — SAFE
 
-**Both, but unevenly.**
+The handler establishes the org boundary correctly:
+- Auth header verified via `anonClient.auth.getUser()` (line 269) — rejects unauthenticated requests
+- `profile.org_id` looked up from the authenticated user (lines 276–281)
+- Throws if no org is found (line 281)
+- Every query in `buildWineryContext` filters by either `.eq("org_id", orgId)` directly OR `.in("vintage_id", vintageIds)` / `.in("vineyard_id", vineyards.map(...))` where the parent IDs were themselves scoped to `orgId` first
 
-- **Client-side** — `useTierGate` hook + `<TierGate>` / `<GrowthTierGate>` wrappers in `src/App.tsx` routes and component-level checks. Reads `organization.tier` + `subscription_status` from `AuthContext`. Falls back to `"hobbyist"` if subscription is not `active` / `trialing` (`useTierGate.ts` lines 25–29).
-- **Server-side (RLS)** — implemented for Growth-tier (`mid_size`) tables only, in migration `20260411071545_*.sql`. Covers exactly these tables, all gated to `mid_size`:
-  - `cost_entries`, `cost_categories`, `lot_cost_summaries`
-  - `blending_trials`, `blending_trial_lots`
-  - (19 policies total, all using `org_has_tier(org_id, 'mid_size')`)
-- **No server-side tier check** exists on Pro-tier tables (`skus`, `orders`, `customers`, `wine_clubs`, `club_shipments`, `inventory_items`, `fermentation_vessels`, `barrels`) or on Enterprise tables (`growers`, `grower_contracts`, `weigh_tags`, `audit_logs`, `facilities`, `sso_*`).
-- **Edge functions** — `paddle-webhook` is the source of truth for setting `organizations.tier`, but per-request edge functions (e.g. `extract-handwritten-notes`, `generate-ttb-report`, `ask-solera`) do **not** re-validate tier before doing work.
+The function uses the **service role client** to bypass RLS, so isolation depends entirely on the explicit org filters in code. I checked all 12 queries — every one is scoped. No leakage path found.
 
-### 3. Three Pro-or-higher (`small_boutique`+) gates — exact locations
+Minor note: `req.json()` accepts a `conversationId` (line 283) but never validates it belongs to `profile.org_id`. It is currently only logged, not queried, so no leakage today, but if conversation history is ever loaded by ID it would need an org check.
 
-| Feature | File | Line | Gate |
-|---|---|---|---|
-| Cellar Management (route) | `src/App.tsx` | **189** | `<TierGate requiredTier="small_boutique" featureName="Cellar Management"><CellarDashboard /></TierGate>` |
-| Inventory Management (route) | `src/App.tsx` | **206** | `<TierGate requiredTier="small_boutique" featureName="Inventory Management"><InventoryList /></TierGate>` |
-| Wine Club (route) | `src/App.tsx` | **212** | `<TierGate requiredTier="small_boutique" featureName="Wine Club"><ClubList /></TierGate>` |
+### 3. Model string
 
-Bonus Pro gate inside a component: `src/components/import/QuickCaptureDialog.tsx` line 26 (`useTierGate("small_boutique")`) — gates the multi-page scan toggle for handwritten imports.
+`"claude-sonnet-4-20250514"` (line 314) — Claude Sonnet 4
 
-### 4. URL manipulation risk — Hobbyist accessing Pro features
+### 4. max_tokens
 
-**Yes, a partial gap exists for Pro-tier (`small_boutique`) features only.** Growth (`mid_size`) tables are safe.
+`4096` (line 315)
 
-#### Safe (defense in depth):
-- All `mid_size+` features (Cost tracking, Blending trials, Reports Builder, Analog Explorer, Ask Solera). Even if a Hobbyist bypasses `<GrowthTierGate>`, the RLS policy `org_has_tier(org_id, 'mid_size')` rejects every SELECT/INSERT/UPDATE/DELETE. The page would render an empty shell, no data leakage or writes.
+### 5. Anthropic API key storage
 
-#### Vulnerable (client-side gate only):
-A determined Hobbyist who bypasses the `<TierGate requiredTier="small_boutique">` React wrapper (e.g. by editing the bundle, monkey-patching `useTierGate`, or directly calling Supabase from devtools) **could** read/write the following tables, because their RLS only checks `org_id`, not tier:
+Env var: `Deno.env.get("ANTHROPIC_API_KEY")` (line 286). Confirmed present in the project secrets list. **Not** in Supabase Vault — stored as a standard Edge Function secret, which is the standard pattern for this project (matches `RESEND_API_KEY`, `PADDLE_API_KEY`, etc.).
 
-- `/cellar`, `/cellar/vessels/*`, `/cellar/barrels`, `/cellar/blending` → `fermentation_vessels`, `barrels` tables
-- `/inventory`, `/inventory/:skuId` → `skus`, `sku_inventory` tables
-- `/orders`, `/customers` → `orders`, `customers` tables
-- `/club`, `/club/:clubId`, `/club/shipments` → `wine_clubs`, `club_memberships`, `club_shipments` tables
+### Summary
 
-Note: this requires bypassing the React UI; the routes themselves render the gate component on normal navigation. But there is no server-side trapdoor.
+| Check | Result |
+|---|---|
+| Org-data injection | ✅ Comprehensive (12 data domains) |
+| Cross-org leakage | ✅ Safe — every query scoped to authenticated org |
+| Model | `claude-sonnet-4-20250514` |
+| max_tokens | `4096` |
+| API key storage | Edge Function env var (`ANTHROPIC_API_KEY`) |
 
-#### Enterprise-tier gaps:
-Same pattern — `/growers/*`, `/settings/sso`, `/settings/api`, `/settings/audit`, `/settings/facilities`, `/settings/alerts/sms` all use `<TierGate requiredTier="enterprise">` but the underlying tables (`growers`, `grower_contracts`, `weigh_tags`, `audit_logs`, `facilities`, `sso_configurations`, `sms_settings`) have RLS scoped only to `org_id`, not tier.
-
-### Summary table
-
-| Tier | Client gate | Server RLS tier check | URL-bypass safe? |
-|---|---|---|---|
-| Pro (`small_boutique`) | ✅ `<TierGate>` on 11 routes | ❌ None | ⚠️ No |
-| Growth (`mid_size`) | ✅ `<GrowthTierGate>` on 7 routes | ✅ 19 policies | ✅ Yes |
-| Enterprise | ✅ `<TierGate>` on 14 routes | ❌ None | ⚠️ No |
-
-### Recommended fix (not applied — diagnostic only)
-
-Add migrations modelled on `20260411071545_*.sql` that wrap RLS policies on Pro-tier and Enterprise-tier tables with `org_has_tier(org_id, 'small_boutique')` and `org_has_tier(org_id, 'enterprise')` respectively. This closes the URL/devtools bypass without changing any client code.
-
-One-line example for `skus`:
-```sql
-CREATE POLICY "Users can view skus" ON public.skus
-  FOR SELECT TO authenticated
-  USING (org_id = get_user_org_id(auth.uid()) AND org_has_tier(org_id, 'small_boutique'));
-```
+No fixes required.
 
