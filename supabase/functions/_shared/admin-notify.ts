@@ -1,10 +1,12 @@
 /**
  * Shared admin notification utility.
- * Sends plain-text emails to the configured ADMIN_EMAIL via Resend.
- * Fire-and-forget — never throws, only logs errors.
+ * Sends branded emails to ADMIN_EMAIL via the queue-backed transactional
+ * email pipeline (retry on 429, suppression respected, audit-logged).
+ * Fire-and-forget — never throws.
  */
+import { sendTransactionalEmail } from "./send-email.ts";
 
-const ADMIN_EMAIL_SELF = "kevin@solera.vin"; // used to suppress self-notifications
+const ADMIN_EMAIL_SELF = "kevin@solera.vin";
 
 export async function sendAdminNotification(
   subject: string,
@@ -12,14 +14,7 @@ export async function sendAdminNotification(
   actorEmail?: string
 ): Promise<void> {
   try {
-    // Skip notifications triggered by the admin themselves
     if (actorEmail && actorEmail.toLowerCase() === ADMIN_EMAIL_SELF.toLowerCase()) {
-      return;
-    }
-
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!RESEND_API_KEY) {
-      console.error("[admin-notify] RESEND_API_KEY not configured");
       return;
     }
 
@@ -29,25 +24,17 @@ export async function sendAdminNotification(
       return;
     }
 
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: "Solera Notifications <notifications@solera.vin>",
-        to: [ADMIN_EMAIL],
-        subject: `[Solera] ${subject}`,
-        text: body,
-      }),
-    });
+    // Idempotency key: subject + actor + minute bucket prevents same-event dupes
+    const minuteBucket = Math.floor(Date.now() / 60000);
+    const idempotencyKey = `admin-${minuteBucket}-${(actorEmail || "system")}-${subject}`.slice(0, 255);
 
-    if (!res.ok) {
-      const errBody = await res.text();
-      console.error(`[admin-notify] Resend error [${res.status}]: ${errBody}`);
-    }
+    await sendTransactionalEmail(
+      ADMIN_EMAIL,
+      "admin-notify",
+      { subject, body },
+      idempotencyKey
+    );
   } catch (err) {
-    console.error("[admin-notify] Failed to send:", err);
+    console.error("[admin-notify] Failed:", err);
   }
 }
