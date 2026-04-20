@@ -25,9 +25,32 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
 
+    // Signed URL TTL = 7 days (was 1h, persisted URLs went stale)
+    const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
+
+    // On-demand refresh of an existing report's signed URL using stored pdf_path
+    if (body.type === "refresh_url" && body.report_id) {
+      const { data: rep } = await supabaseAdmin
+        .from("ttb_reports")
+        .select("pdf_path, org_id")
+        .eq("id", body.report_id)
+        .eq("org_id", orgId)
+        .maybeSingle();
+      if (!rep?.pdf_path) throw new Error("No stored report file to refresh");
+      const { data: signed, error: signErr } = await supabaseAdmin.storage
+        .from("ttb-reports")
+        .createSignedUrl(rep.pdf_path, SIGNED_URL_TTL_SECONDS);
+      if (signErr || !signed?.signedUrl) throw new Error(`Failed to sign URL: ${signErr?.message || "unknown"}`);
+      await supabaseAdmin.from("ttb_reports").update({ pdf_url: signed.signedUrl }).eq("id", body.report_id);
+      return new Response(JSON.stringify({ success: true, pdf_url: signed.signedUrl }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Export additions log
     if (body.type === "additions_log") {
       const { from, to } = body;
+      if (!from || !to) throw new Error("Missing 'from' or 'to' date");
       const { data: additions } = await supabaseAdmin
         .from("ttb_additions")
         .select("*, vintages(year, blocks(name))")
@@ -36,12 +59,19 @@ Deno.serve(async (req) => {
         .lte("added_at", to)
         .order("added_at");
 
+      // P0: Empty-state validation — refuse to generate empty reports
+      if (!additions || additions.length === 0) {
+        return new Response(JSON.stringify({
+          error: "No TTB additions found in the selected period. Log additions in Vintage Detail before exporting.",
+        }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       const html = `<html><body style="font-family:sans-serif;padding:40px;">
         <h1>TTB Additions Log</h1>
         <p><strong>Period:</strong> ${from} to ${to}</p>
         <table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse;width:100%;">
           <tr><th>Date</th><th>Vintage</th><th>Type</th><th>TTB Code</th><th>Amount</th><th>Unit</th><th>Batch (gal)</th><th>Notes</th></tr>
-          ${(additions || []).map((a: any) => `<tr>
+          ${additions.map((a: any) => `<tr>
             <td>${a.added_at?.split("T")[0]}</td>
             <td>${a.vintages?.year || "—"} ${a.vintages?.blocks?.name || ""}</td>
             <td>${a.addition_type}</td>
@@ -56,11 +86,23 @@ Deno.serve(async (req) => {
       </body></html>`;
 
       const fileName = `additions_log_${from}_${to}.html`;
-      await supabaseAdmin.storage.from("ttb-reports").upload(`${orgId}/${fileName}`, new TextEncoder().encode(html), { contentType: "text/html", upsert: true });
+      const storagePath = `${orgId}/${fileName}`;
+      await supabaseAdmin.storage.from("ttb-reports").upload(storagePath, new TextEncoder().encode(html), { contentType: "text/html", upsert: true });
       const { data: signed, error: signErr } = await supabaseAdmin.storage
         .from("ttb-reports")
-        .createSignedUrl(`${orgId}/${fileName}`, 60 * 60);
+        .createSignedUrl(storagePath, SIGNED_URL_TTL_SECONDS);
       if (signErr || !signed?.signedUrl) throw new Error(`Failed to sign URL: ${signErr?.message || "unknown"}`);
+
+      // P2: Audit row for additions log exports
+      await supabaseAdmin.from("ttb_export_log").insert({
+        org_id: orgId,
+        exported_by: userId,
+        export_type: "additions_log",
+        period_start: from,
+        period_end: to,
+        row_count: additions.length,
+        storage_path: storagePath,
+      });
 
       return new Response(JSON.stringify({ success: true, pdf_url: signed.signedUrl }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -74,6 +116,25 @@ Deno.serve(async (req) => {
 
     const { data: bondInfo } = await supabaseAdmin.from("ttb_bond_info").select("*").eq("org_id", orgId).maybeSingle();
     const { data: operations } = await supabaseAdmin.from("ttb_wine_premise_operations").select("*").eq("report_id", report_id).order("wine_type");
+
+    // P0: Preflight validation — refuse to render OW-1 with missing compliance data
+    const missing: string[] = [];
+    if (!bondInfo) {
+      missing.push("Bond information (BWN, Proprietor, Registry, Premises, Bond Number) — configure in Compliance Settings");
+    } else {
+      if (!bondInfo.bonded_winery_number) missing.push("Bonded Wine Premises Number (BWN)");
+      if (!bondInfo.proprietor_name) missing.push("Proprietor Name");
+      if (!bondInfo.bond_number) missing.push("Bond Number");
+    }
+    if (!operations || operations.length === 0) {
+      missing.push("Wine premise operations (no rows for this report)");
+    }
+    if (missing.length > 0) {
+      return new Response(JSON.stringify({
+        error: "Cannot generate OW-1: required compliance data is missing.",
+        missing,
+      }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     const wineTypeLabels: Record<string, string> = {
       still_table_wine: "Still Table Wine",
@@ -375,13 +436,16 @@ Deno.serve(async (req) => {
 </html>`;
 
     const fileName = `ow1_${report.report_period_start}_${report.report_period_end}.html`;
-    await supabaseAdmin.storage.from("ttb-reports").upload(`${orgId}/${fileName}`, new TextEncoder().encode(html), { contentType: "text/html", upsert: true });
+    const storagePath = `${orgId}/${fileName}`;
+    await supabaseAdmin.storage.from("ttb-reports").upload(storagePath, new TextEncoder().encode(html), { contentType: "text/html", upsert: true });
     const { data: signed, error: signErr } = await supabaseAdmin.storage
       .from("ttb-reports")
-      .createSignedUrl(`${orgId}/${fileName}`, 60 * 60);
+      .createSignedUrl(storagePath, SIGNED_URL_TTL_SECONDS);
     if (signErr || !signed?.signedUrl) throw new Error(`Failed to sign URL: ${signErr?.message || "unknown"}`);
 
-    await supabaseAdmin.from("ttb_reports").update({ pdf_url: signed.signedUrl, status: "ready" }).eq("id", report_id);
+    await supabaseAdmin.from("ttb_reports")
+      .update({ pdf_url: signed.signedUrl, pdf_path: storagePath, status: "ready" })
+      .eq("id", report_id);
 
     return new Response(JSON.stringify({ success: true, pdf_url: signed.signedUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

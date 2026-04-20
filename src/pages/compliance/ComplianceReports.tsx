@@ -221,13 +221,41 @@ export default function ComplianceReports() {
     setGeneratingPdf(reportId);
     try {
       const { data, error } = await supabase.functions.invoke("generate-ttb-report", { body: { report_id: reportId } });
-      if (error) throw error;
+      if (error) {
+        // Surface preflight 422 with missing-fields list
+        const ctx: any = (error as any).context;
+        const payload = ctx?.body ? (typeof ctx.body === "string" ? JSON.parse(ctx.body) : ctx.body) : data;
+        if (payload?.missing?.length) {
+          toast.error(`${payload.error}\n• ${payload.missing.join("\n• ")}`, { duration: 8000 });
+          setGeneratingPdf(null);
+          return;
+        }
+        throw error;
+      }
       toast.success("PDF generated");
       fetchReports();
     } catch (e: any) {
       toast.error(e.message || "Failed to generate PDF");
     }
     setGeneratingPdf(null);
+  };
+
+  const handleOpenReport = async (r: any) => {
+    // Always regenerate signed URL via refresh_url so links never go stale
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-ttb-report", {
+        body: { type: "refresh_url", report_id: r.id },
+      });
+      if (error || !data?.pdf_url) {
+        // Fallback to stored URL
+        if (r.pdf_url) window.open(r.pdf_url, "_blank");
+        else toast.error("Could not open report");
+        return;
+      }
+      window.open(data.pdf_url, "_blank");
+    } catch {
+      if (r.pdf_url) window.open(r.pdf_url, "_blank");
+    }
   };
 
   const handleMarkSubmitted = async (reportId: string) => {
@@ -243,7 +271,16 @@ export default function ComplianceReports() {
       const { data, error } = await supabase.functions.invoke("generate-ttb-report", {
         body: { type: "additions_log", from: additionsStart, to: additionsEnd },
       });
-      if (error) throw error;
+      if (error) {
+        const ctx: any = (error as any).context;
+        const payload = ctx?.body ? (typeof ctx.body === "string" ? JSON.parse(ctx.body) : ctx.body) : data;
+        if (payload?.error) {
+          toast.error(payload.error, { duration: 6000 });
+          setExportingAdditions(false);
+          return;
+        }
+        throw error;
+      }
       if (data?.pdf_url) window.open(data.pdf_url, "_blank");
       toast.success("Additions log exported");
       setAdditionsDialogOpen(false);
@@ -378,7 +415,7 @@ export default function ComplianceReports() {
                     <TableCell>{r.submitted_at ? format(new Date(r.submitted_at), "MMM d, yyyy") : "—"}</TableCell>
                     <TableCell className="text-right space-x-2">
                       {r.pdf_url ? (
-                        <Button size="sm" variant="outline" onClick={() => window.open(r.pdf_url, "_blank")}>
+                        <Button size="sm" variant="outline" onClick={() => handleOpenReport(r)}>
                           <Download className="h-3 w-3 mr-1" /> PDF
                         </Button>
                       ) : (
