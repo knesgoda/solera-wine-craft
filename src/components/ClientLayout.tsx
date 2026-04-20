@@ -35,15 +35,31 @@ export default function ClientLayout() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const { data: clientUser } = useQuery({
+  const { data: clientUser, isLoading: clientUserLoading, isError: clientUserError } = useQuery({
     queryKey: ["client-user", userId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("client_users").select("*, client_orgs(name)").eq("auth_user_id", userId!).single();
+      const { data, error } = await supabase
+        .from("client_users")
+        .select("*, client_orgs(name)")
+        .eq("auth_user_id", userId!)
+        .maybeSingle();
       if (error) throw error;
       return data as any;
     },
     enabled: !!userId,
+    retry: false,
   });
+
+  // P0: If the authenticated user has no client_users row, they are not a client
+  // portal user — sign them out and bounce to /login. Prevents a winery user
+  // from landing on /client/* and seeing an empty/broken portal shell.
+  useEffect(() => {
+    if (!userId) return;
+    if (clientUserLoading) return;
+    if (clientUserError || clientUser === null) {
+      supabase.auth.signOut().finally(() => navigate("/login", { replace: true }));
+    }
+  }, [userId, clientUserLoading, clientUserError, clientUser, navigate]);
 
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ["client-unread", clientUser?.client_org_id],
