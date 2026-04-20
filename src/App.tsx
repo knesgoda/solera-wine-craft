@@ -68,6 +68,7 @@ import WeighTagDetail from "./pages/growers/WeighTagDetail";
 import ClientList from "./pages/clients/ClientList";
 import ClientDetail from "./pages/clients/ClientDetail";
 import ClientLayout from "./components/ClientLayout";
+import { ClientProtectedRoute } from "./components/ClientProtectedRoute";
 import ClientLogin from "./pages/client/ClientLogin";
 import ClientSignup from "./pages/client/ClientSignup";
 import ClientDashboard from "./pages/client/ClientDashboard";
@@ -241,7 +242,7 @@ const App = () => (
             {/* Client Portal Routes */}
             <Route path="/client/login" element={<ClientLogin />} />
             <Route path="/client/signup" element={<ClientSignup />} />
-            <Route path="/client" element={<ClientLayout />}>
+            <Route path="/client" element={<ClientProtectedRoute><ClientLayout /></ClientProtectedRoute>}>
               <Route path="dashboard" element={<ClientDashboard />} />
               <Route path="vintages" element={<ClientVintagesList />} />
               <Route path="vintages/:vintageId" element={<ClientVintageDetail />} />
