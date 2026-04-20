@@ -57,9 +57,12 @@ Deno.serve(async (req) => {
 
       const fileName = `additions_log_${from}_${to}.html`;
       await supabaseAdmin.storage.from("ttb-reports").upload(`${orgId}/${fileName}`, new TextEncoder().encode(html), { contentType: "text/html", upsert: true });
-      const { data: urlData } = supabaseAdmin.storage.from("ttb-reports").getPublicUrl(`${orgId}/${fileName}`);
+      const { data: signed, error: signErr } = await supabaseAdmin.storage
+        .from("ttb-reports")
+        .createSignedUrl(`${orgId}/${fileName}`, 60 * 60);
+      if (signErr || !signed?.signedUrl) throw new Error(`Failed to sign URL: ${signErr?.message || "unknown"}`);
 
-      return new Response(JSON.stringify({ success: true, pdf_url: urlData.publicUrl }), {
+      return new Response(JSON.stringify({ success: true, pdf_url: signed.signedUrl }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
