@@ -1,56 +1,70 @@
 
-Diagnostic only — no code changes. I have all the data needed from `vite.config.ts`, `src/main.tsx`, and the offline sync files already in context.
 
-## PWA / Service Worker Diagnostic
+## FK Cascade Diagnostic — Vineyard & Org Deletion
 
-**Files:** `vite.config.ts` (VitePWA config), `src/main.tsx` (registration), `src/hooks/useOfflineSync.ts` + `src/lib/syncQueue.ts` + `src/lib/syncFlush.ts` (offline write queue), `src/components/OfflineBanner.tsx` (offline UX).
+**Source:** Live `pg_constraint` queries against the production schema, cross-checked against `scripts/audit/cascade-delete-report.txt`.
 
-### 1. What is cached for offline access
+---
 
-**App shell (precache):** Default Workbox precache via `registerType: "autoUpdate"` — all built JS/CSS bundles, `index.html`, plus `includeAssets` (`favicon.png`, `icon-192.png`, `icon-512.png`). `maximumFileSizeToCacheInBytes: 5 * 1024 * 1024` (5 MB cap per asset).
+### PATH 1 — Delete a vineyard
 
-**Runtime data caches** (via `runtimeCaching` rules, all keyed by URL pattern against Supabase REST):
-
-| URL pattern | Strategy | Cache name | Max entries | Max age |
-|---|---|---|---|---|
-| `/rest/v1/tasks` | NetworkFirst | tasks-cache | 100 | 24 h |
-| `/rest/v1/lab_samples` | NetworkFirst | lab-cache | 200 | 24 h |
-| `/rest/v1/blocks` | StaleWhileRevalidate | blocks-cache | 100 | 24 h |
-| `/rest/v1/vintages` | StaleWhileRevalidate | vintages-cache | 100 | 24 h |
-
-### 2. Strategies used
-
-- **App shell**: precache + `autoUpdate` → effectively **cache-first** for all built assets, with background update on next load.
-- **Tasks & lab samples (mutable, time-sensitive)**: **NetworkFirst** — try network, fall back to cache when offline.
-- **Blocks & vintages (slow-changing reference data)**: **StaleWhileRevalidate** — serve cache immediately, refresh in background.
-
-### 3. Offline coverage of the four key tables
-
-| Table | Cached? | Strategy |
+| Relationship | Rule | Notes |
 |---|---|---|
-| `lab_samples` | ✅ Yes | NetworkFirst, 24 h |
-| `blocks` | ✅ Yes | StaleWhileRevalidate, 24 h |
-| `vintages` | ✅ Yes | StaleWhileRevalidate, 24 h |
-| `tasks` | ✅ Yes | NetworkFirst, 24 h |
+| `vineyards` ← `blocks.vineyard_id` | **CASCADE** | ✅ blocks deleted with vineyard |
+| `blocks` ← `vintages.block_id` | **SET NULL** | ⚠️ vintages survive, lose block link |
+| `blocks` ← `lab_samples.block_id` | **NO ACTION** | 🔴 **delete blocks if any lab_sample references them** |
+| `blocks` ← `tasks.block_id` | **SET NULL** | ⚠️ tasks survive unlinked |
+| `vintages` ← `lab_samples.vintage_id` | **CASCADE** | ✅ (irrelevant here, vintages aren't deleted) |
+| `vintages` ← `ttb_additions.vintage_id` | **CASCADE** | ✅ (irrelevant here) |
+| `vintages` / `blocks` ← `vintage_milestones.*` | **N/A** | ℹ️ Table does not exist in the schema |
+| `vineyards` ← `tasks.*` | **No FK** | ℹ️ tasks have no `vineyard_id`; only `block_id` (SET NULL) and `org_id` (CASCADE) |
 
-All four are cached. Note: cache key is the full URL including query string, so a page that issues a different `select=` / `order=` / filter combo than the cached one will miss cache and fail offline. Only the exact previously-fetched query is replayable offline.
+**Effective behavior:** Deleting a vineyard cascades to its blocks. But:
+- 🔴 If any `lab_samples` row references one of those blocks via `block_id`, the cascade will **fail with FK violation** (NO ACTION = block-the-delete). Lab samples would need to be reassigned or deleted manually first.
+- ⚠️ Vintages and tasks linked to those blocks survive as orphans (`block_id` set to NULL) — historically defensible (preserve harvest record after vineyard removal) but worth flagging.
 
-### 4. Offline navigation to an uncached route
+---
 
-**Gap found.** The Workbox config has `navigateFallbackDenylist: [/^\/~oauth/]` but **no `navigateFallback`** is defined. With `registerType: "autoUpdate"` and Vite SPA, behavior is:
+### PATH 2 — Delete an organization
 
-- **Previously visited route (HTML in precache via `index.html`)**: Service worker serves the precached `index.html`, React Router takes over, and `OfflineBanner` shows the red "You're offline" bar at the top. Page renders if its data dependencies are in the runtime caches above; otherwise queries fail and component error/empty states render.
-- **Never-visited route or hard refresh of an arbitrary path while offline**: Because there is no explicit `navigateFallback: "index.html"`, the request can fall through to the network and produce the **browser's default offline error page** (Chrome's "No internet" dino, Safari "You are not connected to the Internet"). Not a graceful in-app offline screen.
+| Relationship | Rule | Notes |
+|---|---|---|
+| `organizations` ← `vineyards.org_id` | **CASCADE** | ✅ → triggers Path 1 sub-cascade |
+| `organizations` ← `vintages.org_id` | **CASCADE** | ✅ → cascades to `lab_samples`, `ttb_additions` |
+| `organizations` ← `profiles.org_id` | **CASCADE** | ✅ users-in-org wiped |
+| `organizations` ← `tasks.org_id` | **CASCADE** | ✅ |
+| `organizations` ← `growers.org_id` | **CASCADE** | ✅ |
+| `organizations` ← `grower_contracts.org_id` | **CASCADE** | ✅ → cascades to `weigh_tags`, `contract_block_assignments`, `grading_scales` |
+| `organizations` ← `client_orgs.parent_org_id` | **CASCADE** | ✅ → cascades to `client_users`, `client_messages`, `client_invite_tokens` |
+| `organizations` ← `alert_rules.org_id` | **NO ACTION** | 🔴 blocks org delete |
+| `organizations` ← `notifications.org_id` | **NO ACTION** | 🔴 blocks org delete |
+| `organizations` ← `customers.org_id` | **NO ACTION** | 🔴 blocks org delete |
+| `organizations` ← `orders.org_id` | **NO ACTION** | 🔴 blocks org delete |
+| `organizations` ← `wine_clubs.org_id` | **NO ACTION** | 🔴 blocks org delete |
+| `organizations` ← `club_members.org_id` | **NO ACTION** | 🔴 blocks org delete |
+| `organizations` ← `club_shipments.org_id` | **NO ACTION** | 🔴 blocks org delete |
+| `auth.users` ← `referrals.referrer_user_id` | **CASCADE** | ✅ tied to user, not org directly |
+| `auth.users` ← `referrals.referred_user_id` | **SET NULL** | ⚠️ preserves history of who-converted |
 
-There is **no dedicated `/offline.html`** fallback page and **no React-level "route uncached" boundary**. Offline UX relies entirely on:
-1. The precached `index.html` being served for navigations (works for SPA deep-links only if Workbox's default `NavigationRoute` matches, which it does when `registerType: "autoUpdate"` injects the precache manifest — usually fine, but fragile).
-2. The `OfflineBanner` component, which only renders inside `AppLayout` (authenticated routes). Unauthenticated/marketing routes get no offline banner.
+**Effective behavior:** `cancellation-backups` flow + the cascade audit report confirm this works in practice **only because the application manually clears the NO ACTION tables first** (alert_rules, notifications) before issuing `DELETE FROM organizations`. Without that manual cleanup, org deletion fails.
 
-### Recommended fixes (not applied)
+---
 
-1. Add `workbox.navigateFallback: "index.html"` and `navigateFallbackAllowlist: [/^(?!\/api).*/]` to guarantee the SPA shell is served for any navigation while offline.
-2. Optionally add a static `/offline.html` for the rare case the precache itself is unavailable.
-3. Consider extending runtime caching to `vineyards`, `fermentation_vessels`, `fermentation_logs` if those views need offline reads.
-4. Document the query-string cache-key limitation, or normalize Supabase queries (consistent `select`, `order`) so offline replay reliably hits cache.
+### Flagged issues
 
-No code changes performed.
+| # | Severity | Finding |
+|---|---|---|
+| 1 | 🔴 High | `lab_samples.block_id` → `blocks` is **NO ACTION**. Deleting a vineyard with blocks that have lab samples will fail. Should be **CASCADE** (samples make no sense without their block) or **SET NULL** (preserve historical chemistry, drop spatial link). |
+| 2 | 🟡 Medium | Seven org-children use **NO ACTION** instead of CASCADE: `alert_rules`, `notifications`, `customers`, `orders`, `wine_clubs`, `club_members`, `club_shipments`. Per `mem://database/deletion-constraints` this is intentional ("manual clear before org delete") but it means org deletion is **not** atomic — any code path that issues a raw `DELETE FROM organizations` without the cleanup script will fail. Risk: future devs / direct SQL / admin tooling. |
+| 3 | 🟡 Medium | `vintages.block_id` and `tasks.block_id` use **SET NULL** when their parent block is deleted. Acceptable for historical preservation, but creates orphans with no UI to repair them. Audit log or pre-delete warning would help. |
+| 4 | 🟢 Info | `referrals.referred_user_id` → `auth.users` uses **SET NULL**. Correct: preserves credit history when a referred user closes their account. |
+| 5 | 🟢 Info | `vintage_milestones` referenced in the question **does not exist** as a table in this schema. (Vintage state transitions are tracked on the `vintages` row itself, not in a separate audit table.) |
+
+---
+
+### Recommended fixes (not applied — diagnostic only)
+
+1. **Fix Path 1 break:** Change `lab_samples_block_id_fkey` from NO ACTION to **SET NULL** (preserves chemistry history; matches `vintages.block_id` and `tasks.block_id` pattern). One-line migration.
+2. **Decide Path 2 atomicity:** Either (a) flip the seven NO ACTION org-children to CASCADE so `DELETE FROM organizations` is atomic, or (b) keep current behavior but **document and centralize** the manual-cleanup step in a single `delete_organization_safely(org_id)` SECURITY DEFINER function so no caller ever skips it.
+3. **Add a periodic orphan-detection script** to `scripts/audit/` that flags vintages/tasks with NULL `block_id` for review — currently invisible after a vineyard deletion.
+
