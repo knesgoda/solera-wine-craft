@@ -33,7 +33,8 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        navigateFallbackDenylist: [/^\/~oauth/],
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/api/, /^\/functions/],
         runtimeCaching: [
           {
             urlPattern: /\/rest\/v1\/tasks/,
