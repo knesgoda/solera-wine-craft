@@ -4451,6 +4451,50 @@ export type Database = {
           },
         ]
       }
+      ttb_export_log: {
+        Row: {
+          created_at: string
+          export_type: string
+          exported_by: string | null
+          id: string
+          org_id: string
+          period_end: string | null
+          period_start: string | null
+          row_count: number
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          export_type: string
+          exported_by?: string | null
+          id?: string
+          org_id: string
+          period_end?: string | null
+          period_start?: string | null
+          row_count?: number
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          export_type?: string
+          exported_by?: string | null
+          id?: string
+          org_id?: string
+          period_end?: string | null
+          period_start?: string | null
+          row_count?: number
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ttb_export_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ttb_reports: {
         Row: {
           created_at: string
@@ -4458,6 +4502,7 @@ export type Database = {
           id: string
           notes: string | null
           org_id: string
+          pdf_path: string | null
           pdf_url: string | null
           report_period_end: string
           report_period_start: string
@@ -4471,6 +4516,7 @@ export type Database = {
           id?: string
           notes?: string | null
           org_id: string
+          pdf_path?: string | null
           pdf_url?: string | null
           report_period_end: string
           report_period_start: string
@@ -4484,6 +4530,7 @@ export type Database = {
           id?: string
           notes?: string | null
           org_id?: string
+          pdf_path?: string | null
           pdf_url?: string | null
           report_period_end?: string
           report_period_start?: string
