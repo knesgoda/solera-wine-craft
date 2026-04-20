@@ -1,78 +1,116 @@
 
 
-## TTB Report Generator Diagnostic
+## Custom Crush Client Portal Isolation — Diagnostic
 
-**File:** `supabase/functions/generate-ttb-report/index.ts`
-**Storage bucket:** `ttb-reports` (private, per `<storage-buckets>`)
-**Config:** `[functions.generate-ttb-report] verify_jwt = false` in `supabase/config.toml` — auth validated manually inside the function.
+**Files reviewed:** `src/App.tsx`, `src/components/ClientLayout.tsx`, `src/pages/client/ClientLogin.tsx`, `src/pages/client/ClientDocuments.tsx`, `src/components/ProtectedRoute.tsx`, `supabase/migrations/20260318200245_*.sql` (client portal schema + RLS), `supabase/migrations/20260404083401_*.sql` (storage hardening), `supabase/functions/generate-coa/index.ts`, `supabase/functions/ask-solera/index.ts`, `supabase/functions/send-client-message/index.ts`, `scripts/audit/client-isolation-report.txt`, `supabase/config.toml`.
 
 ---
 
-### 1. Output format
+### 1. How are client users distinguished from winery users?
 
-🔴 **HTML, not PDF.** The function generates a single self-contained HTML document with print-media CSS (`@page { size: letter; margin: 0.6in 0.5in; }`), Times New Roman serif body, and a fixed "Print / Save PDF" banner that calls `window.print()`. The file is uploaded with `contentType: "text/html"` and the resulting URL ends in `.html` (`ow1_<from>_<to>.html` and `additions_log_<from>_<to>.html`).
+Architecturally separate. There is **no shared role enum** between portals.
 
-The user is expected to open the link, hit ⌘P / Ctrl+P, and "Save as PDF" themselves. PRD requires **PDF**. The pdf_url field name is misleading — it returns an HTML URL.
+- **Winery users** → row in `profiles` with `org_id` → `auth.users` → role in `user_roles` (owner/manager/cellar/field).
+- **Client users** → row in `client_users` keyed by `auth_user_id`, pointing at `client_org_id` → `client_orgs.parent_org_id` (the winery that owns the relationship). A client user **does not** have a `profiles.org_id`.
+- **Auth flow** is split: `/login` (`Login.tsx`) for winery, `/client/login` (`ClientLogin.tsx`) for clients. After Supabase auth, `ClientLogin` queries `client_users` and signs the user out if no row exists ("This account is not a client portal account").
+- Helper: `get_client_org_id_for_user(_user_id)` SECURITY DEFINER function returns the caller's `client_org_id`, used in every client-scoped RLS policy.
 
-This matches `mem://features/enterprise-compliance` ("high-fidelity HTML reproduction with print-media CSS") — the gap is intentional from a memory standpoint but still a PRD non-compliance.
-
-### 2. Org scoping of TTB additions
-
-✅ **Correctly scoped.** Auth is established as follows:
-1. `supabaseUser.auth.getUser()` validates the caller's JWT (despite `verify_jwt = false` at config level).
-2. `userId` is read from the validated session, then `profiles.org_id` is looked up via the service-role client.
-3. **Every** TTB query uses `.eq("org_id", orgId)`:
-   - Additions log path: `ttb_additions ... .eq("org_id", orgId).gte("added_at", from).lte("added_at", to)`
-   - OW-1 path: `ttb_reports ... .eq("id", report_id).eq("org_id", orgId)` and `ttb_bond_info ... .eq("org_id", orgId)` and `ttb_wine_premise_operations ... .eq("report_id", report_id)` (joined to the already-org-scoped report).
-
-No client_org_id support — this is a winery-only function. A custom-crush client user calling it would fail at the `profiles.org_id` lookup ("No organization"). No cross-org leakage path identified.
-
-### 3. OW-1 specificity
-
-✅ **Yes — purpose-built for OW-1 (TTB Form 5120.17).** The function has two branches:
-- `body.type === "additions_log"` → simple chemical-additions table for any date range (supplemental compliance log, not a form replica).
-- Default branch → renders the **OW-1 form facsimile** with: serial number, BWN, proprietor name, registry/permit number, premises address, bond number, report period; Part I "Wine Operations (Wine Gallons)" table with the five wine-type rows (Still Table Wine, Sparkling Wine, Dessert Wine, Vermouth, Other) and nine standard columns (Beginning Inventory, Produced, Received, Bottled/Packed, Shipped/Removed, Dumped/Lost, Ending Inventory) plus a TOTALS row; perjury certification block with signature lines.
-
-Pulls from dedicated tables: `ttb_bond_info` (BWN, proprietor, premises, bond number) and `ttb_wine_premise_operations` (per-wine-type gallon figures, joined via `report_id`). It is **not** a generic export.
-
-### 4. Empty / missing data behavior
-
-🟡 **Partial empty-state handling — no graceful UX, but no crash either.**
-
-- **No `report_id` found / wrong org:** `report` is null → `throw new Error("Report not found")` → returns 400 JSON `{error}`. The client UI sees a generic error toast.
-- **No `ttb_bond_info` row** (org never configured): `.maybeSingle()` returns null and the form renders with **blank values** in fields 2, 3, 4, 5, 7 (`${bondInfo?.bonded_winery_number || ""}`). The OW-1 PDF is technically generated but legally useless — TTB requires BWN and proprietor name. No warning, no validation, no banner.
-- **No `ttb_wine_premise_operations` rows** for the report: the operations table renders with **only the header row and no body rows**; the TOTALS-row generator skips when `ops.length < 2`, so even the totals are absent. The HTML uploads successfully and the user gets a "successful" `pdf_url` pointing at an empty form.
-- **Additions log with zero matches:** the table renders with a header row and no body rows. Upload succeeds, returns success. No "No additions found" message.
-
-In all empty cases the function returns HTTP 200 + a URL, masking the fact that the report is incomplete or empty. There is no pre-flight check that warns the user "no bond info on file" or "no operations recorded for this period."
-
-### 5. Storage vs streaming
-
-✅ **Stored in Supabase Storage**, not streamed.
-
-- Uploaded to bucket `ttb-reports` at path `<org_id>/<filename>` via `supabase.storage.from("ttb-reports").upload(...)`.
-- URL returned via `getPublicUrl(...)` — but the bucket is **private** (`Is Public: No`).
-
-🔴 **Same broken-link bug as `generate-coa`:** `getPublicUrl` against a private bucket produces a URL that returns 400/403. The link in the response works only if either (a) the storage RLS policy on `ttb-reports` happens to allow reads via the public CDN path (it does not — per `mem://storage/security-policy`, this bucket has `(storage.foldername(name))[1] = get_user_org_id(auth.uid())::text` SELECT policy, which the public URL endpoint cannot evaluate), or (b) someone clicks while the bucket is temporarily flipped public.
-
-For OW-1 the function does additionally write `pdf_url` into the `ttb_reports` row alongside `status: "ready"` — so the broken URL is also persisted to the database, meaning the "Download" button on the report row in the UI also leads nowhere. Should use `createSignedUrl(path, 60 * 60)` instead.
+✅ **Hard separation** at the table and JWT level.
 
 ---
 
-### Summary table
+### 2. RLS preventing cross-client data access within the same winery
+
+Every client-scoped RLS policy (`vintages`, `lab_samples`, `ttb_additions`, `blending_trials`, `barrels`) enforces:
+
+```sql
+client_org_id IS NOT NULL
+AND client_org_id = get_client_org_id_for_user(auth.uid())
+```
+
+(For child tables it's done via `EXISTS (SELECT 1 FROM vintages v WHERE v.id = vintage_id AND v.client_org_id = get_client_org_id_for_user(auth.uid()))`.)
+
+`client_messages` adds `sender_type = 'client'` to INSERT to prevent spoofing as `facility`.
+
+`client_users` SELECT is restricted to `auth_user_id = auth.uid()` so a client cannot enumerate other clients in the same winery.
+
+✅ **Two clients in the same winery org cannot see each other's lots** — confirmed by `scripts/audit/client-isolation-report.txt` PASS lines 4–6 (vintages, lab samples, messages all return 0 rows when querying another client's data).
+
+---
+
+### 3. Can a client manipulate the URL to reach `/cellar`, `/operations`, `/lab`, etc.?
+
+🟡 **Yes — they can render the routes, but RLS returns empty data.**
+
+`ProtectedRoute` only checks `user`, `profile`, and `organization`. There is **no portal-segregation guard**:
+
+- A client user navigating to `/dashboard` or `/cellar` has no `profiles.org_id` row, so `organization` is undefined. `ProtectedRoute` will time out after 6 s and show the "Unable to load your account" error screen.
+- Worse: **if a client also happens to have a `profiles` row** (legacy, dual-role, or future bug), `ProtectedRoute` lets them in and they will see their winery's full data. There's no "this user belongs to the client portal — redirect to /client/dashboard" check.
+- Conversely, a winery user navigating to `/client/dashboard` is sent through `ClientLayout`, which queries `client_users` for them. With no row, the layout renders forever (the `useQuery` is `enabled: !!userId` and never returns), so they see a half-broken portal but no other client's data.
+
+🔴 **Gap:** No explicit cross-portal redirect. The defense relies on RLS returning empty results rather than denying the route. Acceptable as a backstop, brittle as a primary control.
+
+---
+
+### 4. Can a client user call `ask-solera`? Is context scoped to their lots?
+
+🔴 **They can call it, and the context-scoping is accidental, not enforced.**
+
+`supabase/functions/ask-solera/index.ts`:
+- `verify_jwt` is on (no override in `config.toml`), so any authenticated session reaches the function.
+- The handler does `getUser()` → looks up `profiles.org_id`. If a pure client user calls it, `profile.org_id` is null and the function throws `"User has no organization"` → 500. So today, in practice, the function fails closed for client-only accounts.
+- **`buildWineryContext` is hard-coded to `org_id`** with no `client_org_id` filtering at all. It pulls **all** vintages, vessels, barrels, tasks, weather, anomalies for the winery — not scoped to a single client's lots.
+
+🔴 **Two failure modes:**
+1. **Dual-role account** (a person with both `profiles.org_id` and `client_users` row, e.g. a winery owner who also runs a custom-crush lot, or a buggy onboarding): they hit the function as a winery user and see *every* client's data through Ask Solera, including cross-tenant.
+2. **Client-only:** correctly blocked, but by accident — the function should explicitly reject `client_users.auth_user_id` callers (or scope context to their `client_org_id`), not rely on the absence of a profile.
+
+Additionally there is no portal-side guard preventing a client user from typing `/ask-solera` into the URL. It will fail at the edge function with a generic 500.
+
+---
+
+### 5. Can a client download another client's COA?
+
+✅ **Largely no, with one caveat.**
+
+Two paths to a COA file:
+
+- **a) Direct edge invoke** (`generate-coa`): per `scripts/audit/client-isolation-report.txt`, fixes were applied — the function now calls `getUser()`, looks up both `profiles.org_id` (facility) and `client_users.client_org_id` (client), and returns 403 unless the caller is either a facility user for the vintage's `org_id` **or** a client user whose `client_org_id` matches the vintage's `client_org_id`. Tests pass with 403 for cross-client calls.
+
+- **b) Storage list** (`ClientDocuments.tsx`): the page lists `storage.objects` under the bucket prefix `<clientUser.client_org_id>/`. The bucket is **private**, and the storage RLS policy `"Org users can read client docs"` checks `(storage.foldername(name))[1] = get_user_org_id(auth.uid())::text` — i.e., it scopes by **`profiles.org_id`** (winery org id), not `client_org_id`. Because client users have no `profiles.org_id`, this policy returns false for them and they get **zero objects** listed.
+
+🔴 **Significant gap (P1):**
+- The storage RLS policy was written for **facility users only**. Client users in `ClientDocuments.tsx` will see "No documents available yet." even when COAs exist in their folder, because no policy grants them SELECT.
+- There is no policy of the form: `(storage.foldername(name))[1] = get_client_org_id_for_user(auth.uid())::text`. So either (a) client document listing is currently broken in production, or (b) it works only via signed URLs returned by `generate-coa` directly.
+- Additionally `ClientDocuments.tsx` calls `getPublicUrl()` on a **private** bucket — the resulting URL returns 400/403 when clicked, same broken-link bug as the original `generate-coa` and `generate-ttb-report` issues. Should use `createSignedUrl(path, 3600)` instead.
+
+✅ **Cross-client read is not possible** — even if a client tries to list `<other_client_org_id>/` directly, RLS returns zero. The boundary holds; it just also blocks the legitimate case.
+
+---
+
+### Summary
 
 | # | Question | Result |
 |---|---|---|
-| 1 | Output format | 🔴 HTML with print CSS — user must manually save as PDF. PRD says PDF. |
-| 2 | Org scoping | ✅ Every query filtered by `orgId` from authenticated `profiles` row. |
-| 3 | OW-1 specificity | ✅ Renders TTB Form 5120.17 facsimile with bond info + 5-wine-type operations table + certification block. |
-| 4 | Empty-data behavior | 🟡 No crash, but generates a blank/incomplete form and returns success — no preflight validation, no in-form "no data" message. |
-| 5 | Storage | ✅ Stored in `ttb-reports` bucket. 🔴 But returned as `getPublicUrl` on a private bucket → broken download link. |
+| 1 | Client vs winery distinction | ✅ Separate `client_users` table, separate `/client/login`, post-auth check signs out non-client accounts |
+| 2 | Cross-client RLS within same org | ✅ All client-scoped tables filter by `get_client_org_id_for_user(auth.uid())`; audit report confirms |
+| 3 | Winery routes accessible by URL | 🟡 Routes render, RLS returns empty — but no explicit portal guard; dual-role accounts bypass |
+| 4 | Ask Solera callable by client | 🔴 Reachable; fails closed by accident only; dual-role accounts leak full winery context across all clients |
+| 5 | Cross-client COA download | ✅ Cross-client blocked. 🔴 Storage policy missing for legitimate client SELECT; `getPublicUrl` returns broken URLs on private bucket |
 
-### Flagged gaps (not fixed — diagnostic only)
+---
 
-1. 🔴 **PRD non-compliance:** Output is HTML, not PDF. Options: (a) integrate a Deno-compatible PDF renderer (e.g., `puppeteer`, `@react-pdf/renderer`, or call a headless Chrome service), or (b) update the PRD to accept "print-ready HTML" if the manual print step is acceptable for TTB submission (it is not — TTB e-filing requires PDF or paper).
-2. 🔴 **Broken download link:** Replace `getPublicUrl` with `createSignedUrl(path, 3600)` in **both** branches and in the persisted `ttb_reports.pdf_url` write. Also rename the column / response key from `pdf_url` to `report_url` until #1 is resolved.
-3. 🟡 **Silent empty reports:** Add preflight validation that errors out (or surfaces a warning) when (a) `ttb_bond_info` row is missing, (b) zero `ttb_wine_premise_operations` rows exist for the report, or (c) zero additions in the requested date range. Better: a banner inside the rendered HTML when sections are empty.
-4. 🟡 **`additions_log` branch does not persist a `ttb_reports` row** — only the OW-1 path does. Means the additions log is fire-and-forget; there is no audit trail of who ran which compliance export when.
+### Flagged gaps (diagnostic only — no fixes applied)
+
+1. 🔴 **(P0) `ask-solera` cross-tenant exposure for dual-role accounts.** Add an explicit `client_users` lookup at the top of the function — if the caller has a `client_users` row, either (a) reject with 403 ("client portal cannot use Ask Solera"), or (b) build a *client-scoped* context using only their `client_org_id`'s vintages/lab data. Never fall through to `buildWineryContext(profile.org_id)` for a user who is also a client.
+
+2. 🔴 **(P0) Add portal routing guard.** Either (a) inside `ProtectedRoute`, detect a `client_users` row and redirect to `/client/dashboard`; (b) wrap `/client/*` with a `ClientProtectedRoute` that redirects winery users away. Today the defense is "RLS returns empty" — adequate for data, terrible UX, and zero defense if a future RLS regression slips in.
+
+3. 🔴 **(P1) Add storage RLS policy for client document listing.** Add SELECT policy on `storage.objects` for bucket `client-documents` with `(storage.foldername(name))[1] = get_client_org_id_for_user(auth.uid())::text`. Today client users likely see an empty Documents page.
+
+4. 🔴 **(P1) Replace `getPublicUrl` with `createSignedUrl(path, 3600)`** in `ClientDocuments.tsx` and any persisted URL writes — the bucket is private, public URLs do not resolve.
+
+5. 🟡 **(P2) Lock down `client_users.role` field.** The schema has a `role` column on `client_users` but no policy preventing self-update. Verify it's not editable by the client themselves (the existing UPDATE policy is facility-scoped, but worth audit-confirming via `scripts/audit/client-isolation-report.txt`).
+
+6. 🟡 **(P2) Extend the audit script.** `scripts/audit/client-isolation-report.txt` should add tests for: (a) client user calling `ask-solera` → expect 403/empty-context, (b) client user fetching `/cellar` and asserting empty data, (c) client user listing `client-documents` storage and seeing their own files (to catch the missing-policy regression in #3).
 
