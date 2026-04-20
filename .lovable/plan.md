@@ -1,60 +1,56 @@
 
+Diagnostic only — no code changes. I have all the data needed from `vite.config.ts`, `src/main.tsx`, and the offline sync files already in context.
 
-## Ask Solera AI Handler Diagnostic
+## PWA / Service Worker Diagnostic
 
-**File:** `supabase/functions/ask-solera/index.ts`
+**Files:** `vite.config.ts` (VitePWA config), `src/main.tsx` (registration), `src/hooks/useOfflineSync.ts` + `src/lib/syncQueue.ts` + `src/lib/syncFlush.ts` (offline write queue), `src/components/OfflineBanner.tsx` (offline UX).
 
-### 1. Org-specific data injected into the system prompt
+### 1. What is cached for offline access
 
-The `buildWineryContext()` function (lines 10–252) injects:
+**App shell (precache):** Default Workbox precache via `registerType: "autoUpdate"` — all built JS/CSS bundles, `index.html`, plus `includeAssets` (`favicon.png`, `icon-192.png`, `icon-512.png`). `maximumFileSizeToCacheInBytes: 5 * 1024 * 1024` (5 MB cap per asset).
 
-- Organization name, type, tier
-- Active vintages (planned, in_progress, harvested, in_cellar) with latest lab data per vintage — Brix, pH, TA, VA, Free/Total SO₂, Alcohol, RS
-- Vineyards and active blocks (variety, clone, rootstock, lifecycle stage, acres) plus latest cumulative GDD per vineyard
-- Fermentation vessels (material, capacity, current contents) with latest fermentation log (Brix, temp)
-- Filled barrels grouped by cooperage/toast/type
-- Tasks: open/overdue and recently completed (last 30 days)
-- Weather summary (last 30 days): avg high/low, precip, GDD accumulated
-- TTB additions (last 30 days)
-- Recent lab samples (last 10)
-- Active alert rule thresholds
-- Unresolved anomaly flags (last 10)
+**Runtime data caches** (via `runtimeCaching` rules, all keyed by URL pattern against Supabase REST):
 
-All injected into the **system** field of the Anthropic request (line 316), not the user message.
+| URL pattern | Strategy | Cache name | Max entries | Max age |
+|---|---|---|---|---|
+| `/rest/v1/tasks` | NetworkFirst | tasks-cache | 100 | 24 h |
+| `/rest/v1/lab_samples` | NetworkFirst | lab-cache | 200 | 24 h |
+| `/rest/v1/blocks` | StaleWhileRevalidate | blocks-cache | 100 | 24 h |
+| `/rest/v1/vintages` | StaleWhileRevalidate | vintages-cache | 100 | 24 h |
 
-### 2. Cross-org data leakage risk — SAFE
+### 2. Strategies used
 
-The handler establishes the org boundary correctly:
-- Auth header verified via `anonClient.auth.getUser()` (line 269) — rejects unauthenticated requests
-- `profile.org_id` looked up from the authenticated user (lines 276–281)
-- Throws if no org is found (line 281)
-- Every query in `buildWineryContext` filters by either `.eq("org_id", orgId)` directly OR `.in("vintage_id", vintageIds)` / `.in("vineyard_id", vineyards.map(...))` where the parent IDs were themselves scoped to `orgId` first
+- **App shell**: precache + `autoUpdate` → effectively **cache-first** for all built assets, with background update on next load.
+- **Tasks & lab samples (mutable, time-sensitive)**: **NetworkFirst** — try network, fall back to cache when offline.
+- **Blocks & vintages (slow-changing reference data)**: **StaleWhileRevalidate** — serve cache immediately, refresh in background.
 
-The function uses the **service role client** to bypass RLS, so isolation depends entirely on the explicit org filters in code. I checked all 12 queries — every one is scoped. No leakage path found.
+### 3. Offline coverage of the four key tables
 
-Minor note: `req.json()` accepts a `conversationId` (line 283) but never validates it belongs to `profile.org_id`. It is currently only logged, not queried, so no leakage today, but if conversation history is ever loaded by ID it would need an org check.
+| Table | Cached? | Strategy |
+|---|---|---|
+| `lab_samples` | ✅ Yes | NetworkFirst, 24 h |
+| `blocks` | ✅ Yes | StaleWhileRevalidate, 24 h |
+| `vintages` | ✅ Yes | StaleWhileRevalidate, 24 h |
+| `tasks` | ✅ Yes | NetworkFirst, 24 h |
 
-### 3. Model string
+All four are cached. Note: cache key is the full URL including query string, so a page that issues a different `select=` / `order=` / filter combo than the cached one will miss cache and fail offline. Only the exact previously-fetched query is replayable offline.
 
-`"claude-sonnet-4-20250514"` (line 314) — Claude Sonnet 4
+### 4. Offline navigation to an uncached route
 
-### 4. max_tokens
+**Gap found.** The Workbox config has `navigateFallbackDenylist: [/^\/~oauth/]` but **no `navigateFallback`** is defined. With `registerType: "autoUpdate"` and Vite SPA, behavior is:
 
-`4096` (line 315)
+- **Previously visited route (HTML in precache via `index.html`)**: Service worker serves the precached `index.html`, React Router takes over, and `OfflineBanner` shows the red "You're offline" bar at the top. Page renders if its data dependencies are in the runtime caches above; otherwise queries fail and component error/empty states render.
+- **Never-visited route or hard refresh of an arbitrary path while offline**: Because there is no explicit `navigateFallback: "index.html"`, the request can fall through to the network and produce the **browser's default offline error page** (Chrome's "No internet" dino, Safari "You are not connected to the Internet"). Not a graceful in-app offline screen.
 
-### 5. Anthropic API key storage
+There is **no dedicated `/offline.html`** fallback page and **no React-level "route uncached" boundary**. Offline UX relies entirely on:
+1. The precached `index.html` being served for navigations (works for SPA deep-links only if Workbox's default `NavigationRoute` matches, which it does when `registerType: "autoUpdate"` injects the precache manifest — usually fine, but fragile).
+2. The `OfflineBanner` component, which only renders inside `AppLayout` (authenticated routes). Unauthenticated/marketing routes get no offline banner.
 
-Env var: `Deno.env.get("ANTHROPIC_API_KEY")` (line 286). Confirmed present in the project secrets list. **Not** in Supabase Vault — stored as a standard Edge Function secret, which is the standard pattern for this project (matches `RESEND_API_KEY`, `PADDLE_API_KEY`, etc.).
+### Recommended fixes (not applied)
 
-### Summary
+1. Add `workbox.navigateFallback: "index.html"` and `navigateFallbackAllowlist: [/^(?!\/api).*/]` to guarantee the SPA shell is served for any navigation while offline.
+2. Optionally add a static `/offline.html` for the rare case the precache itself is unavailable.
+3. Consider extending runtime caching to `vineyards`, `fermentation_vessels`, `fermentation_logs` if those views need offline reads.
+4. Document the query-string cache-key limitation, or normalize Supabase queries (consistent `select`, `order`) so offline replay reliably hits cache.
 
-| Check | Result |
-|---|---|
-| Org-data injection | ✅ Comprehensive (12 data domains) |
-| Cross-org leakage | ✅ Safe — every query scoped to authenticated org |
-| Model | `claude-sonnet-4-20250514` |
-| max_tokens | `4096` |
-| API key storage | Edge Function env var (`ANTHROPIC_API_KEY`) |
-
-No fixes required.
-
+No code changes performed.
