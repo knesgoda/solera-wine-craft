@@ -376,11 +376,14 @@ Deno.serve(async (req) => {
 
     const fileName = `ow1_${report.report_period_start}_${report.report_period_end}.html`;
     await supabaseAdmin.storage.from("ttb-reports").upload(`${orgId}/${fileName}`, new TextEncoder().encode(html), { contentType: "text/html", upsert: true });
-    const { data: urlData } = supabaseAdmin.storage.from("ttb-reports").getPublicUrl(`${orgId}/${fileName}`);
+    const { data: signed, error: signErr } = await supabaseAdmin.storage
+      .from("ttb-reports")
+      .createSignedUrl(`${orgId}/${fileName}`, 60 * 60);
+    if (signErr || !signed?.signedUrl) throw new Error(`Failed to sign URL: ${signErr?.message || "unknown"}`);
 
-    await supabaseAdmin.from("ttb_reports").update({ pdf_url: urlData.publicUrl, status: "ready" }).eq("id", report_id);
+    await supabaseAdmin.from("ttb_reports").update({ pdf_url: signed.signedUrl, status: "ready" }).eq("id", report_id);
 
-    return new Response(JSON.stringify({ success: true, pdf_url: urlData.publicUrl }), {
+    return new Response(JSON.stringify({ success: true, pdf_url: signed.signedUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
