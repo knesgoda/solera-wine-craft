@@ -415,7 +415,7 @@ export default function ComplianceReports() {
                     <TableCell>{r.submitted_at ? format(new Date(r.submitted_at), "MMM d, yyyy") : "—"}</TableCell>
                     <TableCell className="text-right space-x-2">
                       {r.pdf_url ? (
-                        <Button size="sm" variant="outline" onClick={() => window.open(r.pdf_url, "_blank")}>
+                        <Button size="sm" variant="outline" onClick={() => handleOpenReport(r)}>
                           <Download className="h-3 w-3 mr-1" /> PDF
                         </Button>
                       ) : (
