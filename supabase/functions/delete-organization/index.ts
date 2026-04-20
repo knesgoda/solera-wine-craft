@@ -117,7 +117,8 @@ Deno.serve(async (req) => {
           format: "xlsx",
           status: "pending",
           created_by: user.id,
-          triggered_by: "deletion",
+          // backup_jobs.triggered_by check constraint allows: manual | scheduled | cancellation
+          triggered_by: "cancellation",
         })
         .select("id")
         .single();
