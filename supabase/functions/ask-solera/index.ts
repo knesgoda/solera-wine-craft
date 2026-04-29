@@ -295,6 +295,20 @@ serve(async (req) => {
       .single();
     if (!profile?.org_id) throw new Error("User has no organization");
 
+    const { data: org } = await serviceClient
+      .from("organizations")
+      .select("tier, subscription_status")
+      .eq("id", profile.org_id)
+      .single();
+
+    const allowedTiers = ["growth", "enterprise"];
+    if (!org || !allowedTiers.includes(org.tier) || ["past_due", "cancelled"].includes(org.subscription_status)) {
+      return new Response(JSON.stringify({ error: "Ask Solera requires a Growth or Enterprise plan." }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { messages, conversationId } = await req.json();
     console.log(`Ask Solera request: org=${profile.org_id}, messages=${messages?.length}, conv=${conversationId}`);
 
