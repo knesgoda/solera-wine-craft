@@ -23,6 +23,9 @@ Deno.serve(async (req) => {
 
     const allowedLineItemKeys = new Set(["sku_id", "quantity"]);
     const requestedItems = line_items.map((item: any) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) {
+        throw new Error("Invalid line item");
+      }
       const keys = Object.keys(item || {});
       const hasRejectedFields = keys.some((key) => !allowedLineItemKeys.has(key));
       if (hasRejectedFields || "unit_price" in item || "label" in item || "product" in item) {
