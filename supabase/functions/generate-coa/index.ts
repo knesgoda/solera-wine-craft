@@ -88,9 +88,12 @@ Deno.serve(async (req) => {
       { contentType: "text/html", upsert: true }
     );
 
-    const { data: urlData } = supabase.storage.from("client-documents").getPublicUrl(`${clientOrgId}/${fileName}`);
+    const { data: signed, error: signedError } = await supabase.storage
+      .from("client-documents")
+      .createSignedUrl(`${clientOrgId}/${fileName}`, 3600);
+    if (signedError || !signed?.signedUrl) throw new Error("Could not create document link");
 
-    return new Response(JSON.stringify({ success: true, pdf_url: urlData.publicUrl }), {
+    return new Response(JSON.stringify({ success: true, pdf_url: signed.signedUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
