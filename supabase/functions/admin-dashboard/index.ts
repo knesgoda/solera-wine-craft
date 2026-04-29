@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://solera.vin",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -35,12 +35,32 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { password, action, payload } = await req.json();
-    const adminPassword = Deno.env.get("ADMIN_PASSWORD");
-
-    if (!adminPassword || password !== adminPassword) {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
       return json({ error: "Unauthorized" }, 401);
     }
+
+    const authClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await authClient.auth.getUser();
+    if (authError || !user?.email) {
+      return json({ error: "Unauthorized" }, 401);
+    }
+
+    const adminEmails = (Deno.env.get("ADMIN_EMAILS") || "")
+      .split(",")
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean);
+
+    if (!adminEmails.includes(user.email.toLowerCase())) {
+      return json({ error: "Forbidden" }, 403);
+    }
+
+    const { action, payload } = await req.json();
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
