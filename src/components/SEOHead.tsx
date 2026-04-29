@@ -79,9 +79,8 @@ export function SEOHead({
     setMeta("property", "og:title", finalTitle);
     setMeta("property", "og:description", finalDesc);
     setMeta("property", "og:image", finalOgImage);
-    // Default image is 1024x1024; update when og-default.png is regenerated to 1200x630
-    setMeta("property", "og:image:width", "1024");
-    setMeta("property", "og:image:height", "1024");
+    setMeta("property", "og:image:width", "1200");
+    setMeta("property", "og:image:height", "630");
     setMeta("property", "og:type", finalOgType);
     setMeta("property", "og:url", finalCanonical);
     setMeta("property", "og:site_name", "Solera");
