@@ -295,13 +295,43 @@ serve(async (req) => {
       .single();
     if (!profile?.org_id) throw new Error("User has no organization");
 
+    const { data: org } = await serviceClient
+      .from("organizations")
+      .select("tier, subscription_status")
+      .eq("id", profile.org_id)
+      .single();
+
+    const allowedTiers = ["growth", "enterprise"];
+    if (!org || !allowedTiers.includes(org.tier) || ["past_due", "cancelled"].includes(org.subscription_status)) {
+      return new Response(JSON.stringify({ error: "Ask Solera requires a Growth or Enterprise plan." }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { messages, conversationId } = await req.json();
+    const validMessages =
+      Array.isArray(messages) &&
+      messages.length <= 50 &&
+      messages.every((message: any) =>
+        message &&
+        (message.role === "user" || message.role === "assistant") &&
+        typeof message.content === "string" &&
+        message.content.length <= 4000
+      );
+
+    if (!validMessages) {
+      return new Response(JSON.stringify({ error: "Invalid message format." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     console.log(`Ask Solera request: org=${profile.org_id}, messages=${messages?.length}, conv=${conversationId}`);
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) {
       console.error("ANTHROPIC_API_KEY is not configured");
-      throw new Error("AI is not configured. Please add your Anthropic API key in Settings.");
+      throw new Error("AI is temporarily unavailable. Please try again later or contact support.");
     }
 
     // Build winery context
@@ -346,7 +376,7 @@ ${wineryContext}`;
         });
       }
       if (response.status === 401) {
-        return new Response(JSON.stringify({ error: "Invalid API key. Please check your Anthropic API key in Settings." }), {
+        return new Response(JSON.stringify({ error: "AI is temporarily unavailable. Please try again later or contact support." }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
