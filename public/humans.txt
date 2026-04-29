@@ -1,0 +1,19 @@
+/* TEAM */
+Founder & Developer: Kevin Nesgoda
+Contact: kevin@solera.vin
+Twitter: @soleravin
+Location: California, USA
+
+/* SITE */
+Name: Solera
+Description: Complete winery management platform — vineyard ops, cellar management, TTB compliance, DTC sales, and AI analytics in one place.
+URL: https://solera.vin
+Tagline: From vine to bottle to doorstep — one platform.
+Last update: 2026-04-29
+
+/* TECHNOLOGY */
+Language: TypeScript
+Frontend: React 18, Vite, TailwindCSS, shadcn/ui
+Backend: Supabase (PostgreSQL)
+Payments: Paddle
+Deployment: Vercel

@@ -84,10 +84,10 @@ export function MarketingFooter() {
             © 2026 Solera. All rights reserved. solera.vin
           </p>
           <div className="flex items-center gap-4">
-            {/* Social icons as simple text links */}
-            <a href="#" className="text-primary-foreground/60 hover:text-primary-foreground text-sm transition-colors">Twitter/X</a>
-            <a href="#" className="text-primary-foreground/60 hover:text-primary-foreground text-sm transition-colors">LinkedIn</a>
-            <a href="#" className="text-primary-foreground/60 hover:text-primary-foreground text-sm transition-colors">Instagram</a>
+            {/* Social links */}
+            <a href="https://twitter.com/soleravin" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/60 hover:text-primary-foreground text-sm transition-colors">Twitter/X</a>
+            <a href="https://www.linkedin.com/company/soleravin" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/60 hover:text-primary-foreground text-sm transition-colors">LinkedIn</a>
+            <a href="https://www.instagram.com/soleravin" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/60 hover:text-primary-foreground text-sm transition-colors">Instagram</a>
           </div>
         </div>
       </div>

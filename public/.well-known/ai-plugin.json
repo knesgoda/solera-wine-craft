@@ -1,0 +1,18 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Solera",
+  "name_for_model": "solera_winery",
+  "description_for_human": "Solera is a complete winery management platform — vineyard operations, cellar management, TTB compliance, DTC sales, wine clubs, and AI analytics in one place.",
+  "description_for_model": "Solera (solera.vin) is a SaaS winery management platform for commercial wineries, hobbyist winemakers, and custom crush facilities. It covers vineyard operations (GDD tracking, harvest predictions, block management), cellar and fermentation management, lab sample tracking, TTB compliance (OW-1 reports), production cost tracking (COGS per gallon/barrel/case), grower contracts and intake pricing, DTC sales and wine club fulfillment, an AI assistant ('Ask Solera') for natural language queries over winery data, and a white-label client portal for custom crush clients. It integrates with Commerce7, Shopify, WineDirect, QuickBooks, and ShipCompliant. Pricing: Hobbyist (free, ≤50 cases), Pro ($69/mo, ≤2,000 cases), Growth ($129/mo, ≤10,000 cases), Enterprise ($399/mo, unlimited). 14-day free trial on paid plans.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://solera.vin/openapi.yaml",
+    "is_user_authenticated": false
+  },
+  "logo_url": "https://solera.vin/logo.png",
+  "contact_email": "support@solera.vin",
+  "legal_info_url": "https://solera.vin/terms"
+}

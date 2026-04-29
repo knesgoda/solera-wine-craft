@@ -63,10 +63,10 @@ export default function Homepage() {
                 The Winery OS Built for the AI Era
               </p>
               <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6">
-                From Vine to Bottle to Doorstep — One Platform.
+                Winery Management Software — From Vine to Bottle to Doorstep.
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-xl">
-                Solera gives every winemaker — from weekend hobbyist to 50,000-case custom crush facility — the operational intelligence of a world-class winery. Free to start. No onboarding fees. No transaction markups.
+                Solera is winery management software built for every scale — from weekend hobbyist to 50,000-case custom crush facility. Replace Innovint, WineDirect, and three spreadsheets with one platform. Free to start. No onboarding fees. No transaction markups.
               </p>
               <div className="flex flex-wrap gap-4 mb-8">
                 <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8" asChild>

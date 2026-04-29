@@ -240,7 +240,7 @@ export default function ComparePage() {
 
       <section className="pt-28 pb-16 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 lg:px-8 text-center">
-          <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">See how Solera stacks up.</h1>
+          <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">Compare Winery Management Software: Solera vs. Innovint, WineDirect &amp; More</h1>
           <p className="text-xl text-primary-foreground/80">Honest comparisons. Real data. Your decision.</p>
         </div>
       </section>
