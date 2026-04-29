@@ -3164,7 +3164,7 @@ export type Database = {
       lab_samples: {
         Row: {
           alcohol: number | null
-          block_id: string | null
+          block_id: string
           brix: number | null
           created_at: string
           external_sample_id: string | null
@@ -3181,12 +3181,13 @@ export type Database = {
           so2_total: number | null
           source_image_id: string | null
           ta: number | null
+          updated_at: string
           va: number | null
           vintage_id: string
         }
         Insert: {
           alcohol?: number | null
-          block_id?: string | null
+          block_id: string
           brix?: number | null
           created_at?: string
           external_sample_id?: string | null
@@ -3203,12 +3204,13 @@ export type Database = {
           so2_total?: number | null
           source_image_id?: string | null
           ta?: number | null
+          updated_at?: string
           va?: number | null
           vintage_id: string
         }
         Update: {
           alcohol?: number | null
-          block_id?: string | null
+          block_id?: string
           brix?: number | null
           created_at?: string
           external_sample_id?: string | null
@@ -3225,6 +3227,7 @@ export type Database = {
           so2_total?: number | null
           source_image_id?: string | null
           ta?: number | null
+          updated_at?: string
           va?: number | null
           vintage_id?: string
         }
