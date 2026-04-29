@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,8 +6,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import {
@@ -25,61 +23,22 @@ import { PdfReportsTab } from "./components/PdfReportsTab";
 import soleraLogo from "@/assets/solera-logo.png";
 
 // ─── API Hook ───
-export function useAdminApi(password: string) {
+export function useAdminApi() {
   return useCallback(
     async (action: string, payload?: any) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Access denied");
+
       const { data, error } = await supabase.functions.invoke("admin-dashboard", {
-        body: { password, action, payload },
+        body: { action, payload },
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       return data;
     },
-    [password]
-  );
-}
-
-// ─── Login Gate ───
-function AdminLogin({ onLogin }: { onLogin: (pw: string) => void }) {
-  const [pw, setPw] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      const { data } = await supabase.functions.invoke("verify-admin", {
-        body: { password: pw },
-      });
-      if (data?.verified) onLogin(pw);
-      else setError("Invalid password");
-    } catch {
-      setError("Authentication failed");
-    }
-    setLoading(false);
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: "#1A1A1A" }}>
-      <Card className="w-full max-w-sm border-none shadow-2xl">
-        <CardHeader className="text-center">
-          <img src={soleraLogo} alt="Solera" className="h-10 mx-auto mb-2" />
-          <CardTitle className="font-display text-xl">Solera Admin</CardTitle>
-          <CardDescription>Enter admin password to continue.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Password" />
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Verifying…" : "Sign In"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+    []
   );
 }
 
