@@ -315,7 +315,7 @@ serve(async (req) => {
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) {
       console.error("ANTHROPIC_API_KEY is not configured");
-      throw new Error("AI is not configured. Please add your Anthropic API key in Settings.");
+      throw new Error("AI is temporarily unavailable. Please try again later or contact support.");
     }
 
     // Build winery context
@@ -360,7 +360,7 @@ ${wineryContext}`;
         });
       }
       if (response.status === 401) {
-        return new Response(JSON.stringify({ error: "Invalid API key. Please check your Anthropic API key in Settings." }), {
+        return new Response(JSON.stringify({ error: "AI is temporarily unavailable. Please try again later or contact support." }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
