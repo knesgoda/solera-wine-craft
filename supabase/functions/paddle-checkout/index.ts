@@ -15,14 +15,91 @@ Deno.serve(async (req) => {
     const paddleKey = Deno.env.get("PADDLE_API_KEY");
     if (!paddleKey) throw new Error("Paddle not configured");
 
-    const { org_id, line_items, customer_email, customer_name, customer_address, success_url, cancel_url } = body;
+    const { line_items, customer_email, customer_name, customer_address, success_url } = body;
 
-    if (!org_id || !Array.isArray(line_items) || line_items.length === 0) {
+    if (!Array.isArray(line_items) || line_items.length === 0) {
       throw new Error("Missing checkout line items");
     }
 
-    // Build Paddle transaction items as non-catalog custom items
-    const paddleItems = line_items.map((item: any) => ({
+    const allowedLineItemKeys = new Set(["sku_id", "quantity"]);
+    const requestedItems = line_items.map((item: any) => {
+      const keys = Object.keys(item || {});
+      const hasRejectedFields = keys.some((key) => !allowedLineItemKeys.has(key));
+      if (hasRejectedFields || "unit_price" in item || "label" in item || "product" in item) {
+        throw new Error("Line items may only include sku_id and quantity");
+      }
+      if (typeof item.sku_id !== "string" || !item.sku_id) {
+        throw new Error("Invalid SKU");
+      }
+      if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+        throw new Error("Quantity must be a positive integer");
+      }
+      return { sku_id: item.sku_id, quantity: item.quantity };
+    });
+
+    const quantitiesBySku = new Map<string, number>();
+    for (const item of requestedItems) {
+      quantitiesBySku.set(item.sku_id, (quantitiesBySku.get(item.sku_id) || 0) + item.quantity);
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const skuIds = [...quantitiesBySku.keys()];
+    const { data: skus, error: skuError } = await supabase
+      .from("inventory_skus")
+      .select("id, org_id, label, variety, vintage_year, price, active, cases, loose_bottles, bottles_per_case")
+      .in("id", skuIds);
+
+    if (skuError || !skus || skus.length !== skuIds.length) {
+      throw new Error("Invalid SKU");
+    }
+
+    const orgId = skus[0].org_id;
+    if (!skus.every((sku: any) => sku.org_id === orgId)) {
+      throw new Error("All SKUs must belong to the same organization");
+    }
+
+    const { data: storefront } = await supabase
+      .from("storefront_config")
+      .select("enabled")
+      .eq("org_id", orgId)
+      .maybeSingle();
+
+    if (storefront?.enabled !== true) {
+      throw new Error("Storefront is not enabled");
+    }
+
+    for (const sku of skus as any[]) {
+      const quantity = quantitiesBySku.get(sku.id) || 0;
+      const available = (Number(sku.cases) || 0) * (Number(sku.bottles_per_case) || 0) + (Number(sku.loose_bottles) || 0);
+      if (sku.active !== true) {
+        throw new Error("SKU is not active");
+      }
+      if (!sku.price || Number(sku.price) <= 0) {
+        throw new Error("SKU price is unavailable");
+      }
+      if (quantity > available) {
+        throw new Error("Requested quantity exceeds available stock");
+      }
+    }
+
+    const skuById = new Map((skus as any[]).map((sku) => [sku.id, sku]));
+    const trustedLineItems = requestedItems.map((item) => {
+      const sku = skuById.get(item.sku_id);
+      return {
+        sku_id: sku.id,
+        label: sku.label || "Wine",
+        variety: sku.variety,
+        vintage_year: sku.vintage_year,
+        unit_price: Number(sku.price),
+        quantity: item.quantity,
+      };
+    });
+
+    const paddleItems = trustedLineItems.map((item) => ({
       quantity: item.quantity,
       price: {
         description: `${item.label}${item.variety ? ` — ${item.variety}` : ""}${item.vintage_year ? ` ${item.vintage_year}` : ""}`,
@@ -42,10 +119,10 @@ Deno.serve(async (req) => {
     const transactionPayload: any = {
       items: paddleItems,
       custom_data: {
-        org_id,
+        org_id: orgId,
         customer_name,
         customer_email,
-        line_items_json: JSON.stringify(line_items),
+        line_items_json: JSON.stringify(trustedLineItems),
         customer_address: customer_address ? JSON.stringify(customer_address) : null,
       },
       checkout: {
