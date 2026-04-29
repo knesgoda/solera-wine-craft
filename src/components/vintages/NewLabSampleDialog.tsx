@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -40,6 +40,20 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSampl
   const { profile } = useAuth();
   const isEditing = !!editingSample;
 
+  const { data: vintageBlockId } = useQuery({
+    queryKey: ["vintage-block-id", vintageId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vintages")
+        .select("block_id")
+        .eq("id", vintageId)
+        .single();
+      if (error) throw error;
+      return data?.block_id || null;
+    },
+    enabled: open && !!vintageId,
+  });
+
   const [sampledAt, setSampledAt] = useState(new Date().toISOString().slice(0, 16));
   const [brix, setBrix] = useState("");
   const [ph, setPh] = useState("");
@@ -70,8 +84,13 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSampl
 
   const mutation = useMutation({
     mutationFn: async () => {
+      if (!vintageBlockId) {
+        throw new Error("Cannot record lab sample because this vintage is not linked to a block.");
+      }
+
       const record = {
         vintage_id: vintageId,
+        block_id: vintageBlockId,
         sampled_at: new Date(sampledAt).toISOString(),
         brix: brix ? parseFloat(brix) : null,
         ph: ph ? parseFloat(ph) : null,
