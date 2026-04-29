@@ -310,6 +310,22 @@ serve(async (req) => {
     }
 
     const { messages, conversationId } = await req.json();
+    const validMessages =
+      Array.isArray(messages) &&
+      messages.length <= 50 &&
+      messages.every((message: any) =>
+        message &&
+        (message.role === "user" || message.role === "assistant") &&
+        typeof message.content === "string" &&
+        message.content.length <= 4000
+      );
+
+    if (!validMessages) {
+      return new Response(JSON.stringify({ error: "Invalid message format." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     console.log(`Ask Solera request: org=${profile.org_id}, messages=${messages?.length}, conv=${conversationId}`);
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
