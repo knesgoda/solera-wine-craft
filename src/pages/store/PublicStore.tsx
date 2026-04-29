@@ -45,7 +45,7 @@ const PublicStore = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("storefront_config")
-        .select("*")
+        .select("id, org_id, enabled, store_name, store_description, store_logo_url, age_gate_enabled, custom_domain")
         .eq("enabled", true)
         .limit(1)
         .single();
