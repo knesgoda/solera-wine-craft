@@ -3,7 +3,6 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
-import vitePrerender from "vite-plugin-prerender";
 
 const PRERENDER_ROUTES = [
   "/", "/features", "/pricing", "/compare", "/about", "/faq",
@@ -11,7 +10,12 @@ const PRERENDER_ROUTES = [
   "/developers", "/store",
 ];
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(async ({ mode }) => {
+  const vitePrerender = mode === "production"
+    ? (await import("vite-plugin-prerender")).default
+    : null;
+
+  return {
   server: {
     host: "::",
     port: 8080,
@@ -22,7 +26,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
-    mode === "production" && vitePrerender({
+    mode === "production" && vitePrerender?.({
       staticDir: path.join(__dirname, "dist"),
       routes: PRERENDER_ROUTES,
     }),
@@ -77,4 +81,5 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom"],
   },
-}));
+};
+});
