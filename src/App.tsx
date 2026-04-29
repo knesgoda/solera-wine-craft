@@ -145,7 +145,7 @@ const App = () => (
             <Route path="/join" element={<JoinRedirect />} />
             {/* Marketing routes */}
             <Route element={<MarketingLayout />}>
-              <Route path="/" element={<Homepage />} />
+              <Route path="/" element={<ComingSoonPage />} />
               <Route path="/features" element={<FeaturesPage />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/compare" element={<ComparePage />} />
