@@ -3,6 +3,13 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+import vitePrerender from "vite-plugin-prerender";
+
+const PRERENDER_ROUTES = [
+  "/", "/features", "/pricing", "/compare", "/about", "/faq",
+  "/changelog", "/contact", "/blog", "/privacy", "/terms",
+  "/developers", "/store",
+];
 
 export default defineConfig(({ mode }) => ({
   server: {
@@ -15,6 +22,10 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
+    mode === "production" && vitePrerender({
+      staticDir: path.join(__dirname, "dist"),
+      routes: PRERENDER_ROUTES,
+    }),
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.png", "icon-192.png", "icon-512.png"],

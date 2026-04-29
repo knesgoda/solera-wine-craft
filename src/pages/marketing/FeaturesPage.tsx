@@ -391,8 +391,8 @@ export default function FeaturesPage() {
       {/* Hero */}
       <section className="pt-28 pb-16 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 lg:px-8 text-center">
-          <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">Everything your winery needs.</h1>
-          <p className="text-xl text-primary-foreground/80 mb-4">Thirteen fully integrated modules — from vineyard ops and ripening intelligence to production costing, grower contracts, and DTC sales.</p>
+          <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">Winery Management Software Features</h1>
+          <p className="text-xl text-primary-foreground/80 mb-4">Thirteen fully integrated modules — from vineyard ops and ripening intelligence to production costing, grower contracts, wine club management, and DTC sales.</p>
           <p className="text-sm text-primary-foreground/60">One monthly price. No onboarding fees. No transaction markups.</p>
         </div>
       </section>

@@ -28,6 +28,16 @@ const ORG_SCHEMA = {
   founder: { "@type": "Person", name: "Kevin Nesgoda" },
   foundingDate: "2026",
   description: "Winery management software built for the AI era",
+  sameAs: [
+    "https://twitter.com/soleravin",
+    "https://www.linkedin.com/company/soleravin",
+  ],
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer support",
+    email: "support@solera.vin",
+    url: "https://solera.vin/contact",
+  },
 };
 
 export function SEOHead({
@@ -69,6 +79,9 @@ export function SEOHead({
     setMeta("property", "og:title", finalTitle);
     setMeta("property", "og:description", finalDesc);
     setMeta("property", "og:image", finalOgImage);
+    // Default image is 1024x1024; update when og-default.png is regenerated to 1200x630
+    setMeta("property", "og:image:width", "1024");
+    setMeta("property", "og:image:height", "1024");
     setMeta("property", "og:type", finalOgType);
     setMeta("property", "og:url", finalCanonical);
     setMeta("property", "og:site_name", "Solera");
@@ -149,6 +162,8 @@ export const HOMEPAGE_SCHEMA = [
     operatingSystem: "Web, iOS, Android",
     description: "Complete winery management platform from vineyard to DTC sales",
     url: "https://solera.vin",
+    image: "https://solera.vin/og-default.png",
+    screenshot: "https://solera.vin/og-default.png",
     offers: [
       { "@type": "Offer", name: "Hobbyist", price: "0", priceCurrency: "USD" },
       { "@type": "Offer", name: "Pro", price: "69", priceCurrency: "USD", billingPeriod: "P1M" },
