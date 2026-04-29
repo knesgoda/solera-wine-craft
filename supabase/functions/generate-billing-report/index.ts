@@ -12,8 +12,23 @@ Deno.serve(async (req) => {
     const { client_org_id, from, to } = await req.json();
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("Unauthorized");
+    const anonClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user } } = await anonClient.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
     const { data: clientOrg } = await supabase.from("client_orgs").select("*, organizations:parent_org_id(name)").eq("id", client_org_id).single();
     if (!clientOrg) throw new Error("Client org not found");
+
+    const { data: profile } = await supabase.from("profiles").select("org_id").eq("id", user.id).single();
+    if (profile?.org_id !== clientOrg.parent_org_id) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Get vintages for this client
     const { data: vintages } = await supabase.from("vintages").select("*, blocks(name)").eq("client_org_id", client_org_id);
@@ -65,14 +80,19 @@ Deno.serve(async (req) => {
       { contentType: "text/html", upsert: true }
     );
 
-    const { data: urlData } = supabase.storage.from("client-documents").getPublicUrl(`${client_org_id}/${fileName}`);
+    const { data: signed, error: signedError } = await supabase.storage
+      .from("client-documents")
+      .createSignedUrl(`${client_org_id}/${fileName}`, 3600);
+    if (signedError || !signed?.signedUrl) throw new Error("Could not create report link");
 
-    return new Response(JSON.stringify({ success: true, pdf_url: urlData.publicUrl }), {
+    return new Response(JSON.stringify({ success: true, pdf_url: signed.signedUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
+    const msg = (e as Error).message;
+    const status = msg === "Unauthorized" ? 401 : 400;
     return new Response(JSON.stringify({ error: (e as Error).message }), {
-      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
