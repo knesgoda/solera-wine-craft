@@ -27,14 +27,12 @@ interface Props {
   vintageId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editingAddition?: any;
 }
 
-export function NewAdditionDialog({ vintageId, open, onOpenChange, editingAddition }: Props) {
+export function NewAdditionDialog({ vintageId, open, onOpenChange }: Props) {
   const { organization, profile } = useAuth();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
-  const isEditing = !!editingAddition;
 
   const [additionType, setAdditionType] = useState("");
   const [ttbCode, setTtbCode] = useState("");
@@ -46,22 +44,13 @@ export function NewAdditionDialog({ vintageId, open, onOpenChange, editingAdditi
   );
 
   useEffect(() => {
-    if (editingAddition) {
-      setAdditionType(editingAddition.addition_type || "");
-      setTtbCode(editingAddition.ttb_code || "");
-      setAmount(editingAddition.amount != null ? String(editingAddition.amount) : "");
-      setUnit(editingAddition.unit || "");
-      setBatchSize(editingAddition.batch_size != null ? String(editingAddition.batch_size) : "");
-      setAddedBy(editingAddition.added_by || "");
-    } else {
-      setAdditionType("");
-      setTtbCode("");
-      setAmount("");
-      setUnit("");
-      setBatchSize("");
-      setAddedBy([profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || "");
-    }
-  }, [editingAddition, open]);
+    setAdditionType("");
+    setTtbCode("");
+    setAmount("");
+    setUnit("");
+    setBatchSize("");
+    setAddedBy([profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || "");
+  }, [open, profile?.first_name, profile?.last_name]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -76,20 +65,12 @@ export function NewAdditionDialog({ vintageId, open, onOpenChange, editingAdditi
         added_by: addedBy || null,
       };
 
-      if (isEditing) {
-        const { error } = await supabase
-          .from("ttb_additions")
-          .update(record as any)
-          .eq("id", editingAddition.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("ttb_additions").insert(record as any);
-        if (error) throw error;
-      }
+      const { error } = await supabase.from("ttb_additions").insert(record as any);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ttb-additions", vintageId] });
-      toast.success(isEditing ? "Addition updated" : "Addition recorded");
+      toast.success("Addition recorded");
       onOpenChange(false);
     },
     onError: (err: any) => toast.error(err.message),
@@ -97,8 +78,8 @@ export function NewAdditionDialog({ vintageId, open, onOpenChange, editingAdditi
 
   const canSubmit = additionType && amount && unit;
 
-  const title = isEditing ? "Edit Treatment" : "Add Treatment";
-  const buttonText = isEditing ? "Update Addition" : "Record Addition";
+  const title = "Add Treatment";
+  const buttonText = "Record Addition";
 
   const formContent = (
     <div className="space-y-4 mt-2">
