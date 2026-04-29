@@ -243,9 +243,25 @@ serve(async (req) => {
     ).auth.getUser();
     if (authError || !user) throw new Error("Unauthorized");
 
-    const { jobId, rows, mappings, orgId, duplicateStrategy } = await req.json();
+    const { jobId, rows, mappings, duplicateStrategy } = await req.json();
 
-    await supabase.from("import_jobs").update({ status: "importing", started_at: new Date().toISOString() }).eq("id", jobId);
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("org_id")
+      .eq("id", user.id)
+      .single();
+    if (profileError || !profile?.org_id) throw new Error("Unauthorized");
+    const orgId = profile.org_id;
+
+    const { data: job, error: jobError } = await supabase
+      .from("import_jobs")
+      .select("id")
+      .eq("id", jobId)
+      .eq("org_id", orgId)
+      .single();
+    if (jobError || !job) throw new Error("Import job not found");
+
+    await supabase.from("import_jobs").update({ status: "importing", started_at: new Date().toISOString() }).eq("id", jobId).eq("org_id", orgId);
 
     let imported = 0;
     let skipped = 0;
@@ -624,7 +640,7 @@ serve(async (req) => {
     }
 
     // Accumulate across batches
-    const { data: currentJob } = await supabase.from("import_jobs").select("imported_rows, skipped_rows, error_rows").eq("id", jobId).single();
+    const { data: currentJob } = await supabase.from("import_jobs").select("imported_rows, skipped_rows, error_rows").eq("id", jobId).eq("org_id", orgId).single();
     const prevImported = currentJob?.imported_rows || 0;
     const prevSkipped = currentJob?.skipped_rows || 0;
     const prevErrors = currentJob?.error_rows || 0;
@@ -635,7 +651,7 @@ serve(async (req) => {
       skipped_rows: prevSkipped + skipped,
       error_rows: prevErrors + errors,
       completed_at: new Date().toISOString(),
-    }).eq("id", jobId);
+    }).eq("id", jobId).eq("org_id", orgId);
 
     return new Response(JSON.stringify({ imported, skipped, errors, total: rows.length }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
