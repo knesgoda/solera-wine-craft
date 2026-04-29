@@ -42,7 +42,7 @@ async function verifyPaddleSignature(rawBody: string, signature: string, secret:
   if (!ts || !h1) return false;
 
   const age = Math.floor(Date.now() / 1000) - Number(ts);
-  if (age > 300) return false;
+  if (Math.abs(age) > 300) return false;
 
   const signedPayload = `${ts}:${rawBody}`;
   const encoder = new TextEncoder();
@@ -365,6 +365,7 @@ Deno.serve(async (req) => {
       case "transaction.payment_failed": {
         if (customerId) {
           await supabase.from("organizations").update({
+            tier: "hobbyist",
             subscription_status: "past_due",
           } as any).eq("paddle_customer_id", customerId);
         }
@@ -375,6 +376,16 @@ Deno.serve(async (req) => {
           `Payment failed: ${failOrg.name}`,
           `Organization: ${failOrg.name}\nError: ${errorDetail}\nCustomer ID: ${customerId}`
         ).catch(() => {});
+        break;
+      }
+
+      case "subscription.past_due": {
+        if (subId) {
+          await supabase.from("organizations").update({
+            tier: "hobbyist",
+            subscription_status: "past_due",
+          } as any).eq("paddle_subscription_id", subId);
+        }
         break;
       }
 
