@@ -379,7 +379,7 @@ export default function ApiSettings() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Endpoint URL</Label>
+              <Label className="inline-flex items-center">Endpoint URL<HelpTooltip content="The endpoint Solera will POST data to when events occur in your account. Used to connect Solera to your own systems or tools like Zapier." /></Label>
               <Input value={newWebhookUrl} onChange={(e) => setNewWebhookUrl(e.target.value)} placeholder="https://your-server.com/webhook" />
             </div>
             <div>
