@@ -40,7 +40,7 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSampl
   const { profile } = useAuth();
   const isEditing = !!editingSample;
 
-  const { data: vintageBlockId } = useQuery({
+  const { data: vintageBlockId, isLoading: blockIdLoading } = useQuery({
     queryKey: ["vintage-block-id", vintageId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -178,7 +178,12 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSampl
         <Label>Notes</Label>
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
       </div>
-      <Button className="w-full min-h-[44px]" onClick={() => mutation.mutate()} disabled={!sampledAt || mutation.isPending}>
+      {!blockIdLoading && !vintageBlockId && (
+        <p className="text-sm text-destructive">
+          This vintage is not linked to a block. Lab samples cannot be recorded until the vintage has an associated block.
+        </p>
+      )}
+      <Button className="w-full min-h-[44px]" onClick={() => mutation.mutate()} disabled={!sampledAt || mutation.isPending || !vintageBlockId}>
         {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
         {buttonText}
       </Button>
