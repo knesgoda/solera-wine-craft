@@ -191,6 +191,11 @@ const BlockDetail = () => {
           <InfoRow label="Clone" value={block.clone} tooltip="A specific genetic selection of the variety. Different clones of the same variety can ripen days apart, which matters for multi-clone estates." />
           <InfoRow label="Rootstock" value={block.rootstock} tooltip="The root system the variety is grafted onto. Affects vigor, water uptake, and ripening speed. Common examples: 101-14, 3309C, 1103P." />
           <InfoRow label="Acres" value={block.acres} tooltip="Total planted area of this block. Used in yield calculations and harvest crew scheduling." />
+          <InfoRow label="Vine Spacing" value={(block as any).vine_spacing_ft ? `${(block as any).vine_spacing_ft} ft` : null} tooltip="Distance between vines within a row, in feet. Used to estimate vine count and canopy density." />
+          <InfoRow label="Row Spacing" value={(block as any).row_spacing_ft ? `${(block as any).row_spacing_ft} ft` : null} tooltip="Distance between rows, in feet. Combined with vine spacing to calculate vines per acre." />
+          <InfoRow label="Year Planted" value={(block as any).year_planted} tooltip="The year this block was established. Vine age affects yield, concentration, and flavor development." />
+          <InfoRow label="GDD Accumulation" value={prediction?.currentGdd != null ? `${prediction.currentGdd} GDD` : null} tooltip="Growing Degree Days accumulated since April 1. Higher GDD means faster ripening. Pulled automatically from weather data for your vineyard location." />
+          <InfoRow label="Estimated Harvest Date" value={prediction?.predictedDate ? format(prediction.predictedDate, "MMMM d, yyyy") : null} tooltip="Solera's predicted pick date based on current Brix trajectory and GDD accumulation. Updates automatically when new lab samples are added." />
         </CardContent>
       </Card>
 
