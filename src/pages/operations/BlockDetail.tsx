@@ -107,6 +107,7 @@ const BlockDetail = () => {
         soil_texture: editForm.soil_texture || null,
         soil_organic_matter: editForm.soil_organic_matter ? parseFloat(editForm.soil_organic_matter) : null,
         drainage: editForm.drainage || null,
+        row_orientation: editForm.row_orientation || null,
       }).eq("id", blockId!);
       if (error) throw error;
     },
@@ -132,6 +133,7 @@ const BlockDetail = () => {
       soil_texture: block.soil_texture || "",
       soil_organic_matter: block.soil_organic_matter != null ? String(block.soil_organic_matter) : "",
       drainage: (block as any).drainage || "",
+      row_orientation: (block as any).row_orientation || "",
     });
     setEditOpen(true);
   };
@@ -199,6 +201,7 @@ const BlockDetail = () => {
             <InfoRow label="Texture" value={block.soil_texture} />
             <InfoRow label="Organic Matter" value={block.soil_organic_matter ? `${block.soil_organic_matter}%` : null} />
             <InfoRow label="Drainage" value={(block as any).drainage} />
+            <InfoRow label="Row Orientation" value={(block as any).row_orientation} tooltip="Compass direction the rows run (e.g. N-S, E-W). Affects sun exposure throughout the day, ripening uniformity, and canopy management decisions." />
           </CardContent>
         </Card>
       )}
@@ -264,6 +267,10 @@ const BlockDetail = () => {
                 <Label>Drainage</Label>
                 <Input value={editForm.drainage} onChange={(e) => setEditForm({ ...editForm, drainage: e.target.value })} placeholder="e.g. Well-drained" />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="inline-flex items-center">Row Orientation<HelpTooltip content="Compass direction the rows run (e.g. N-S, E-W, NE-SW). Affects sun exposure throughout the day, ripening uniformity, and canopy management decisions." /></Label>
+              <Input value={editForm.row_orientation} onChange={(e) => setEditForm({ ...editForm, row_orientation: e.target.value })} placeholder="e.g. N-S" />
             </div>
             <Button type="submit" className="w-full" disabled={!editForm.name || updateBlock.isPending}>
               {updateBlock.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : "Save Changes"}
