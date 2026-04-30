@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ReactMarkdown from "react-markdown";
@@ -318,9 +319,16 @@ const AskSolera = () => {
   const ConversationSidebar = () => (
     <div className="flex flex-col h-full border-r border-border bg-muted/30">
       <div className="p-3 border-b border-border">
-        <Button onClick={handleNewConversation} className="w-full" variant="outline" size="sm">
-          <Plus className="h-4 w-4 mr-2" /> New Chat
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button onClick={handleNewConversation} className="flex-1" variant="outline" size="sm">
+            <Plus className="h-4 w-4 mr-2" /> New Chat
+          </Button>
+          <HelpTooltip content="Start a fresh conversation with your AI winemaking assistant. Your previous conversations are saved and accessible from the history panel." />
+        </div>
+        <div className="flex items-center mt-2 text-[11px] text-muted-foreground">
+          Conversation History
+          <HelpTooltip content="Your past Ask Solera conversations, organized by date. Click any conversation to continue where you left off." />
+        </div>
       </div>
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
