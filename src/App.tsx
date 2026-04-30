@@ -193,13 +193,13 @@ const App = () => (
               <Route path="/cellar/barrels" element={<TierGate requiredTier="small_boutique" featureName="Cellar Management"><BarrelInventory /></TierGate>} />
               <Route path="/cellar/blending" element={<TierGate requiredTier="small_boutique" featureName="Cellar Management"><BlendingTrials /></TierGate>} />
               <Route path="/cellar/blending/:trialId" element={<TierGate requiredTier="small_boutique" featureName="Cellar Management"><TrialDetail /></TierGate>} />
-              <Route path="/ask-solera" element={<GrowthTierGate><AskSolera /></GrowthTierGate>} />
+              <Route path="/ask-solera" element={<GrowthTierGate featureName="Ask Solera AI" featureDescription="Your winery's AI assistant. Ask questions about your vintages, blocks, and fermentation in plain English."><AskSolera /></GrowthTierGate>} />
               <Route path="/sales" element={<Navigate to="/inventory" replace />} />
               <Route path="/reports" element={<Reports />} />
-              <Route path="/reports/builder" element={<GrowthTierGate><ReportsBuilder /></GrowthTierGate>} />
+              <Route path="/reports/builder" element={<GrowthTierGate featureName="Custom Report Builder" featureDescription="Build and save custom reports across your vineyard, cellar, and sales data."><ReportsBuilder /></GrowthTierGate>} />
               <Route path="/data-import" element={<DataImport />} />
               <Route path="/import/handwritten" element={<HandwrittenImport />} />
-              <Route path="/analytics/analog" element={<GrowthTierGate><AnalogExplorer /></GrowthTierGate>} />
+              <Route path="/analytics/analog" element={<GrowthTierGate featureName="Vintage Analog Explorer" featureDescription="Find historical vintages that match your current growing conditions to inform harvest and blending decisions."><AnalogExplorer /></GrowthTierGate>} />
               <Route path="/costs" element={<GrowthTierGate><CostOverview /></GrowthTierGate>} />
               <Route path="/costs/dashboard" element={<GrowthTierGate><CogsDashboard /></GrowthTierGate>} />
               <Route path="/costs/lot/:vintageId" element={<GrowthTierGate><LotCostDetail /></GrowthTierGate>} />

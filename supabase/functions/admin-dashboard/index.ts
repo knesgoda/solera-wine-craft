@@ -363,8 +363,17 @@ Deno.serve(async (req) => {
       ]);
 
       // Activity timeline
+      // Fetch org-scoped vintage IDs first to prevent lab_samples leaking across orgs
+      const { data: orgVintages } = await supabase
+        .from("vintages")
+        .select("id")
+        .eq("org_id", orgId);
+      const orgVintageIds = (orgVintages || []).map((v: any) => v.id);
+
       const [labsRes, tasksRes, aiRes] = await Promise.all([
-        supabase.from("lab_samples").select("id, sampled_at, brix, ph").order("sampled_at", { ascending: false }).limit(5),
+        orgVintageIds.length > 0
+          ? supabase.from("lab_samples").select("id, sampled_at, brix, ph").in("vintage_id", orgVintageIds).order("sampled_at", { ascending: false }).limit(5)
+          : Promise.resolve({ data: [] }),
         supabase.from("tasks").select("id, title, status, created_at, completed_at").eq("org_id", orgId).order("created_at", { ascending: false }).limit(10),
         supabase.from("ai_conversations").select("id, title, created_at").eq("org_id", orgId).order("created_at", { ascending: false }).limit(5),
       ]);
@@ -883,7 +892,7 @@ Deno.serve(async (req) => {
         } catch (e: any) { checks.paddle = { status: "red", detail: e.message }; }
       } else { checks.paddle = { status: "red", detail: "Not configured" }; }
       checks.resend = Deno.env.get("RESEND_API_KEY") ? { status: "green" } : { status: "red", detail: "Not configured" };
-      checks.ai = Deno.env.get("LOVABLE_API_KEY") ? { status: "green" } : { status: "red", detail: "Not configured" };
+      checks.ai = Deno.env.get("ANTHROPIC_API_KEY") ? { status: "green" } : { status: "red", detail: "ANTHROPIC_API_KEY not configured" };
       return json({ checks, checkedAt: new Date().toISOString() });
     }
 

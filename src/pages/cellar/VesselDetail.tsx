@@ -117,6 +117,7 @@ export default function VesselDetail() {
         // Evaluate alert rules asynchronously
         supabase.functions.invoke("evaluate-alerts", {
           body: { type: "fermentation_log", record },
+          headers: { "x-internal-secret": import.meta.env.VITE_INTERNAL_FUNCTION_SECRET || "" },
         }).catch((e) => console.error("Alert evaluation failed:", e));
       }
     },

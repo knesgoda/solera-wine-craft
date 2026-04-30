@@ -15,14 +15,55 @@ Deno.serve(async (req) => {
     if (!stripeKey) throw new Error("Stripe not configured");
 
     const authHeader = req.headers.get("authorization");
-    const supabase = createClient(
+    const anonClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader! } } }
     );
     const serviceClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    // Get shipment
+    // Verify caller identity
+    const { data: { user }, error: userErr } = await anonClient.auth.getUser();
+    if (userErr || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Fetch caller's org
+    const { data: callerProfile } = await serviceClient
+      .from("profiles")
+      .select("org_id")
+      .eq("id", user.id)
+      .single();
+    if (!callerProfile?.org_id) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const callerOrgId = callerProfile.org_id;
+
+    // Fetch shipment and verify ownership
+    const { data: shipmentOwner } = await serviceClient
+      .from("club_shipments")
+      .select("org_id")
+      .eq("id", shipment_id)
+      .single();
+    if (!shipmentOwner) {
+      return new Response(JSON.stringify({ error: "Shipment not found" }), {
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (callerOrgId !== shipmentOwner.org_id) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Use service client for all subsequent reads (ownership verified)
+    const supabase = serviceClient;
+
+    // Get shipment with club details
     const { data: shipment, error: shipErr } = await supabase
       .from("club_shipments")
       .select("*, wine_clubs:club_id(name, price_per_shipment, bottles_per_shipment)")

@@ -127,6 +127,7 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSampl
         // Evaluate alert rules asynchronously
         supabase.functions.invoke("evaluate-alerts", {
           body: { type: "lab_sample", record },
+          headers: { "x-internal-secret": import.meta.env.VITE_INTERNAL_FUNCTION_SECRET || "" },
         }).catch((e) => console.error("Alert evaluation failed:", e));
 
         // Detect anomalies asynchronously
