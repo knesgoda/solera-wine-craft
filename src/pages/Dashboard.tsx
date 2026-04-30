@@ -14,6 +14,15 @@ import { usePrimeWindowBlocks } from "@/hooks/usePrimeWindowBlocks";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
+
+const TOOLTIPS: Record<string, string> = {
+  "Active Vintages": "A vintage is one winemaking batch, typically tied to a single harvest year and grape variety. Active vintages are currently in production.",
+  "Tasks Due": "Open tasks assigned to you or your team that are due today or overdue. Click to view and complete them.",
+  "Cases On Hand": "Total finished wine cases currently in your inventory across all SKUs and storage locations.",
+  "Inventory Value": "Estimated retail value of all cases on hand based on your current bottle price per SKU.",
+  "Prime Pick Windows": "Blocks where Solera's harvest prediction model estimates optimal picking is within the next 14 days based on current Brix trajectory and GDD accumulation.",
+};
 
 const Dashboard = () => {
   const { profile, organization } = useAuth();
@@ -93,7 +102,10 @@ const Dashboard = () => {
           const inner = (
             <Card className="hover:shadow-lg transition-shadow cursor-pointer border-none shadow-md">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground inline-flex items-center">
+                  {stat.title}
+                  {TOOLTIPS[stat.title] && <HelpTooltip content={TOOLTIPS[stat.title]} />}
+                </CardTitle>
                 <stat.icon className={`h-5 w-5 ${stat.color}`} />
               </CardHeader>
               <CardContent>
@@ -121,6 +133,7 @@ const Dashboard = () => {
                 <Send className="h-4 w-4 text-secondary" />
               </span>
               Ask Solera
+              <HelpTooltip content="Ask your AI winemaking assistant anything about your operation. Try: When should I pick Block 3? or How does this vintage compare to 2022?" />
             </CardTitle>
           </CardHeader>
           <CardContent>
