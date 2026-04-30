@@ -196,7 +196,7 @@ export function PeakPredictionTab({ vintage, labSamples }: Props) {
                     <span className="text-sm font-medium text-foreground">{f.name}</span>
                     <div className="flex items-center gap-3">
                       <span className={`text-sm ${f.hasData ? "text-foreground" : "text-muted-foreground italic"}`}>
-                        {f.hasData ? f.value : "No data — using default"}
+                        {f.hasData ? f.value : "No data, using default"}
                       </span>
                       {f.impact === "later" && <TrendingUp className="h-4 w-4 text-green-600" aria-label="Pushes peak later" />}
                       {f.impact === "earlier" && <TrendingDown className="h-4 w-4 text-amber-600" aria-label="Pushes peak earlier" />}
