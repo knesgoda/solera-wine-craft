@@ -5,15 +5,51 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function escapeXml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Require authenticated caller (function deploys with verify_jwt=false)
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const anonClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const { data: { user }, error: authErr } = await anonClient.auth.getUser();
+    if (authErr || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { order_id } = await req.json();
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const { data: order } = await supabase.from("orders").select("*, inventory_skus:sku_id(label, variety, vintage_year)").eq("id", order_id).single();
     if (!order) throw new Error("Order not found");
+
+    // Caller must belong to the order's org
+    const { data: profile } = await supabase.from("profiles").select("org_id").eq("id", user.id).single();
+    if (!profile?.org_id || profile.org_id !== order.org_id) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const { data: config } = await supabase.from("shipcompliant_config").select("*").eq("org_id", order.org_id).single();
     if (!config || !config.active) {
@@ -42,15 +78,15 @@ Deno.serve(async (req) => {
     <ns:CheckComplianceOfSalesOrder>
       <ns:Request>
         <ns:Security>
-          <ns:Username>${config.username}</ns:Username>
-          <ns:Password>${config.password_hash}</ns:Password>
+          <ns:Username>${escapeXml(config.username)}</ns:Username>
+          <ns:Password>${escapeXml(config.password_hash)}</ns:Password>
         </ns:Security>
         <ns:SalesOrder>
-          <ns:ShipTo><ns:State>${destinationState}</ns:State></ns:ShipTo>
+          <ns:ShipTo><ns:State>${escapeXml(destinationState)}</ns:State></ns:ShipTo>
           <ns:OrderItems>
             <ns:OrderItem>
-              <ns:ProductKey>${order.inventory_skus?.label || "WINE"}</ns:ProductKey>
-              <ns:Quantity>${order.quantity_bottles}</ns:Quantity>
+              <ns:ProductKey>${escapeXml(order.inventory_skus?.label || "WINE")}</ns:ProductKey>
+              <ns:Quantity>${escapeXml(order.quantity_bottles)}</ns:Quantity>
             </ns:OrderItem>
           </ns:OrderItems>
         </ns:SalesOrder>

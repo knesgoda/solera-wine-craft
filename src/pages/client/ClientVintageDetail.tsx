@@ -10,6 +10,7 @@ import { LabChart } from "@/components/vintages/LabChart";
 import { format, parseISO } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
+import { exportCoaPdf } from "@/lib/coaPdfExport";
 
 export default function ClientVintageDetail() {
   const { vintageId } = useParams();
@@ -59,10 +60,29 @@ export default function ClientVintageDetail() {
   const handleDownloadCoa = async () => {
     setGeneratingCoa(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-coa", { body: { vintage_id: vintageId } });
-      if (error) throw error;
-      if (data?.pdf_url) window.open(data.pdf_url, "_blank");
-      toast.success("COA generated");
+      // Fetch vineyard name (vintage already loaded; lab samples and trials too)
+      const { data: vintageWithVineyard } = await supabase
+        .from("vintages")
+        .select("harvest_date, blocks(name, vineyards(name))")
+        .eq("id", vintageId!)
+        .single();
+      const block = (vintageWithVineyard as any)?.blocks;
+      const vineyardName = block?.vineyards?.name || "";
+      const latestLab = labSamples.length > 0
+        ? labSamples[labSamples.length - 1] // last item; query is ascending
+        : null;
+
+      exportCoaPdf({
+        vintageYear: vintage.year,
+        blockName: block?.name || vintage.blocks?.name || "",
+        vineyardName,
+        status: vintage.status,
+        harvestDate: vintageWithVineyard?.harvest_date || vintage.harvest_date || null,
+        latestLab,
+        trials: (trials as any[]).map((t) => ({ name: t.name, notes: t.notes })),
+        generatedAt: new Date(),
+      });
+      toast.success("COA downloaded");
     } catch (e: any) { toast.error(e.message); }
     finally { setGeneratingCoa(false); }
   };
