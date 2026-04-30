@@ -1,48 +1,120 @@
-# HelpTooltip System — Implementation Plan
+# Field Expansion: 7 Modules with HelpTooltips
 
-Add a single reusable click-activated help tooltip and place it next to ~80 field labels and stat tiles across the app, so users get inline guidance without crowding the UI.
+Extend forms and detail views across Cellar, Lab/Vintage, TTB, Custom Crush, Vineyard, and Tasks. Add ~30 new labeled inputs (each with a HelpTooltip), wire them to the database, and surface them in detail views. Reuse the existing `HelpTooltip` component — do not modify it.
 
-## Part 1 — Build the reusable component
+## Schema reality check (from live DB)
 
-**New file:** `src/components/ui/HelpTooltip.tsx`
+Some columns the brief asks for already exist. Plan respects what's actually there:
 
-- Built on the already-installed `@radix-ui/react-popover` (no new deps).
-- Props: `content: string` (required), `size?: "sm" | "md"` (default `"sm"`).
-- Click-only trigger (Radix Popover defaults to click on Trigger). Click outside / Escape close automatically.
-- ? button: 16px (sm) / 20px circle, transparent bg, 1px solid Solera gold (`#C8902A`), gold text 10px/600, hover fills gold with white text, gold focus ring, `aria-label="Help"`, `aria-expanded` reflects open state.
-- Popover: max-width 280px, bg `#1a1a1a`, text `#F5F0E8` 13px / line-height 1.5, radius 6px, padding 10px 14px, shadow `0 4px 12px rgba(0,0,0,0.3)`, `role="tooltip"`, side `top` with `collisionPadding` so it auto-flips below near viewport edges, includes a small `<PopoverArrow>` matching the dark bg.
-- All Tailwind utility classes are static (no template literals); explicit hex colors used inline via `style` only where Tailwind tokens don't match the spec exactly (popover bg/text), to satisfy the JIT static-class rule.
+- `blocks` — already has `row_spacing_ft`, `vine_spacing_ft`, `year_planted`. Only `row_orientation` is missing.
+- `tasks` — already has `category` and `priority`. Need `task_type`, `assigned_to_user_id`. (Reuse `category` for visual badge; add `task_type` as a new finer-grained field per spec.)
+- `fermentation_vessels` — already has `vessel_type`, `status`, `current_fill_gal`, `capacity_gallons`. Missing: `oak_type`, `toast_level`, `barrel_age_fills`, `fill_level_pct`.
+- `fermentation_logs` — has `temp_f`, `brix`. Missing: `cap_management`.
+- `vintages` — has `fermentation_start`, `ml_complete` (bool). Missing: `target_brix`, `target_ph`, `mlf_status`, `yeast_strain`, `inoculation_date`, plus Part 5 custom-crush fields.
+- `lab_samples` — Missing: `sample_source`, `malic_acid`.
+- `ttb_bond_info` — already has `bond_number`. No `ttb_settings` or `ow1_reports` table — both will be created.
+- **No `lots` or `client_lots` table** — Custom Crush is modeled as `vintages` with `client_org_id`. Part 5 fields go on `vintages`.
 
-## Parts 2–10 — Place tooltips
+## Part 1 — Cellar: NewVesselDialog
 
-For every label below, render `<HelpTooltip content="…" />` immediately after the label text, inline, with a 4px left margin (`ml-1`). Stat tile titles get the icon next to the title text inside `<CardTitle>`.
+File: `src/components/cellar/NewVesselDialog.tsx`, `src/pages/cellar/VesselDetail.tsx`
 
-- **Part 2 — Dashboard** (`src/pages/Dashboard.tsx`): the 5 stat card titles + the Ask Solera CardTitle ("Ask Solera" line) for the input.
-- **Part 3 — Vineyard Operations** (`src/pages/operations/BlockDetail.tsx`, `VineyardDetail.tsx`, `src/components/tasks/NewTaskDialog.tsx`, `src/pages/tasks/TaskDetail.tsx`): block metadata fields (Variety, Clone, Rootstock, Acres, Row Orientation, Vine Spacing, Row Spacing, Year Planted, GDD Accumulation, Estimated Harvest Date) + task fields (Task Type, Assigned To, Due Date, Priority).
-- **Part 4 — Vintage & Lab** (`src/components/vintages/NewLabSampleDialog.tsx`, `NewVintageDialog.tsx`, `src/pages/vintages/VintageDetail.tsx`): lab fields (Brix, pH, TA, VA, Free SO2, Total SO2, Alcohol, RS, Malic Acid, Sample Source) + vintage fields (Target Brix, Target pH, Fermentation Start Date, MLF Status).
-- **Part 5 — Cellar & Fermentation** (`src/components/cellar/NewVesselDialog.tsx`, `NewTrialDialog.tsx`, `src/pages/cellar/VesselDetail.tsx`, `TrialDetail.tsx`): vessel fields (Vessel Type, Capacity, Fill Level, Vessel Status, Oak Type, Toast Level, Barrel Age), fermentation log fields (Temperature, Pump Over / Punch Down, Brix Drop, Inoculation Date, Yeast Strain), blending trial fields (Component Percentage, Trial Notes, Target Volume).
-- **Part 6 — TTB Compliance** (`src/components/vintages/NewAdditionDialog.tsx`, `TtbAdditionsTab.tsx`, `src/pages/compliance/ComplianceReports.tsx`, `ComplianceSettings.tsx`): TTB additions (Addition Type, Quantity, Purpose, Lot Number) + OW-1 (Bond Number, Reporting Period, Wine on Hand Beginning, Produced This Period, Taxpaid Removals, Losses).
-- **Part 7 — Sales / DTC / Inventory** (`src/components/inventory/NewSkuDialog.tsx`, `src/pages/inventory/SkuDetail.tsx`, `InventoryList.tsx`, `src/pages/club/ClubDetail.tsx`, `ClubShipments.tsx`): SKU fields (SKU, Bottle Size, Cases On Hand, Bottles On Hand, Allocation, Cost Per Bottle, Retail Price) + wine club (Shipment Frequency, Club Tier, Compliance State).
-- **Part 8 — Custom Crush Portal** (`src/pages/clients/ClientDetail.tsx`, `src/pages/client/ClientVintageDetail.tsx`, `ClientDocuments.tsx`): Client Name, Lot Number, Grapes Received, Expected Yield, Contract Status, COA Status.
-- **Part 9 — Data Migration & Integrations** (`src/components/import/ImportUploader.tsx`, `MappingReview.tsx`, `ImportPreview.tsx`, `src/pages/DataImport.tsx`, `src/pages/settings/GoogleSheetsSettings.tsx`, `ApiSettings.tsx`): Source Format, Column Mapping, Import Target, Duplicate Handling, Google Sheets Sync, Sync Frequency, API Key, Webhook URL.
-- **Part 10 — Ask Solera** (`src/pages/AskSolera.tsx`): New Chat, Conversation History, Winery Context indicator (if rendered), Analog Explorer link/section.
+Add to dialog: Vessel Type select (required, before Capacity), Vessel Status select (after type, default `empty_clean`), Fill Level % (after capacity), and a barrel-only conditional block (Oak Type, Toast Level, Barrel Age) shown only when type is `barrel`.
 
-If a specific field/label doesn't exist in a file, that tooltip is skipped for that file and noted in the final report rather than inventing UI.
+Migration: add `oak_type text`, `toast_level text`, `barrel_age_fills integer DEFAULT 0 CHECK >= 0`, `fill_level_pct integer DEFAULT 0 CHECK 0..100`. Reuse existing `vessel_type` and `status`.
 
-## Part 11 — Final verification pass
+Display new fields in `VesselDetail` via the existing InfoRow pattern; barrel fields gated on `vessel_type === 'barrel'`.
 
-After all placements:
+## Part 2 — Cellar: Fermentation log + ferment start fields
 
-1. Grep all `HelpTooltip content="…"` usages and report any whose content exceeds 300 characters (none of the supplied strings exceed this, but the check is run anyway).
-2. Confirm every module imports the same `@/components/ui/HelpTooltip` and there are no parallel re-implementations (`rg "function HelpTooltip|const HelpTooltip"`).
-3. Build/typecheck runs automatically; runtime errors panel is checked for HelpTooltip-related errors.
-4. Manually scan each modified label row for crowding at 375px — tooltips use `inline-flex` with `ml-1` and the trigger is only 16px so they sit cleanly to the right of labels without breaking inputs/buttons. Any layout that wraps awkwardly gets `flex items-center gap-1` on the parent label.
+Find the fermentation log entry surface in `VesselDetail.tsx` (or sibling). Add `cap_management` select to the per-log form. Brix and Temp already exist — just ensure both are labeled with HelpTooltip.
 
-Report findings; if all clean, output **TOOLTIP SYSTEM COMPLETE**.
+Add `yeast_strain` (text) and `inoculation_date` (date) to `NewVintageDialog` and the vintage edit surface in `VintageDetail`. Migration adds `cap_management text` on `fermentation_logs` and `yeast_strain text`, `inoculation_date date` on `vintages`.
+
+History view (existing fermentation log table) shows `cap_management` as a new column.
+
+## Part 3 — Vintage & Lab
+
+Files: `src/components/vintages/NewLabSampleDialog.tsx`, `src/components/vintages/NewVintageDialog.tsx`, `src/pages/vintages/VintageDetail.tsx`.
+
+NewLabSampleDialog: add `sample_source` select and `malic_acid` numeric.
+
+VintageDetail (and NewVintageDialog where appropriate): add `target_brix`, `target_ph`, `fermentation_start_date`, `mlf_status` select. Note: existing `fermentation_start` (timestamp) is kept for backward compatibility; new `fermentation_start_date` is a date-only convenience field per spec. Existing `ml_complete` boolean is preserved; the new `mlf_status` enum string is independent.
+
+Migration: lab_samples gets `sample_source text`, `malic_acid numeric`. Vintages gets `target_brix numeric`, `target_ph numeric`, `fermentation_start_date date`, `mlf_status text`.
+
+Display all new fields in the vintage detail read-only section.
+
+## Part 4 — TTB OW-1 Form
+
+Build a new "OW-1 Reports" surface inside the existing TTB module (`src/pages/compliance/ComplianceReports.tsx` is the host).
+
+Bond Number stays on existing `ttb_bond_info` (already present) — surface as a banner/link if missing.
+
+New table `ow1_reports` with columns per spec, including the generated `wine_on_hand_ending` stored column and unique `(org_id, reporting_month, reporting_year)`. RLS: org-scoped via `get_user_org_id(auth.uid())`.
+
+UI: list of reports (month/year, status, ending balance), "New Report" dialog with Month, Year, the four numeric inputs and a live-calculated read-only Ending. Edit drafts; mark submitted.
+
+## Part 5 — Custom Crush lot fields (on `vintages`)
+
+Files: `src/pages/clients/ClientDetail.tsx`, `src/pages/vintages/VintageDetail.tsx` (since custom crush lots are vintages with `client_org_id`).
+
+Add to the vintage edit/create surface for client lots: `grapes_received_tons`, `expected_yield_gallons` (with auto-suggest = tons * 150 placeholder), `contract_status` select (default `pending`), `coa_status` select (default `not_requested`).
+
+Lot list view (`ClientDetail` lot tab + `ClientList` if applicable): color-coded badges per spec for both statuses.
+
+Pending-contract guard: warning banner at top of `VintageDetail` when `contract_status = 'pending'` and the vintage has a `client_org_id`.
+
+Migration adds the 4 columns to `vintages`.
+
+## Part 6 — Vineyard BlockDetail
+
+File: `src/pages/operations/BlockDetail.tsx`.
+
+Edit dialog adds `row_orientation` select. Vine/Row spacing and Year Planted already in DB — surface inputs if not already present in the edit form.
+
+InfoRow display section adds: Row Orientation, Vine Spacing (`X ft`), Row Spacing (`X ft`), Year Planted, GDD Accumulation (read-only from existing weather data / `lab_samples.gdd_cumulative` or weather hook), Estimated Harvest Date (from `useHarvestPrediction`). Each gets a tooltip. Null values render as nothing (existing InfoRow behavior).
+
+Migration adds only `row_orientation text` to `blocks`.
+
+## Part 7 — Tasks
+
+File: `src/components/tasks/NewTaskDialog.tsx`, `src/pages/tasks/TaskList.tsx`, `src/pages/tasks/TaskDetail.tsx`.
+
+NewTaskDialog adds: `task_type` select, `priority` select (default `normal`, column already exists), `assigned_to_user_id` select populated from `profiles WHERE org_id = current org`.
+
+Migration adds `task_type text` and `assigned_to_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL` on `tasks`. Reuses existing `priority` column.
+
+Task list cards: render `task_type` as a neutral badge and `priority` as a colored dot/border (gray/blue/orange/red).
+
+## Final verification
+
+After all parts:
+
+1. `rg -c 'HelpTooltip content=' src/` summed across files — report total.
+2. `rg -o 'content="[^"]{301,}"' src/` — report any over-length tooltip strings.
+3. List every migration file created.
+4. Confirm no new field added without a HelpTooltip.
+5. Build/typecheck runs automatically; report any TS errors.
+6. Manually verify barrel-only block in `NewVesselDialog` only renders when `vessel_type === 'barrel'`.
+
+Output **FIELD EXPANSION COMPLETE** if all clean.
 
 ## Technical notes
 
-- Component is a single self-contained file using `Popover`, `PopoverTrigger`, `PopoverContent` from `@/components/ui/popover` (already wraps Radix). PopoverArrow is added via direct `@radix-ui/react-popover` import for the arrow only.
-- No changes to `tailwind.config.ts`, no new packages, no DB/RLS/edge function changes.
-- Memory rule respected: all Tailwind classes used are full static utilities; the gold/cream/near-black colors that aren't already tokens are applied via inline `style` to avoid arbitrary-value class generation issues.
-- Per the "no em dashes in user-facing copy" rule, all tooltip strings supplied by the user use en dashes / hyphens — kept as provided. Any em dashes in the supplied copy will be normalized to hyphens before insertion.
+- All new selects use shadcn `Select` already in the codebase.
+- All RLS policies follow the existing org-scoped pattern with `get_user_org_id(auth.uid())` and `has_role`. New tables `ow1_reports` get standard 4-policy CRUD scoped to org.
+- The generated column `wine_on_hand_ending numeric GENERATED ALWAYS AS (...) STORED` works in Postgres 12+ which Supabase runs.
+- Migrations are idempotent (`ADD COLUMN IF NOT EXISTS`, `CREATE TABLE IF NOT EXISTS`).
+- Custom Crush lot model uses `vintages` with `client_org_id` — no new `client_lots` table is created (the brief assumes one exists; the codebase took a different path, and creating a parallel table would split the schema).
+- Memory rule: no em dashes in user-facing copy. All tooltip strings supplied with em dashes will be normalized to en dashes or hyphens before insertion.
+- Tailwind classes remain static utilities per project memory.
+- No changes to `HelpTooltip.tsx` itself.
+
+## Out of scope / explicit deviations from the brief
+
+- No `client_lots` / `lots` table created — Part 5 fields land on `vintages` since that is how custom crush lots already work in this codebase.
+- `ttb_settings` table not created — `ttb_bond_info` already stores bond number org-scoped; reusing it.
+- `tasks.priority` column already exists; brief's "create migration adding priority" reduces to seeding the input control only.
+- Fermentation `temp_f` and `brix` columns already exist; no schema change for those — only label + tooltip wiring.
+- `vintages.fermentation_start` (timestamptz) is preserved alongside the new `fermentation_start_date` (date) per the brief's wording. If you'd prefer to consolidate, say so before approval and I'll drop the new column and reuse the old one.
