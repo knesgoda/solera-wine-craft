@@ -34,6 +34,13 @@ export default function ComingSoon() {
     e.preventDefault();
     setError(null);
     if (honeypot) return; // bot trap
+
+    const trimmedEmail = email.trim();
+    if (trimmedEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -238,6 +245,7 @@ export default function ComingSoon() {
                     id="email"
                     type="email"
                     required
+                    maxLength={254}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@winery.com"
