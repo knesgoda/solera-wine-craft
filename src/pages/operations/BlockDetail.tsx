@@ -287,6 +287,20 @@ const BlockDetail = () => {
               <Label className="inline-flex items-center">Row Orientation<HelpTooltip content="Compass direction the rows run (e.g. N-S, E-W, NE-SW). Affects sun exposure throughout the day, ripening uniformity, and canopy management decisions." /></Label>
               <Input value={editForm.row_orientation} onChange={(e) => setEditForm({ ...editForm, row_orientation: e.target.value })} placeholder="e.g. N-S" />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="inline-flex items-center">Vine Spacing (ft)<HelpTooltip content="Distance between vines within a row, in feet. Used to estimate vine count and canopy density." /></Label>
+                <Input type="number" step="0.5" min="1" value={editForm.vine_spacing_ft} onChange={(e) => setEditForm({ ...editForm, vine_spacing_ft: e.target.value })} placeholder="e.g. 4" />
+              </div>
+              <div className="space-y-2">
+                <Label className="inline-flex items-center">Row Spacing (ft)<HelpTooltip content="Distance between rows, in feet. Combined with vine spacing to calculate vines per acre." /></Label>
+                <Input type="number" step="0.5" min="1" value={editForm.row_spacing_ft} onChange={(e) => setEditForm({ ...editForm, row_spacing_ft: e.target.value })} placeholder="e.g. 8" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="inline-flex items-center">Year Planted<HelpTooltip content="The year this block was established. Vine age affects yield, concentration, and flavor development." /></Label>
+              <Input type="number" min="1900" max={new Date().getFullYear()} value={editForm.year_planted} onChange={(e) => setEditForm({ ...editForm, year_planted: e.target.value })} placeholder="e.g. 2015" />
+            </div>
             <Button type="submit" className="w-full" disabled={!editForm.name || updateBlock.isPending}>
               {updateBlock.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : "Save Changes"}
             </Button>
