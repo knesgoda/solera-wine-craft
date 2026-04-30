@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { useToast } from "@/hooks/use-toast";
 import { Key, Webhook, Copy, Plus, Trash2, Send, AlertTriangle, Lock } from "lucide-react";
 import { format } from "date-fns";
@@ -200,7 +201,7 @@ export default function ApiSettings() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>API Keys</CardTitle>
+                <CardTitle className="inline-flex items-center">API Keys<HelpTooltip content="Your Solera API keys for connecting third-party tools. Treat each key like a password and never share it. Each key can be scoped to specific modules and permissions." /></CardTitle>
                 <CardDescription>Authenticate API requests with Bearer tokens.</CardDescription>
               </div>
               <Button onClick={() => setShowNewKeyDialog(true)}><Plus className="h-4 w-4 mr-1.5" />New API Key</Button>
