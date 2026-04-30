@@ -16,6 +16,8 @@ import type { Database } from "@/integrations/supabase/types";
 import { HarvestWindowCard } from "@/components/harvest/HarvestWindowCard";
 import { RipeningHistorySection } from "@/components/ripening/RipeningHistorySection";
 import { HelpTooltip } from "@/components/ui/HelpTooltip";
+import { useHarvestPrediction } from "@/hooks/useHarvestPrediction";
+import { format } from "date-fns";
 type LifecycleStage = Database["public"]["Enums"]["block_lifecycle_stage"];
 
 const LIFECYCLE_LABELS: Record<LifecycleStage, string> = {
@@ -50,7 +52,7 @@ const InfoRow = ({ label, value, tooltip }: { label: string; value: string | num
 const emptyEditForm = {
   name: "", variety: "", clone: "", rootstock: "", acres: "",
   lifecycle_stage: "" as string, soil_ph: "", soil_texture: "", soil_organic_matter: "", drainage: "",
-  row_orientation: "",
+  row_orientation: "", vine_spacing_ft: "", row_spacing_ft: "", year_planted: "",
 };
 
 const BlockDetail = () => {
@@ -80,6 +82,8 @@ const BlockDetail = () => {
     },
     enabled: !!vineyardId,
   });
+
+  const { data: prediction } = useHarvestPrediction(blockId, vineyardId);
 
   const deleteBlock = useMutation({
     mutationFn: async () => {
