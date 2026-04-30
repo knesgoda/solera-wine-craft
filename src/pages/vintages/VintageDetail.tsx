@@ -89,7 +89,7 @@ export default function VintageDetail() {
   const [editContractStatus, setEditContractStatus] = useState<string>("");
   const [editCoaStatus, setEditCoaStatus] = useState<string>("");
   const orgId = profile?.org_id;
-  const tierGate = useTierGate("mid_size");
+  const tierGate = useTierGate("small_boutique");
   const defaultTab = location.pathname.endsWith("/peak-prediction") ? "peak" : "lab";
 
   const deleteSample = useMutation({
