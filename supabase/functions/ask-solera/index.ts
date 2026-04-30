@@ -301,8 +301,11 @@ serve(async (req) => {
       .eq("id", profile.org_id)
       .single();
 
-    const allowedTiers = ["mid_size", "enterprise"];
-    if (!org || !allowedTiers.includes(org.tier) || ["past_due", "canceled"].includes(org.subscription_status)) {
+    if (
+      !org ||
+      !["mid_size", "enterprise"].includes(org.tier) ||
+      !["active", "trialing"].includes(org.subscription_status)
+    ) {
       return new Response(JSON.stringify({ error: "Ask Solera requires a Growth or Enterprise plan." }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -332,6 +335,40 @@ serve(async (req) => {
     if (!ANTHROPIC_API_KEY) {
       console.error("ANTHROPIC_API_KEY is not configured");
       throw new Error("AI is temporarily unavailable. Please try again later or contact support.");
+    }
+
+    // Log conversation for training — failures must never block the response
+    let loggedConversationId: string | null = null;
+    try {
+      const { data: convoRow } = await serviceClient
+        .from("ai_conversations")
+        .insert({
+          org_id: profile.org_id,
+          user_id: user.id,
+          started_at: new Date().toISOString(),
+          message_count: messages.length + 1,
+          model: "claude-sonnet-4-6",
+        })
+        .select("id")
+        .single();
+      loggedConversationId = convoRow?.id || null;
+    } catch (e) {
+      console.error("Failed to log ai_conversations row:", e);
+    }
+
+    if (loggedConversationId) {
+      try {
+        const userMessages = messages.map((m: any) => ({
+          conversation_id: loggedConversationId,
+          org_id: profile.org_id,
+          role: m.role,
+          content: m.content,
+          created_at: new Date().toISOString(),
+        }));
+        await serviceClient.from("ai_messages").insert(userMessages);
+      } catch (e) {
+        console.error("Failed to log incoming messages:", e);
+      }
     }
 
     // Build winery context
@@ -383,7 +420,53 @@ ${wineryContext}`;
       throw new Error("AI is temporarily unavailable. Please try again later or contact support.");
     }
 
-    return new Response(response.body, {
+    // Stream the response and capture the full text for training logging
+    if (!loggedConversationId || !response.body) {
+      return new Response(response.body, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
+      });
+    }
+
+    // Tee the stream: one branch goes to the client, the other is consumed to capture assistant text
+    const [clientStream, captureStream] = response.body.tee();
+
+    // Consume captureStream asynchronously to log the assistant message
+    (async () => {
+      try {
+        const reader = captureStream.getReader();
+        const decoder = new TextDecoder();
+        let fullText = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          // Extract text deltas from SSE stream
+          for (const line of chunk.split("\n")) {
+            if (line.startsWith("data: ")) {
+              try {
+                const json = JSON.parse(line.slice(6));
+                if (json.type === "content_block_delta" && json.delta?.type === "text_delta") {
+                  fullText += json.delta.text || "";
+                }
+              } catch { /* ignore parse errors on non-JSON lines */ }
+            }
+          }
+        }
+        if (fullText && loggedConversationId) {
+          await serviceClient.from("ai_messages").insert({
+            conversation_id: loggedConversationId,
+            org_id: profile.org_id,
+            role: "assistant",
+            content: fullText,
+            created_at: new Date().toISOString(),
+          });
+        }
+      } catch (e) {
+        console.error("Failed to log assistant message:", e);
+      }
+    })();
+
+    return new Response(clientStream, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
     });
   } catch (e) {

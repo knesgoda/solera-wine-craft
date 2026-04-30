@@ -213,6 +213,12 @@ export function RipeningCharts({ selectedBlocks, samples, vintageMap, gddData, c
           <CardTitle className="text-base font-display">Brix Ripening Curves</CardTitle>
         </CardHeader>
         <CardContent>
+          {brixData.length === 0 && selectedBlocks.length > 0 ? (
+            <div className="h-[320px] w-full flex flex-col items-center justify-center text-center">
+              <p className="text-muted-foreground text-sm font-medium">No lab samples recorded yet for the selected blocks.</p>
+              <p className="text-muted-foreground text-xs mt-2 max-w-sm">Add lab samples from the Vintages module to begin tracking ripening progress.</p>
+            </div>
+          ) : (
           <div className="h-[320px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={brixData}>
@@ -283,6 +289,7 @@ export function RipeningCharts({ selectedBlocks, samples, vintageMap, gddData, c
               </ComposedChart>
             </ResponsiveContainer>
           </div>
+          )}
         </CardContent>
       </Card>
 

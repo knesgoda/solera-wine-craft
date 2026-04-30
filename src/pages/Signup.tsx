@@ -16,6 +16,7 @@ const Signup = () => {
   const [searchParams] = useSearchParams();
   const inviteCode = searchParams.get("invite");
   const refCode = searchParams.get("ref");
+  const planParam = searchParams.get("plan");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [wineryName, setWineryName] = useState("");
@@ -50,7 +51,9 @@ const Signup = () => {
     })();
   }, [refCode]);
 
-  if (!authLoading && user) return <Navigate to="/dashboard" replace />;
+  if (!authLoading && user) {
+    return <Navigate to={planParam ? `/settings/billing?plan=${planParam}` : "/dashboard"} replace />;
+  }
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,7 +125,7 @@ const Signup = () => {
       }).catch(() => {});
 
       toast.success("Account created! Let's set up your winery.");
-      navigate("/onboarding");
+      navigate(planParam ? `/onboarding?plan=${planParam}` : "/onboarding");
     } catch (error: any) {
       toast.error(error.message);
     } finally {

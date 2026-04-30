@@ -217,6 +217,16 @@ Deno.serve(async (req) => {
           console.warn("subscription.created: no org_id in custom_data");
           break;
         }
+        // Validate org exists to prevent ghost subscriptions
+        const { data: orgExists } = await supabase
+          .from("organizations")
+          .select("id")
+          .eq("id", orgId)
+          .single();
+        if (!orgExists) {
+          console.error(`subscription.created: org ${orgId} not found — skipping update`);
+          break;
+        }
         await supabase.from("organizations").update({
           paddle_customer_id: customerId,
           paddle_subscription_id: subId,
@@ -348,6 +358,7 @@ Deno.serve(async (req) => {
 
       case "subscription.paused": {
         await supabase.from("organizations").update({
+          tier: "hobbyist",
           subscription_status: "paused",
         } as any).eq("paddle_subscription_id", subId);
         break;

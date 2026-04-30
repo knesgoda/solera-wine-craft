@@ -294,8 +294,8 @@ export default function PricingPage() {
       return;
     }
 
-    // Not logged in — send to signup
-    navigate("/signup");
+    // Not logged in — send to signup with intended plan so checkout can resume after auth
+    navigate(`/signup?plan=${tierKey}`);
   };
 
   const TIER_TO_PADDLE: Record<string, string> = {

@@ -49,7 +49,7 @@ export default defineConfig(async ({ mode }) => {
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/~oauth/, /^\/api/, /^\/functions/],
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/api/, /^\/functions/, /^\/auth/],
         runtimeCaching: [
           {
             urlPattern: /\/rest\/v1\/tasks/,

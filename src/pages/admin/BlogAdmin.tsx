@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -12,8 +12,6 @@ import { toast } from "sonner";
 import { SEOHead } from "@/components/SEOHead";
 import { ArrowLeft, Plus, Pencil, Eye, EyeOff, Trash2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { useRoleAccess } from "@/hooks/useRoleAccess";
-import { useNavigate } from "react-router-dom";
 
 const CATEGORIES = [
   "Winery Management",
@@ -46,51 +44,68 @@ type BlogPost = {
 };
 
 export default function BlogAdmin() {
-  const { isAtLeast } = useRoleAccess();
-  const navigate = useNavigate();
-  const [authenticated, setAuthenticated] = useState(false);
-  const [password, setPassword] = useState("");
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [editing, setEditing] = useState<BlogPost | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
-  if (!isAtLeast("owner")) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-display font-bold text-foreground">Not Authorized</h1>
-          <p className="text-muted-foreground">You don't have permission to access this page.</p>
-          <Button variant="outline" onClick={() => navigate("/dashboard")}>Back to Dashboard</Button>
-        </div>
-      </div>
-    );
-  }
-
-  const verifyPassword = async () => {
-    try {
-      const response = await supabase.functions.invoke("verify-admin", {
-        body: { password },
-      });
-      if (response.data?.verified) {
-        setAuthenticated(true);
-        loadPosts();
-      } else {
-        toast.error("Invalid password");
+  useEffect(() => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        setAuthenticated(false);
+        return;
       }
-    } catch {
-      toast.error("Verification failed");
-    }
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-admin`,
+          {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+          }
+        );
+        if (response.ok) {
+          setAuthenticated(true);
+          loadPosts(token);
+        } else {
+          setAuthenticated(false);
+        }
+      } catch {
+        setAuthenticated(false);
+      }
+    })();
+  }, []);
+
+  const getToken = async (): Promise<string | null> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
   };
 
-  const loadPosts = async () => {
+  const loadPosts = async (token?: string) => {
+    const t = token || await getToken();
+    if (!t) return;
     try {
-      const response = await supabase.functions.invoke("verify-admin", {
-        body: { password, action: "list-posts" },
-      });
-      if (response.data?.posts) {
-        setPosts(response.data.posts);
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-admin`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${t}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ action: "list-posts" }),
+        }
+      );
+      const data = await response.json();
+      if (data?.posts) {
+        setPosts(data.posts);
       }
     } catch {
       toast.error("Failed to load posts");
@@ -99,16 +114,27 @@ export default function BlogAdmin() {
 
   const savePost = async (post: Partial<BlogPost> & { id?: string }) => {
     setLoading(true);
+    const token = await getToken();
+    if (!token) { setLoading(false); return; }
     try {
-      const response = await supabase.functions.invoke("verify-admin", {
-        body: { password, action: post.id ? "update-post" : "create-post", post },
-      });
-      if (response.data?.success) {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-admin`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ action: post.id ? "update-post" : "create-post", post }),
+        }
+      );
+      const data = await response.json();
+      if (data?.success) {
         toast.success(post.id ? "Post updated" : "Post created");
         setEditing(null);
         loadPosts();
       } else {
-        toast.error(response.data?.error || "Failed to save");
+        toast.error(data?.error || "Failed to save");
       }
     } catch {
       toast.error("Failed to save post");
@@ -125,10 +151,20 @@ export default function BlogAdmin() {
   };
 
   const deletePost = async (id: string) => {
+    const token = await getToken();
+    if (!token) return;
     try {
-      await supabase.functions.invoke("verify-admin", {
-        body: { password, action: "delete-post", postId: id },
-      });
+      await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-admin`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ action: "delete-post", postId: id }),
+        }
+      );
       toast.success("Post deleted");
       loadPosts();
     } catch {
@@ -136,30 +172,12 @@ export default function BlogAdmin() {
     }
   };
 
-  if (!authenticated) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <SEOHead title="Blog Admin" noIndex />
-        <div className="w-full max-w-sm p-8 bg-card rounded-xl border border-border shadow-lg">
-          <h1 className="font-display text-2xl font-bold text-foreground mb-6 text-center">Blog Admin</h1>
-          <div className="space-y-4">
-            <div>
-              <Label>Admin Password</Label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && verifyPassword()}
-                placeholder="Enter admin password"
-              />
-            </div>
-            <Button onClick={verifyPassword} className="w-full bg-primary text-primary-foreground">
-              Sign In
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
+  if (authenticated === null) {
+    return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Verifying access…</p></div>;
+  }
+
+  if (authenticated === false) {
+    return <div>Access denied.</div>;
   }
 
   if (editing) {
