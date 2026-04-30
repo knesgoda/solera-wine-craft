@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -108,7 +109,7 @@ export function NewTaskDialog({ open, onOpenChange }: Props) {
       </div>
 
       <div>
-        <Label>Due Date</Label>
+        <Label className="inline-flex items-center">Due Date<HelpTooltip content="The date this task should be completed. Overdue tasks appear highlighted in red on the dashboard." /></Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button

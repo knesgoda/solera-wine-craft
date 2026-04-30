@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -84,7 +85,7 @@ export function NewAdditionDialog({ vintageId, open, onOpenChange }: Props) {
   const formContent = (
     <div className="space-y-4 mt-2">
       <div>
-        <Label>Type *</Label>
+        <Label className="inline-flex items-center">Type *<HelpTooltip content="The type of winemaking addition being recorded. All additions to wine must be logged for TTB compliance. Solera tracks these against legal limits automatically." /></Label>
         <Select value={additionType} onValueChange={setAdditionType}>
           <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
           <SelectContent>
@@ -95,12 +96,12 @@ export function NewAdditionDialog({ vintageId, open, onOpenChange }: Props) {
         </Select>
       </div>
       <div>
-        <Label>TTB Code</Label>
+        <Label className="inline-flex items-center">TTB Code<HelpTooltip content="The TTB regulatory code for this addition (for example 24.246 for SO2). Used on the OW-1 report to document compliance with federal limits." /></Label>
         <Input value={ttbCode} onChange={(e) => setTtbCode(e.target.value)} placeholder="e.g. 24.246" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label>Amount *</Label>
+          <Label className="inline-flex items-center">Amount *<HelpTooltip content="Amount of the addition used. Use the units specified, such as grams per liter (g/L), parts per million (ppm), or pounds per 1000 gallons. Solera converts for reporting." /></Label>
           <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
         </div>
         <div>
