@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { HarvestWindowCard } from "@/components/harvest/HarvestWindowCard";
 import { RipeningHistorySection } from "@/components/ripening/RipeningHistorySection";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 type LifecycleStage = Database["public"]["Enums"]["block_lifecycle_stage"];
 
 const LIFECYCLE_LABELS: Record<LifecycleStage, string> = {
@@ -33,11 +34,14 @@ const LIFECYCLE_COLORS: Record<LifecycleStage, string> = {
   replanting: "bg-red-100 text-red-800",
 };
 
-const InfoRow = ({ label, value }: { label: string; value: string | number | null | undefined }) => {
+const InfoRow = ({ label, value, tooltip }: { label: string; value: string | number | null | undefined; tooltip?: string }) => {
   if (!value && value !== 0) return null;
   return (
     <div className="flex justify-between py-3 border-b border-border last:border-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-sm text-muted-foreground inline-flex items-center">
+        {label}
+        {tooltip && <HelpTooltip content={tooltip} />}
+      </span>
       <span className="text-sm font-medium text-foreground">{value}</span>
     </div>
   );
@@ -170,10 +174,10 @@ const BlockDetail = () => {
           <CardTitle className="text-lg font-display">Viticulture</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <InfoRow label="Variety" value={block.variety} />
-          <InfoRow label="Clone" value={block.clone} />
-          <InfoRow label="Rootstock" value={block.rootstock} />
-          <InfoRow label="Acres" value={block.acres} />
+          <InfoRow label="Variety" value={block.variety} tooltip="The grape variety planted in this block. Used to group blocks for ripening comparison and harvest scheduling." />
+          <InfoRow label="Clone" value={block.clone} tooltip="A specific genetic selection of the variety. Different clones of the same variety can ripen days apart, which matters for multi-clone estates." />
+          <InfoRow label="Rootstock" value={block.rootstock} tooltip="The root system the variety is grafted onto. Affects vigor, water uptake, and ripening speed. Common examples: 101-14, 3309C, 1103P." />
+          <InfoRow label="Acres" value={block.acres} tooltip="Total planted area of this block. Used in yield calculations and harvest crew scheduling." />
         </CardContent>
       </Card>
 
@@ -211,21 +215,21 @@ const BlockDetail = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Variety</Label>
+                <Label className="inline-flex items-center">Variety<HelpTooltip content="The grape variety planted in this block. Used to group blocks for ripening comparison and harvest scheduling." /></Label>
                 <Input value={editForm.variety} onChange={(e) => setEditForm({ ...editForm, variety: e.target.value })} placeholder="e.g. Cabernet Sauvignon" />
               </div>
               <div className="space-y-2">
-                <Label>Clone</Label>
+                <Label className="inline-flex items-center">Clone<HelpTooltip content="A specific genetic selection of the variety. Different clones of the same variety can ripen days apart, which matters for multi-clone estates." /></Label>
                 <Input value={editForm.clone} onChange={(e) => setEditForm({ ...editForm, clone: e.target.value })} placeholder="e.g. 337" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Rootstock</Label>
+                <Label className="inline-flex items-center">Rootstock<HelpTooltip content="The root system the variety is grafted onto. Affects vigor, water uptake, and ripening speed. Common examples: 101-14, 3309C, 1103P." /></Label>
                 <Input value={editForm.rootstock} onChange={(e) => setEditForm({ ...editForm, rootstock: e.target.value })} placeholder="e.g. 110R" />
               </div>
               <div className="space-y-2">
-                <Label>Acres</Label>
+                <Label className="inline-flex items-center">Acres<HelpTooltip content="Total planted area of this block. Used in yield calculations and harvest crew scheduling." /></Label>
                 <Input type="number" step="0.01" value={editForm.acres} onChange={(e) => setEditForm({ ...editForm, acres: e.target.value })} />
               </div>
             </div>
