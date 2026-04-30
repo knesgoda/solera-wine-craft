@@ -301,8 +301,8 @@ serve(async (req) => {
       .eq("id", profile.org_id)
       .single();
 
-    const allowedTiers = ["growth", "enterprise"];
-    if (!org || !allowedTiers.includes(org.tier) || ["past_due", "cancelled"].includes(org.subscription_status)) {
+    const allowedTiers = ["mid_size", "enterprise"];
+    if (!org || !allowedTiers.includes(org.tier) || ["past_due", "canceled"].includes(org.subscription_status)) {
       return new Response(JSON.stringify({ error: "Ask Solera requires a Growth or Enterprise plan." }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -380,7 +380,7 @@ ${wineryContext}`;
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      throw new Error(`AI request failed (${response.status}): ${t.slice(0, 200)}`);
+      throw new Error("AI is temporarily unavailable. Please try again later or contact support.");
     }
 
     return new Response(response.body, {
