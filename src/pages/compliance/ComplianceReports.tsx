@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Plus, Download, FileText, CheckCircle, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
+import { exportTtbReportPdf, exportTtbAdditionsPdf, type TtbReportData } from "@/lib/ttbPdfExport";
 
 const WINE_TYPES = [
   { value: "still_table_wine", label: "Still Table Wine" },
@@ -20,6 +21,23 @@ const WINE_TYPES = [
   { value: "vermouth", label: "Vermouth" },
   { value: "other", label: "Other" },
 ] as const;
+
+/** TTB excise tax rates (USD per wine gallon) for small producers, 2026 reference. */
+const TAX_RATES: Record<string, number> = {
+  still_table_wine: 0.07,
+  sparkling_wine: 3.30,
+  dessert_wine: 0.57,
+  vermouth: 1.07,
+  other: 1.07,
+};
+
+const WINE_TYPE_LABEL: Record<string, string> = {
+  still_table_wine: "Still Table Wine",
+  sparkling_wine: "Sparkling Wine",
+  dessert_wine: "Dessert Wine",
+  vermouth: "Vermouth",
+  other: "Other",
+};
 
 /** TTB standard: 1 ton of grapes yields approximately 170 gallons of wine */
 const TONS_TO_GALLONS = 170;
