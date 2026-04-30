@@ -27,6 +27,30 @@ import { AnomaliesTab } from "@/components/vintages/AnomaliesTab";
 import { VintageCostsTab } from "@/components/costs/VintageCostsTab";
 import { useTierGate } from "@/hooks/useTierGate";
 import { DollarSign } from "lucide-react";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+
+const contractStatusBadge = (s?: string | null) => {
+  if (!s) return null;
+  const map: Record<string, string> = {
+    pending: "bg-yellow-100 text-yellow-900 border-yellow-300",
+    signed: "bg-green-100 text-green-900 border-green-300",
+    countersigned: "bg-green-100 text-green-900 border-green-300",
+    expired: "bg-red-100 text-red-900 border-red-300",
+  };
+  return <Badge variant="outline" className={`capitalize ${map[s] || ""}`}>{s.replace(/_/g, " ")}</Badge>;
+};
+const coaStatusBadge = (s?: string | null) => {
+  if (!s) return null;
+  const map: Record<string, string> = {
+    not_requested: "bg-muted text-muted-foreground border-border",
+    pending_lab: "bg-yellow-100 text-yellow-900 border-yellow-300",
+    ready: "bg-blue-100 text-blue-900 border-blue-300",
+    released_to_client: "bg-green-100 text-green-900 border-green-300",
+  };
+  return <Badge variant="outline" className={`capitalize ${map[s] || ""}`}>{s.replace(/_/g, " ")}</Badge>;
+};
 
 const statusLabels: Record<string, string> = {
   planned: "Planned", in_progress: "In Progress", harvested: "Harvested",
@@ -49,6 +73,16 @@ export default function VintageDetail() {
   const [editHarvestDate, setEditHarvestDate] = useState<Date | undefined>(undefined);
   const [editTons, setEditTons] = useState("");
   const [editNotes, setEditNotes] = useState("");
+  const [editYeastStrain, setEditYeastStrain] = useState("");
+  const [editInoculationDate, setEditInoculationDate] = useState<Date | undefined>(undefined);
+  const [editTargetBrix, setEditTargetBrix] = useState("");
+  const [editTargetPh, setEditTargetPh] = useState("");
+  const [editFermStartDate, setEditFermStartDate] = useState<Date | undefined>(undefined);
+  const [editMlfStatus, setEditMlfStatus] = useState<string>("");
+  const [editGrapesTons, setEditGrapesTons] = useState("");
+  const [editYieldGal, setEditYieldGal] = useState("");
+  const [editContractStatus, setEditContractStatus] = useState<string>("");
+  const [editCoaStatus, setEditCoaStatus] = useState<string>("");
   const orgId = profile?.org_id;
   const tierGate = useTierGate("mid_size");
 
@@ -135,6 +169,16 @@ export default function VintageDetail() {
         harvest_date: editHarvestDate ? format(editHarvestDate, "yyyy-MM-dd") : null,
         tons_harvested: editTons ? parseFloat(editTons) : null,
         notes: editNotes || null,
+        yeast_strain: editYeastStrain || null,
+        inoculation_date: editInoculationDate ? format(editInoculationDate, "yyyy-MM-dd") : null,
+        target_brix: editTargetBrix ? parseFloat(editTargetBrix) : null,
+        target_ph: editTargetPh ? parseFloat(editTargetPh) : null,
+        fermentation_start_date: editFermStartDate ? format(editFermStartDate, "yyyy-MM-dd") : null,
+        mlf_status: editMlfStatus || null,
+        grapes_received_tons: editGrapesTons ? parseFloat(editGrapesTons) : null,
+        expected_yield_gallons: editYieldGal ? parseFloat(editYieldGal) : null,
+        contract_status: editContractStatus || null,
+        coa_status: editCoaStatus || null,
       } as any).eq("id", vintageId!);
       if (error) throw error;
     },
@@ -164,6 +208,16 @@ export default function VintageDetail() {
     setEditHarvestDate(vintage?.harvest_date ? parseISO(vintage.harvest_date) : undefined);
     setEditTons(vintage?.tons_harvested != null ? String(vintage.tons_harvested) : "");
     setEditNotes(vintage?.notes || "");
+    setEditYeastStrain(vintage?.yeast_strain || "");
+    setEditInoculationDate(vintage?.inoculation_date ? parseISO(vintage.inoculation_date) : undefined);
+    setEditTargetBrix(vintage?.target_brix != null ? String(vintage.target_brix) : "");
+    setEditTargetPh(vintage?.target_ph != null ? String(vintage.target_ph) : "");
+    setEditFermStartDate(vintage?.fermentation_start_date ? parseISO(vintage.fermentation_start_date) : undefined);
+    setEditMlfStatus(vintage?.mlf_status || "");
+    setEditGrapesTons(vintage?.grapes_received_tons != null ? String(vintage.grapes_received_tons) : "");
+    setEditYieldGal(vintage?.expected_yield_gallons != null ? String(vintage.expected_yield_gallons) : "");
+    setEditContractStatus(vintage?.contract_status || "");
+    setEditCoaStatus(vintage?.coa_status || "");
     setIsEditingVintage(true);
   };
 
