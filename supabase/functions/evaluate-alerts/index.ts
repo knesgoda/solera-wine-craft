@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { sendTransactionalEmail } from "../_shared/send-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://solera.vin",
@@ -297,7 +298,6 @@ Deno.serve(async (req) => {
 
     const orgUsers = (profiles || []).filter((p: any) => p.email);
     const userIds = profiles?.map((p: any) => p.id) || [];
-    const resendKey = Deno.env.get("RESEND_API_KEY");
 
     for (const match of matches) {
       // Write notification for each user
@@ -323,39 +323,20 @@ Deno.serve(async (req) => {
 
       // Send emails for email/both channels
       if (match.channel === "email" || match.channel === "both") {
-        if (resendKey) {
-          const label = PARAM_LABELS[match.parameter] || match.parameter;
-          const linkButton = match.linkUrl
-            ? `<a href="${match.linkUrl}" style="display: inline-block; background: #6B1B2A; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600;">View Ripening Tracker</a>`
-            : `<a href="https://solera.vin/dashboard" style="display: inline-block; background: #6B1B2A; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600;">View in Solera</a>`;
-
-          const emailHtml = `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a1a;">
-              <h2 style="color: #6B1B2A; font-size: 20px; margin: 0 0 16px;">⚠️ ${label} Alert</h2>
-              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 24px; color: #333;">${match.message}</p>
-              ${linkButton}
-              <p style="font-size: 12px; color: #999; margin: 32px 0 0;">Solera — Alert Notifications</p>
-            </div>
-          `;
-
-          for (const p of orgUsers) {
-            try {
-              await fetch("https://api.resend.com/emails", {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  from: "Solera Alerts <notifications@solera.vin>",
-                  to: [p.email],
-                  subject: `⚠️ ${label} Alert`,
-                  html: emailHtml,
-                }),
-              });
-            } catch (e) {
-              console.error(`Email error for ${p.id}:`, e);
-            }
-          }
-        } else {
-          console.warn("RESEND_API_KEY not configured — skipping alert emails");
+        const label = PARAM_LABELS[match.parameter] || match.parameter;
+        const ctaUrl = match.linkUrl || "https://solera.vin/dashboard";
+        for (const p of orgUsers) {
+          await sendTransactionalEmail(
+            p.email,
+            "lab-alert",
+            {
+              alertText: match.message,
+              parameter: label,
+              ctaUrl,
+            },
+            // One email per user per rule trigger; rule is rate-limited 24h above
+            `lab-alert-${match.ruleId}-${p.id}-${now.toISOString().slice(0, 13)}`,
+          );
         }
       }
     }
