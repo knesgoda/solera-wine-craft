@@ -30,6 +30,10 @@ import { DollarSign } from "lucide-react";
 import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { PeakPredictionTab } from "@/components/vintages/PeakPredictionTab";
+import { TierGate } from "@/components/TierGate";
+import { Sparkles } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
 const contractStatusBadge = (s?: string | null) => {
   if (!s) return null;
@@ -61,6 +65,7 @@ const statusOrder = ["planned", "in_progress", "harvested", "in_cellar", "bottle
 export default function VintageDetail() {
   const { vintageId } = useParams<{ vintageId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { organization, profile } = useAuth();
   const [labDialogOpen, setLabDialogOpen] = useState(false);
@@ -85,6 +90,7 @@ export default function VintageDetail() {
   const [editCoaStatus, setEditCoaStatus] = useState<string>("");
   const orgId = profile?.org_id;
   const tierGate = useTierGate("mid_size");
+  const defaultTab = location.pathname.endsWith("/peak-prediction") ? "peak" : "lab";
 
   const deleteSample = useMutation({
     mutationFn: async (sampleId: string) => {
@@ -508,7 +514,7 @@ export default function VintageDetail() {
       </Card>
 
       {/* Tabs for Lab Samples, TTB Additions, Costs */}
-      <Tabs defaultValue="lab" className="space-y-4">
+      <Tabs defaultValue={defaultTab} className="space-y-4">
         <TabsList className="w-full flex-wrap">
           <TabsTrigger value="lab" className="flex-1 gap-2">
             <FlaskConical className="h-4 w-4" /> Lab
@@ -518,6 +524,9 @@ export default function VintageDetail() {
           </TabsTrigger>
           <TabsTrigger value="anomalies" className="flex-1 gap-2">
             <AlertTriangle className="h-4 w-4" /> Anomalies
+          </TabsTrigger>
+          <TabsTrigger value="peak" className="flex-1 gap-2">
+            <Sparkles className="h-4 w-4" /> Peak
           </TabsTrigger>
           {tierGate.allowed && (
             <TabsTrigger value="costs" className="flex-1 gap-2">
@@ -621,6 +630,12 @@ export default function VintageDetail() {
 
         <TabsContent value="anomalies">
           <AnomaliesTab vintageId={vintageId!} />
+        </TabsContent>
+
+        <TabsContent value="peak">
+          <TierGate requiredTier="small_boutique" featureName="Peak Prediction">
+            <PeakPredictionTab vintage={vintage} labSamples={labSamples} />
+          </TierGate>
         </TabsContent>
 
         {tierGate.allowed && (
