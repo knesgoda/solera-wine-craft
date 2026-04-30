@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendTransactionalEmail } from "../_shared/send-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://solera.vin",
@@ -56,7 +57,9 @@ Deno.serve(async (req) => {
     const senderType = callerClient ? "client" : "facility";
 
     // Insert message
+    const messageId = crypto.randomUUID();
     const { error } = await supabase.from("client_messages").insert({
+      id: messageId,
       org_id: clientOrg.parent_org_id,
       client_org_id,
       sender_type: senderType,
@@ -65,23 +68,31 @@ Deno.serve(async (req) => {
     });
     if (error) throw error;
 
-    // Notify org owner via email (if Resend is configured)
-    const resendKey = Deno.env.get("RESEND_API_KEY");
-    if (resendKey && senderType === "client") {
-      const { data: profiles } = await supabase.from("profiles").select("email").eq("org_id", clientOrg.parent_org_id).limit(1);
+    // Notify org owner via Lovable email queue (only when client writes to facility)
+    if (senderType === "client") {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("org_id", clientOrg.parent_org_id)
+        .limit(1);
       const ownerEmail = profiles?.[0]?.email;
       if (ownerEmail) {
-        const { data: cOrg } = await supabase.from("client_orgs").select("name").eq("id", client_org_id).single();
-        await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            from: `Solera <noreply@${Deno.env.get("RESEND_DOMAIN") || "solera.vin"}>`,
-            to: [ownerEmail],
-            subject: `New message from ${cOrg?.name || "client"}`,
-            html: `<p>${cOrg?.name || "A client"} sent you a message:</p><blockquote>${message}</blockquote>`,
-          }),
-        });
+        const { data: cOrg } = await supabase
+          .from("client_orgs")
+          .select("name")
+          .eq("id", client_org_id)
+          .single();
+        const preview = (message || "").toString().slice(0, 280);
+        await sendTransactionalEmail(
+          ownerEmail,
+          "client-message-notify",
+          {
+            clientName: cOrg?.name || "A client",
+            messagePreview: preview,
+            ctaUrl: "https://solera.vin/clients",
+          },
+          `client-msg-${messageId}`,
+        );
       }
     }
 
