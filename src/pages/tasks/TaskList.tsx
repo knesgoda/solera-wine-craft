@@ -30,7 +30,20 @@ type TaskRow = {
   offline_queued: boolean;
   created_at: string;
   updated_at: string;
+  priority: string | null;
+  task_type: string | null;
 };
+
+const PRIORITY_BORDER: Record<string, string> = {
+  low: "border-l-gray-300",
+  medium: "border-l-blue-400",
+  high: "border-l-orange-400",
+  critical: "border-l-red-500",
+  urgent: "border-l-red-500",
+};
+
+const formatTaskType = (t: string) =>
+  t.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default function TaskList() {
   const { organization } = useAuth();
@@ -74,7 +87,7 @@ export default function TaskList() {
   const renderTask = (task: TaskRow) => (
     <Card
       key={task.id}
-      className="cursor-pointer hover:shadow-md transition-shadow"
+      className={`cursor-pointer hover:shadow-md transition-shadow border-l-4 ${PRIORITY_BORDER[task.priority ?? "medium"] ?? PRIORITY_BORDER.medium}`}
       onClick={() => navigate(`/tasks/${task.id}`)}
     >
       <CardContent className="p-4 flex items-center justify-between gap-3">
@@ -92,6 +105,9 @@ export default function TaskList() {
                 <MapPin className="h-3.5 w-3.5" />
                 GPS
               </span>
+            )}
+            {task.task_type && (
+              <Badge variant="secondary" className="text-xs">{formatTaskType(task.task_type)}</Badge>
             )}
           </div>
         </div>
