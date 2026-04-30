@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
 export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading, organization, profile, authError, refreshProfile } = useAuth();
+  const location = useLocation();
   const [timedOut, setTimedOut] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [clientCheck, setClientCheck] = useState<"pending" | "winery" | "client">("pending");
@@ -84,7 +85,8 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
     );
   }
 
-  if (organization && !organization.onboarding_completed) {
+  if (organization && !organization.onboarding_completed &&
+      !location.pathname.startsWith("/onboarding")) {
     return <Navigate to="/onboarding" replace />;
   }
 

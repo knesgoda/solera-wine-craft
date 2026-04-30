@@ -11,6 +11,14 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const cronSecret = req.headers.get("x-cron-secret");
+    const expectedSecret = Deno.env.get("CRON_SECRET");
+    if (!expectedSecret || cronSecret !== expectedSecret) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
@@ -80,7 +88,7 @@ serve(async (req) => {
           const avgLow = (weather.reduce((s, w) => s + (w.temp_min_f || 0), 0) / weather.length).toFixed(1);
           const totalPrecip = weather.reduce((s, w) => s + (w.precip_inches || 0), 0).toFixed(2);
           const gdd = weather.reduce((s, w) => s + (w.gdd_daily || 0), 0).toFixed(1);
-          weatherSummary = `Avg high: ${avgHigh}°F, Avg low: ${avgLow}°F, Total precip: ${totalPrecip}", GDD accumulated: ${gdd}`;
+          weatherSummary = `Avg high: ${avgHigh}°F, Avg low: ${avgLow}°F, Total precip: ${totalPrecip} in, GDD accumulated: ${gdd}`;
         }
 
         const context = `

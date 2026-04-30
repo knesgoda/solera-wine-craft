@@ -340,18 +340,35 @@ serve(async (req) => {
     // Log conversation for training — failures must never block the response
     let loggedConversationId: string | null = null;
     try {
-      const { data: convoRow } = await serviceClient
-        .from("ai_conversations")
-        .insert({
-          org_id: profile.org_id,
-          user_id: user.id,
-          started_at: new Date().toISOString(),
-          message_count: messages.length + 1,
-          model: "claude-sonnet-4-6",
-        })
-        .select("id")
-        .single();
-      loggedConversationId = convoRow?.id || null;
+      // If caller supplied a conversationId, validate it belongs to them
+      if (conversationId) {
+        const { data: existingConvo } = await serviceClient
+          .from("ai_conversations")
+          .select("id")
+          .eq("id", conversationId)
+          .eq("org_id", profile.org_id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (existingConvo) {
+          loggedConversationId = existingConvo.id;
+        }
+        // If not found/not owned, fall through to create a new conversation below
+      }
+
+      if (!loggedConversationId) {
+        const { data: convoRow } = await serviceClient
+          .from("ai_conversations")
+          .insert({
+            org_id: profile.org_id,
+            user_id: user.id,
+            started_at: new Date().toISOString(),
+            message_count: messages.length + 1,
+            model: "claude-sonnet-4-6",
+          })
+          .select("id")
+          .single();
+        loggedConversationId = convoRow?.id || null;
+      }
     } catch (e) {
       console.error("Failed to log ai_conversations row:", e);
     }
@@ -420,11 +437,16 @@ ${wineryContext}`;
       throw new Error("AI is temporarily unavailable. Please try again later or contact support.");
     }
 
+    const streamHeaders = {
+      ...corsHeaders,
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      ...(loggedConversationId ? { "x-conversation-id": loggedConversationId } : {}),
+    };
+
     // Stream the response and capture the full text for training logging
     if (!loggedConversationId || !response.body) {
-      return new Response(response.body, {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
-      });
+      return new Response(response.body, { headers: streamHeaders });
     }
 
     // Tee the stream: one branch goes to the client, the other is consumed to capture assistant text
@@ -466,9 +488,7 @@ ${wineryContext}`;
       }
     })();
 
-    return new Response(clientStream, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
-    });
+    return new Response(clientStream, { headers: streamHeaders });
   } catch (e) {
     console.error("ask-solera error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {

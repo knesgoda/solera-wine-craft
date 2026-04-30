@@ -23,6 +23,20 @@ export async function flushSyncQueue(): Promise<number> {
       if (item.operation === "insert") {
         const { error } = await supabase.from(item.table as any).insert(item.data as any);
         if (error) throw error;
+
+        if (item.table === "lab_samples") {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.access_token) {
+              await supabase.functions.invoke("proxy-evaluate-alerts", {
+                body: { type: "lab_samples", record: item.data },
+                headers: { Authorization: `Bearer ${session.access_token}` },
+              });
+            }
+          } catch (alertErr) {
+            console.error("proxy-evaluate-alerts failed after offline lab_samples sync:", alertErr);
+          }
+        }
       } else if (item.operation === "update") {
         const { id: recordId, ...rest } = item.data;
 
@@ -44,6 +58,20 @@ export async function flushSyncQueue(): Promise<number> {
 
         const { error } = await supabase.from(item.table as any).update(rest as any).eq("id", recordId);
         if (error) throw error;
+
+        if (item.table === "lab_samples") {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.access_token) {
+              await supabase.functions.invoke("proxy-evaluate-alerts", {
+                body: { type: "lab_samples", record: item.data },
+                headers: { Authorization: `Bearer ${session.access_token}` },
+              });
+            }
+          } catch (alertErr) {
+            console.error("proxy-evaluate-alerts failed after offline lab_samples sync:", alertErr);
+          }
+        }
       }
       await clearSyncQueueItem(item.id!);
       flushed++;

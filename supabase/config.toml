@@ -53,5 +53,10 @@ project_id = "vibdxsntxwrepnkrlbdw"
     verify_jwt = false
   [functions.webhook-dispatch]
     verify_jwt = false
+
   [functions.weekly-summary]
+    verify_jwt = false
+  [functions.proxy-evaluate-alerts]
+    verify_jwt = false
+  [functions.create-checkout]
     verify_jwt = false

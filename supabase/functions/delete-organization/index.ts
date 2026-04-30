@@ -91,6 +91,24 @@ Deno.serve(async (req) => {
       }, 400);
     }
 
+    // Pre-flight: check for TTB compliance records (ON DELETE RESTRICT)
+    const { data: orgVintages } = await admin
+      .from("vintages")
+      .select("id")
+      .eq("org_id", org.id);
+    const vintageIds = (orgVintages || []).map((v) => v.id);
+    if (vintageIds.length > 0) {
+      const { count: ttbCount } = await admin
+        .from("ttb_additions")
+        .select("id", { count: "exact", head: true })
+        .in("vintage_id", vintageIds);
+      if (ttbCount && ttbCount > 0) {
+        return jsonResponse({
+          error: "This organization has TTB compliance records and cannot be deleted. Contact support to arrange data export and account closure.",
+        }, 409);
+      }
+    }
+
     // Audit row
     const { data: audit, error: auditErr } = await admin
       .from("data_deletion_requests")
@@ -108,29 +126,54 @@ Deno.serve(async (req) => {
     if (auditErr) throw auditErr;
     auditId = audit.id;
 
-    // Final auto-export (best-effort, fire-and-forget)
+    // Final export must complete before any deletion begins
     if (!skipExport) {
-      const { data: job } = await admin
+      const { data: job, error: jobErr } = await admin
         .from("backup_jobs")
         .insert({
           org_id: org.id,
           format: "xlsx",
           status: "pending",
           created_by: user.id,
-          // backup_jobs.triggered_by check constraint allows: manual | scheduled | cancellation
           triggered_by: "cancellation",
         })
         .select("id")
         .single();
-      if (job?.id) {
-        fetch(`${supabaseUrl}/functions/v1/process-backup`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${serviceKey}`,
-          },
-          body: JSON.stringify({ job_id: job.id }),
-        }).catch((e) => console.error("Final export trigger failed:", e));
+      if (jobErr || !job?.id) {
+        throw new Error("Failed to create export job before deletion.");
+      }
+
+      // Await process-backup synchronously before proceeding
+      const processResp = await fetch(`${supabaseUrl}/functions/v1/process-backup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({ job_id: job.id }),
+      }).catch((e) => {
+        console.error("Export trigger failed:", e);
+        return null;
+      });
+
+      if (!processResp || !processResp.ok) {
+        await admin.from("data_deletion_requests")
+          .update({ status: "failed", error_message: "Pre-deletion export failed", completed_at: new Date().toISOString() })
+          .eq("id", auditId);
+        return jsonResponse({ error: "Pre-deletion data export failed. Organization was not deleted. Please try again or contact support." }, 500);
+      }
+
+      // Confirm job completed
+      const { data: finishedJob } = await admin
+        .from("backup_jobs")
+        .select("status")
+        .eq("id", job.id)
+        .single();
+      if (finishedJob?.status === "failed") {
+        await admin.from("data_deletion_requests")
+          .update({ status: "failed", error_message: "Export job failed", completed_at: new Date().toISOString() })
+          .eq("id", auditId);
+        return jsonResponse({ error: "Pre-deletion data export failed. Organization was not deleted. Please try again or contact support." }, 500);
       }
     }
 

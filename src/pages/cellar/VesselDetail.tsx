@@ -114,11 +114,14 @@ export default function VesselDetail() {
         const { error } = await supabase.from("fermentation_logs").insert(record as any);
         if (error) throw error;
 
-        // Evaluate alert rules asynchronously
-        supabase.functions.invoke("evaluate-alerts", {
-          body: { type: "fermentation_log", record },
-          headers: { "x-internal-secret": import.meta.env.VITE_INTERNAL_FUNCTION_SECRET || "" },
-        }).catch((e) => console.error("Alert evaluation failed:", e));
+        // Evaluate alert rules asynchronously via authenticated proxy
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (!session?.access_token) return;
+          supabase.functions.invoke("proxy-evaluate-alerts", {
+            body: { type: "fermentation_log", record },
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }).catch((e) => console.error("Alert evaluation failed:", e));
+        });
       }
     },
     onSuccess: () => {

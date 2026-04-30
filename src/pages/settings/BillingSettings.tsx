@@ -122,36 +122,22 @@ const BillingSettings = () => {
           toast({ title: "Plan upgraded!", description: `You're now on the ${getTierDisplay(tier)} plan.` });
         }
       } else {
-        // No subscription — open Paddle checkout
+        // No subscription — create checkout server-side to bind org_id securely
         const priceId = (PADDLE_PRICES as any)[tier]?.monthly;
         if (!priceId) {
           toast({ title: "Error", description: "Unable to start checkout. Please contact support.", variant: "destructive" });
           return;
         }
 
-        const paddle = await getPaddle();
-        if (!paddle) {
-          toast({ title: "Error", description: "Payment system not initialized. Please try again.", variant: "destructive" });
+        const { data, error } = await supabase.functions.invoke("create-checkout", {
+          body: { priceId },
+        });
+        if (error || !data?.checkoutUrl) {
+          toast({ title: "Error", description: "Unable to start checkout. Please try again.", variant: "destructive" });
           return;
         }
 
-        const checkoutConfig: any = {
-          items: [{ priceId, quantity: 1 }],
-          settings: {
-            successUrl: `${window.location.origin}/settings/billing?checkout=success`,
-            theme: 'light',
-            locale: 'en',
-          },
-        };
-
-        if (organization?.id) {
-          checkoutConfig.customData = { org_id: organization.id };
-        }
-        if (user?.email) {
-          checkoutConfig.customer = { email: user.email };
-        }
-
-        paddle.Checkout.open(checkoutConfig);
+        window.location.href = data.checkoutUrl;
       }
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
