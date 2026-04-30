@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
@@ -57,8 +58,8 @@ export function NewVesselDialog({ open, onOpenChange }: Props) {
   const formContent = (
     <div className="space-y-4 mt-2">
       <div><Label>Name *</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Tank 1" /></div>
-      <div><Label>Capacity (liters)</Label><Input type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} /></div>
-      <div><Label>Material</Label><Input value={material} onChange={(e) => setMaterial(e.target.value)} placeholder="e.g. Stainless Steel" /></div>
+      <div><Label className="inline-flex items-center">Capacity (liters)<HelpTooltip content="Total volume the vessel holds, in liters or gallons depending on your unit preference. Used for fill level tracking and cooperage planning." /></Label><Input type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} /></div>
+      <div><Label className="inline-flex items-center">Material<HelpTooltip content="The vessel material such as stainless steel, oak barrel, concrete, or amphora. Affects oxygenation, flavor development, and the appropriate monitoring schedule." /></Label><Input value={material} onChange={(e) => setMaterial(e.target.value)} placeholder="e.g. Stainless Steel" /></div>
       <div className="flex items-center justify-between">
         <Label>Temperature Controlled</Label>
         <Switch checked={tempControlled} onCheckedChange={setTempControlled} />

@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -102,7 +103,7 @@ export function NewSkuDialog({ open, onOpenChange, onCreated }: Props) {
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label>Label *</Label>
+            <Label className="inline-flex items-center">Label *<HelpTooltip content="The display name for this SKU. Keep it short and consistent, for example PINOT-2022-750. Used to track inventory and connect to your DTC storefront." /></Label>
             <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Estate Cabernet Sauvignon" />
           </div>
 
@@ -133,32 +134,32 @@ export function NewSkuDialog({ open, onOpenChange, onCreated }: Props) {
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <Label>Cases</Label>
+              <Label className="inline-flex items-center">Cases<HelpTooltip content="Number of full cases currently in inventory for this SKU. Solera updates this automatically when sales are recorded." /></Label>
               <Input type="number" value={cases} onChange={(e) => setCases(e.target.value)} />
             </div>
             <div>
-              <Label>Bottles/Case</Label>
+              <Label className="inline-flex items-center">Bottles/Case<HelpTooltip content="The bottle format for this SKU determines the case pack count, for example twelve 750ml bottles per case. Affects shipping calculations." /></Label>
               <Input type="number" value={bottlesPerCase} onChange={(e) => setBottlesPerCase(e.target.value)} />
             </div>
             <div>
-              <Label>Loose Bottles</Label>
+              <Label className="inline-flex items-center">Loose Bottles<HelpTooltip content="Individual bottles not yet packed into full cases. Solera tracks these separately for accurate inventory counts." /></Label>
               <Input type="number" value={looseBottles} onChange={(e) => setLooseBottles(e.target.value)} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Price / Bottle</Label>
+              <Label className="inline-flex items-center">Price / Bottle<HelpTooltip content="Your standard consumer retail price per bottle. Used as the base price for DTC sales and wine club pricing." /></Label>
               <Input type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} />
             </div>
             <div>
-              <Label>Cost / Bottle</Label>
+              <Label className="inline-flex items-center">Cost / Bottle<HelpTooltip content="Your fully-loaded production cost per bottle including grapes, supplies, labor, and overhead. Used to calculate COGS and gross margin per SKU." /></Label>
               <Input type="number" step="0.01" value={costPerBottle} onChange={(e) => setCostPerBottle(e.target.value)} />
             </div>
           </div>
 
           <div>
-            <Label>Allocation Type</Label>
+            <Label className="inline-flex items-center">Allocation Type<HelpTooltip content="Cases reserved for specific channels: wine club, wholesale, DTC, or specific customers. Allocated inventory is reserved and not available for general sale." /></Label>
             <Select value={allocationType} onValueChange={setAllocationType}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>

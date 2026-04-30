@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { useToast } from "@/hooks/use-toast";
 import { Key, Webhook, Copy, Plus, Trash2, Send, AlertTriangle, Lock } from "lucide-react";
 import { format } from "date-fns";
@@ -200,7 +201,7 @@ export default function ApiSettings() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>API Keys</CardTitle>
+                <CardTitle className="inline-flex items-center">API Keys<HelpTooltip content="Your Solera API keys for connecting third-party tools. Treat each key like a password and never share it. Each key can be scoped to specific modules and permissions." /></CardTitle>
                 <CardDescription>Authenticate API requests with Bearer tokens.</CardDescription>
               </div>
               <Button onClick={() => setShowNewKeyDialog(true)}><Plus className="h-4 w-4 mr-1.5" />New API Key</Button>
@@ -378,7 +379,7 @@ export default function ApiSettings() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Endpoint URL</Label>
+              <Label className="inline-flex items-center">Endpoint URL<HelpTooltip content="The endpoint Solera will POST data to when events occur in your account. Used to connect Solera to your own systems or tools like Zapier." /></Label>
               <Input value={newWebhookUrl} onChange={(e) => setNewWebhookUrl(e.target.value)} placeholder="https://your-server.com/webhook" />
             </div>
             <div>

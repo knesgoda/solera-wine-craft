@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Plus, Trash2, Star } from "lucide-react";
@@ -120,7 +121,7 @@ export function NewTrialDialog({ open, onOpenChange }: Props) {
           <SelectContent>{vintages.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.year}</SelectItem>)}</SelectContent>
         </Select>
       </div>
-      <div><Label>Total Volume (L)</Label><Input type="number" value={totalVolume} onChange={(e) => setTotalVolume(e.target.value)} /></div>
+      <div><Label className="inline-flex items-center">Total Volume (L)<HelpTooltip content="The total volume of finished wine you intend to produce from this blend. Used to calculate how many barrels or tanks to pull from each component." /></Label><Input type="number" value={totalVolume} onChange={(e) => setTotalVolume(e.target.value)} /></div>
 
       {/* Star Rating */}
       <div>
@@ -137,7 +138,7 @@ export function NewTrialDialog({ open, onOpenChange }: Props) {
       {/* Lots */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <Label>Lots</Label>
+          <Label className="inline-flex items-center">Lots<HelpTooltip content="The proportion of each wine component in the blend, as a percentage of total volume. All components in a trial must sum to 100%." /></Label>
           <span className={`text-sm ${Math.abs(totalPct - 100) > 0.1 ? "text-destructive" : "text-primary"}`}>
             {totalPct.toFixed(1)}%
           </span>
@@ -184,7 +185,7 @@ export function NewTrialDialog({ open, onOpenChange }: Props) {
         </Button>
       </div>
 
-      <div><Label>Tasting Notes</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></div>
+      <div><Label className="inline-flex items-center">Tasting Notes<HelpTooltip content="Tasting notes and observations for this blend. Be specific: color, aroma, palate, finish, and structural balance all inform the final blend decision." /></Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></div>
       <Button className="w-full min-h-[44px]" onClick={() => create.mutate()} disabled={!name.trim() || create.isPending}>
         {create.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
         Create Trial

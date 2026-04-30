@@ -20,7 +20,7 @@ import {
 
 interface Props {
   api: (action: string, payload?: any) => Promise<any>;
-  password: string;
+  password?: string;
 }
 
 const TIER_LABELS: Record<string, string> = {
@@ -35,7 +35,7 @@ const PAGE_SIZE = 25;
 
 type SortKey = "name" | "tier" | "userCount" | "vintageCount" | "blockCount" | "labCount" | "taskCount" | "importCount" | "lastActive" | "created_at";
 
-export function CustomersTab({ api, password }: Props) {
+export function CustomersTab({ api }: Props) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { startImpersonation } = useImpersonation();
