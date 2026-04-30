@@ -235,23 +235,113 @@ export default function ComplianceReports() {
     fetchReports();
   };
 
+  // TTB PDF now generated client-side via jsPDF — Edge Function export deprecated.
+  const buildReportData = async (reportId: string): Promise<TtbReportData | null> => {
+    if (!profile?.org_id) return null;
+    const [{ data: report }, { data: bondInfo }, { data: operations }, { data: org }] = await Promise.all([
+      supabase.from("ttb_reports").select("*").eq("id", reportId).eq("org_id", profile.org_id).maybeSingle(),
+      supabase.from("ttb_bond_info").select("*").eq("org_id", profile.org_id).maybeSingle(),
+      supabase.from("ttb_wine_premise_operations").select("*").eq("report_id", reportId).order("wine_type"),
+      supabase.from("organizations").select("name").eq("id", profile.org_id).maybeSingle(),
+    ]);
+
+    if (!report) {
+      toast.error("Report not found");
+      return null;
+    }
+
+    // Preflight (parity with deprecated Edge Function)
+    const missing: string[] = [];
+    if (!bondInfo) {
+      missing.push("Bond information (BWN, Proprietor, Bond Number) — configure in Compliance Settings");
+    } else {
+      if (!bondInfo.bonded_winery_number) missing.push("Bonded Wine Premises Number (BWN)");
+      if (!bondInfo.proprietor_name) missing.push("Proprietor Name");
+      if (!bondInfo.bond_number) missing.push("Bond Number");
+    }
+    if (!operations || operations.length === 0) {
+      missing.push("Wine premise operations (no rows for this report)");
+    }
+    if (missing.length > 0) {
+      toast.error(
+        `Cannot generate OW-1: required compliance data is missing.\n• ${missing.join("\n• ")}`,
+        { duration: 8000 },
+      );
+      return null;
+    }
+
+    const { data: additions } = await supabase
+      .from("ttb_additions")
+      .select("*, vintages(year, blocks(name))")
+      .eq("org_id", profile.org_id)
+      .gte("added_at", report.report_period_start)
+      .lte("added_at", report.report_period_end + "T23:59:59")
+      .order("added_at");
+
+    const ops = operations || [];
+    const summary = {
+      totalWineProduced: ops.reduce((s: number, o: any) => s + Number(o.produced_gallons || 0), 0),
+      totalWineRemoved: ops.reduce(
+        (s: number, o: any) => s + Number(o.bottled_gallons || 0) + Number(o.shipped_gallons || 0),
+        0,
+      ),
+      inventoryOnHand: ops.reduce((s: number, o: any) => s + Number(o.ending_inventory_gallons || 0), 0),
+      bondBalance: 0,
+    };
+
+    const taxAndBond = ops
+      .filter((o: any) => Number(o.shipped_gallons || 0) > 0)
+      .map((o: any) => {
+        const gallons = Number(o.shipped_gallons || 0);
+        const rate = TAX_RATES[o.wine_type] ?? 0;
+        return {
+          taxClass: WINE_TYPE_LABEL[o.wine_type] || o.wine_type,
+          gallonsRemoved: gallons,
+          taxRate: rate,
+          taxDue: gallons * rate,
+        };
+      });
+
+    const periodLabel = format(new Date(report.report_period_start), "MMMM yyyy");
+
+    return {
+      org: {
+        name: org?.name || "Winery",
+        bonded_winery_number: bondInfo?.bonded_winery_number,
+        proprietor_name: bondInfo?.proprietor_name,
+        bond_number: bondInfo?.bond_number,
+      },
+      period: {
+        start: report.report_period_start,
+        end: report.report_period_end,
+        label: periodLabel,
+      },
+      summary,
+      additions: (additions || []).map((a: any) => ({
+        date: format(new Date(a.added_at), "yyyy-MM-dd"),
+        type: String(a.addition_type || "").replace(/_/g, " "),
+        quantity: Number(a.amount || 0),
+        unit: String(a.unit || ""),
+        lotVessel: a.vintages
+          ? `${a.vintages.year || ""}${a.vintages.blocks?.name ? " · " + a.vintages.blocks.name : ""}`.trim()
+          : "",
+        notes: a.ttb_code || "",
+      })),
+      taxAndBond,
+      generatedAt: new Date(),
+    };
+  };
+
   const handleGeneratePdf = async (reportId: string) => {
     setGeneratingPdf(reportId);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-ttb-report", { body: { report_id: reportId } });
-      if (error) {
-        // Surface preflight 422 with missing-fields list
-        const ctx: any = (error as any).context;
-        const payload = ctx?.body ? (typeof ctx.body === "string" ? JSON.parse(ctx.body) : ctx.body) : data;
-        if (payload?.missing?.length) {
-          toast.error(`${payload.error}\n• ${payload.missing.join("\n• ")}`, { duration: 8000 });
-          setGeneratingPdf(null);
-          return;
-        }
-        throw error;
+      const data = await buildReportData(reportId);
+      if (!data) {
+        setGeneratingPdf(null);
+        return;
       }
-      toast.success("PDF generated");
-      fetchReports();
+      exportTtbReportPdf(data);
+      toast.success("PDF downloaded");
     } catch (e: any) {
       toast.error(e.message || "Failed to generate PDF");
     }
@@ -259,21 +349,19 @@ export default function ComplianceReports() {
   };
 
   const handleOpenReport = async (r: any) => {
-    // Always regenerate signed URL via refresh_url so links never go stale
+    // TTB PDF now generated client-side via jsPDF — Edge Function export deprecated.
+    setGeneratingPdf(r.id);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-ttb-report", {
-        body: { type: "refresh_url", report_id: r.id },
-      });
-      if (error || !data?.pdf_url) {
-        // Fallback to stored URL
-        if (r.pdf_url) window.open(r.pdf_url, "_blank");
-        else toast.error("Could not open report");
+      const data = await buildReportData(r.id);
+      if (!data) {
+        setGeneratingPdf(null);
         return;
       }
-      window.open(data.pdf_url, "_blank");
-    } catch {
-      if (r.pdf_url) window.open(r.pdf_url, "_blank");
+      exportTtbReportPdf(data);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to open report");
     }
+    setGeneratingPdf(null);
   };
 
   const handleMarkSubmitted = async (reportId: string) => {
@@ -283,24 +371,34 @@ export default function ComplianceReports() {
   };
 
   const handleExportAdditions = async () => {
-    if (!additionsStart || !additionsEnd) return;
+    // TTB PDF now generated client-side via jsPDF — Edge Function export deprecated.
+    if (!additionsStart || !additionsEnd || !profile?.org_id) return;
     setExportingAdditions(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-ttb-report", {
-        body: { type: "additions_log", from: additionsStart, to: additionsEnd },
-      });
-      if (error) {
-        const ctx: any = (error as any).context;
-        const payload = ctx?.body ? (typeof ctx.body === "string" ? JSON.parse(ctx.body) : ctx.body) : data;
-        if (payload?.error) {
-          toast.error(payload.error, { duration: 6000 });
-          setExportingAdditions(false);
-          return;
-        }
-        throw error;
-      }
-      if (data?.pdf_url) window.open(data.pdf_url, "_blank");
-      toast.success("Additions log exported");
+      const [{ data: additions }, { data: org }] = await Promise.all([
+        supabase
+          .from("ttb_additions")
+          .select("*, vintages(year, blocks(name))")
+          .eq("org_id", profile.org_id)
+          .gte("added_at", additionsStart)
+          .lte("added_at", additionsEnd + "T23:59:59")
+          .order("added_at"),
+        supabase.from("organizations").select("name").eq("id", profile.org_id).maybeSingle(),
+      ]);
+
+      const rows = (additions || []).map((a: any) => ({
+        date: format(new Date(a.added_at), "yyyy-MM-dd"),
+        type: String(a.addition_type || "").replace(/_/g, " "),
+        quantity: Number(a.amount || 0),
+        unit: String(a.unit || ""),
+        lotVessel: a.vintages
+          ? `${a.vintages.year || ""}${a.vintages.blocks?.name ? " · " + a.vintages.blocks.name : ""}`.trim()
+          : "",
+        notes: a.ttb_code || "",
+      }));
+
+      exportTtbAdditionsPdf(org?.name || "Winery", additionsStart, additionsEnd, rows);
+      toast.success("Additions log downloaded");
       setAdditionsDialogOpen(false);
     } catch (e: any) {
       toast.error(e.message || "Failed to export");
