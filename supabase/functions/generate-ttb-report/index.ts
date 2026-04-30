@@ -1,3 +1,5 @@
+// DEPRECATED: TTB report now exports as true PDF client-side via jsPDF.
+// This function is no longer called. Retained for reference only.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
