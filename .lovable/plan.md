@@ -1,112 +1,92 @@
-## TTB PDF Export — Client-Side jsPDF
+# Security Fix Plan — HIGH & MEDIUM Findings
 
-Replace the current server-rendered TTB export (Edge Function → Storage → signed URL) with a true client-side PDF download via jsPDF + jspdf-autotable, triggered from the existing buttons. No data fetching or calculation logic changes.
-
-### Things you should know before approving
-
-1. **Two separate exports today, both server-rendered.** `ComplianceReports.tsx` currently has:
-   - **OW-1 report** per saved row → `handleGeneratePdf` (Edge: stores PDF, returns signed URL) and `handleOpenReport` (Edge: refreshes signed URL).
-   - **Additions Log** dialog → `handleExportAdditions` (Edge: builds PDF for date range).
-   This plan migrates **both** to client-side jsPDF so the user no longer leaves the page and no Storage round-trip is needed.
-
-2. **Layout divergence from the existing Form 5120.17 facsimile.** The current Edge Function renders a high-fidelity TTB Form 5120.17 (per memory: enterprise-compliance, critical-path). The spec in this prompt describes a different, Solera-branded layout (gold/crimson header, 2x2 stat grid, autotable). I will build exactly the spec'd layout. The old facsimile remains in the Edge Function file (commented as deprecated) and can be revived if compliance review later requires the strict TTB form.
-
-3. **No `TtbReportData` type exists yet.** Data is assembled inside the Edge Function from `ttb_reports`, `ttb_bond_info`, `ttb_wine_premise_operations`, and `ttb_additions`. I will define and export `TtbReportData` from `src/lib/ttbPdfExport.ts` and assemble it client-side from the same tables before calling `exportTtbReportPdf`.
-
-4. **Preflight validation is preserved.** The Edge Function refuses to render if bond info or operations rows are missing (422 with a missing-fields list). I will replicate this client-side with the same toast UX before opening the PDF.
-
-5. **No removal.** Old Edge Function is retained with a deprecation header comment as instructed. No DB schema or storage policy changes.
+Targeted patches to 6 edge functions. No schema changes, no UI changes, no changes to business logic.
 
 ---
 
-### Implementation
+## HIGH Priority
 
-#### 1. Dependencies
-Add to `package.json`:
-- `jspdf`
-- `jspdf-autotable`
+### 1. `complete-client-signup` — Auth spoofing
+**Problem:** Trusts `auth_user_id` from request body. An attacker could pass another user's UUID and link a client account to them.
 
-#### 2. New file: `src/lib/ttbPdfExport.ts`
+**Fix:**
+- Require `Authorization` header
+- Use `supabase.auth.getClaims(token)` to derive `auth_user_id` from the verified JWT (ignore body value)
+- Add length validation for `first_name` / `last_name` (1–100 chars)
+- Verify `invite.email` matches the JWT's email claim before linking
 
-Exports:
-```ts
-export interface TtbReportData {
-  org: { name: string; bonded_winery_number?: string | null; proprietor_name?: string | null; bond_number?: string | null };
-  period: { start: string; end: string; label: string }; // label = "January 2026"
-  summary: {
-    totalWineProduced: number;   // gallons
-    totalWineRemoved: number;    // shipped + bottled (per spec mapping)
-    inventoryOnHand: number;     // sum ending_inventory_gallons
-    bondBalance: number;         // bondInfo.bond_amount or 0
-  };
-  additions: Array<{ date: string; type: string; quantity: number; unit: string; lotVessel: string; notes: string }>;
-  taxAndBond: Array<{ taxClass: string; gallonsRemoved: number; taxRate: number; taxDue: number }>;
-  generatedAt: Date;
-}
+### 2. `generate-coa` — HTML masquerading as PDF
+**Problem:** Function returns HTML with `.html` extension under field name `pdf_url`. Deno cannot run jsPDF reliably for production rendering.
 
-export function exportTtbReportPdf(report: TtbReportData): void;
-```
+**Fix:**
+- Mark Edge Function as deprecated (comment header), keep returning current output for backward compatibility
+- Create new client-side helper `src/lib/coaPdfExport.ts` using jsPDF (mirrors `ttbPdfExport.ts` pattern)
+- Update the COA download caller in `src/pages/client/ClientVintageDetail.tsx` (and any winery-side caller) to fetch the same data via supabase queries and render PDF in browser
+- Filename: `COA_[Vintage]_[BlockName].pdf`
 
-Build steps inside the function:
-- Letter (8.5×11"), 0.75" margins, helvetica body, times-bold headings.
-- **Header on every page** via `doc.setPage` loop after build:
-  - "SOLERA" small caps, gold `#C8902A`, 10pt
-  - "TTB Compliance Report" gray `#666` next to it
-  - Org name + period right-aligned
-  - 1pt crimson `#6B1B2A` rule
-- **Page 1 summary**:
-  - "Operations Report — OW-1" times bold 18pt
-  - 2×2 stat grid with subtle border, label small gray, value 16pt bold
-  - "Generated [date] · [winery]" muted line
-- **Additions table** (`autoTable`):
-  - Columns: Date, Type, Quantity, Unit, Lot/Vessel, Notes
-  - Header fill `#6B1B2A`, white text
-  - Alternating fill `#F5F0E8`
-  - Empty array → single row "No additions recorded for this period"
-  - `didDrawPage` hook re-draws the global header
-- **Tax and Bond table** (forces `addPage()` first):
-  - Columns: Tax Class, Gallons Removed, Tax Rate, Tax Due
-  - Foot row with bold totals
-- **Footer** on every page (post-loop): "Generated by Solera — solera.vin" centered, page number right.
-- **Filename**: `TTB_Report_[OrgName]_[Period].pdf` with `.replace(/\s+/g, "_")`. Save via `doc.save(filename)`.
+### 3. `check-compliance` — XML injection
+**Problem:** `config.username`, `config.password_hash`, `destinationState`, `sku.label`, `quantity_bottles` are interpolated raw into a SOAP envelope. Any `<` `>` `&` `"` `'` in stored config or SKU labels breaks the request or allows XML injection.
 
-Note on copy: the spec uses an em dash in "Operations Report — OW-1" and the footer string. Per project core rule (no em dashes in user-facing copy), I will substitute with " - " (space-hyphen-space) in the rendered PDF text. Filename uses underscores per spec.
+**Fix:**
+- Add `escapeXml()` helper that replaces `& < > " '` with entity references
+- Wrap every interpolated value with `escapeXml(String(value))`
+- Add JWT auth guard at top (function currently has `verify_jwt = false` and no in-code check)
 
-#### 3. Wire to existing buttons in `src/pages/compliance/ComplianceReports.tsx`
+### 4. `ask-solera` — Invalid model ID
+**Problem:** Uses `claude-sonnet-4-6` which is not a valid Anthropic model identifier. Will silently fail or 404 at runtime.
 
-Add a small client-side assembler (no UI/text changes):
-```ts
-async function buildReportData(reportId: string): Promise<TtbReportData | null>
-```
-Fetches `ttb_reports`, `ttb_bond_info`, `ttb_wine_premise_operations`, `organizations.name`, plus `ttb_additions` over the report period, and computes summary totals. Performs the same preflight (`missing[]` toast) as the Edge Function before returning.
-
-Replace the body of:
-- `handleGeneratePdf(reportId)` → assemble + `exportTtbReportPdf(data)`. Comment retained Edge invocation as `// TTB PDF now generated client-side via jsPDF — Edge Function export deprecated.`
-- `handleOpenReport(r)` → same; the row no longer needs a `pdf_url` to render the "PDF" button. Update the JSX condition so the button always uses the client-side path (button label/styling unchanged: "PDF" with Download icon if `r.pdf_url` exists for back-compat with old rows, otherwise "Generate PDF" with FileText icon — both call the same client-side handler).
-- `handleExportAdditions()` → assemble an additions-only `TtbReportData` (empty summary/taxAndBond rows or omitted sections) and call `exportTtbReportPdf` with a flag or a sibling helper `exportTtbAdditionsPdf` (cleaner: single PDF with just the additions table + header/footer). I'll add `exportTtbAdditionsPdf(orgName, from, to, additions)` to the same file to keep the OW-1 layout focused.
-
-No button labels, icons, or styling change. No changes to `handleSaveReport`, `autoCalculate`, `validate`, or any state that drives the form.
-
-#### 4. Deprecate Edge Function
-Top of `supabase/functions/generate-ttb-report/index.ts`:
-```ts
-// DEPRECATED: TTB report now exports as true PDF client-side via jsPDF.
-// This function is no longer called. Retained for reference only.
-```
-File body untouched; remains deployed but unused.
+**Fix:**
+- Replace with `claude-sonnet-4-20250514` (per project memory `mem://tech/ai-integration`)
+- Add a context-length cap: truncate injected org context to ~8000 chars before sending
 
 ---
 
-### Files touched
+## MEDIUM Priority
 
-- `package.json` (add `jspdf`, `jspdf-autotable`)
-- `src/lib/ttbPdfExport.ts` (new)
-- `src/pages/compliance/ComplianceReports.tsx` (rewire 3 handlers, add assembler, no UI changes)
-- `supabase/functions/generate-ttb-report/index.ts` (deprecation comment only)
+### 5. `sync-shopify` — Missing auth guard
+Add JWT verification using `getClaims()`, then verify the caller's `org_id` (from `profiles`) matches the `org_id` in the request body. Reject otherwise.
 
-### Out of scope
+### 6. `notify-admin` — Missing auth guard
+Add a shared-secret check (`x-admin-notify-secret` header validated against `Deno.env.get("ADMIN_NOTIFY_SECRET")`) since this is invoked server-to-server. If the secret env var is not yet configured, fall back to requiring service-role JWT.
 
-- TTB form-field fidelity (Form 5120.17 layout)
-- DB schema, RLS, or storage policy changes
-- Removing the Edge Function or its storage records
-- Changing button labels, icons, the New Report dialog, validation, or auto-calculate logic
+### 7. `check-compliance` — Auth (covered above in #3)
+
+---
+
+## Files Touched
+
+**Edge functions:**
+- `supabase/functions/complete-client-signup/index.ts`
+- `supabase/functions/generate-coa/index.ts` (deprecation comment only)
+- `supabase/functions/check-compliance/index.ts`
+- `supabase/functions/ask-solera/index.ts`
+- `supabase/functions/sync-shopify/index.ts`
+- `supabase/functions/notify-admin/index.ts`
+
+**Client code:**
+- `src/lib/coaPdfExport.ts` (new — jsPDF generator mirroring `ttbPdfExport.ts`)
+- `src/pages/client/ClientVintageDetail.tsx` (swap COA download to client-side PDF)
+- Any other COA caller found via `rg "generate-coa"`
+
+**No DB migrations. No config.toml changes. No package additions** (jsPDF already installed for TTB).
+
+---
+
+## Out of Scope (Deferred)
+
+- Restructuring `generate-coa` to be removed entirely (kept for backward compat per audit recommendation)
+- Adding rate limiting to public-ish endpoints
+- The `_test_secret_canary.ts` finding from `secrets-report.txt` — verify whether this is an intentional audit fixture before deleting
+
+---
+
+## Verification Checklist
+
+- [ ] `complete-client-signup` rejects calls without `Authorization` header (401)
+- [ ] `complete-client-signup` ignores body `auth_user_id` and uses JWT `sub`
+- [ ] `check-compliance` escapes `&`, `<`, `>`, `"`, `'` in SOAP body
+- [ ] `ask-solera` returns successful Anthropic response (model ID valid)
+- [ ] `sync-shopify` rejects cross-org requests
+- [ ] `notify-admin` rejects unsigned requests
+- [ ] COA download produces a real `.pdf` file in browser
+- [ ] No TypeScript errors; build succeeds
