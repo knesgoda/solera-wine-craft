@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { Bot, Send, Plus, Trash2, ArrowLeft, MessageSquare, Sparkles, AlertTriangle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,6 +43,20 @@ const AskSolera = () => {
   const [streamError, setStreamError] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(!isMobile);
   const [activeTab, setActiveTab] = useState<"chat" | "summaries">("chat");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Prefill from ?prompt= query param (does NOT auto-send)
+  useEffect(() => {
+    const prompt = searchParams.get("prompt");
+    if (prompt) {
+      setInput(prompt);
+      // Clear the param so refresh doesn't re-prefill over user edits
+      const next = new URLSearchParams(searchParams);
+      next.delete("prompt");
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Fetch conversations
   const { data: conversations = [] } = useQuery({
