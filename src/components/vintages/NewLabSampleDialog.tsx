@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -169,14 +170,14 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSampl
         <Input type="datetime-local" value={sampledAt} onChange={(e) => setSampledAt(e.target.value)} />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div><Label>Brix (°)</Label><Input type="number" step="0.1" value={brix} onChange={(e) => setBrix(e.target.value)} /></div>
-        <div><Label>pH</Label><Input type="number" step="0.01" value={ph} onChange={(e) => setPh(e.target.value)} /></div>
-        <div><Label>TA (g/L)</Label><Input type="number" step="0.01" value={ta} onChange={(e) => setTa(e.target.value)} /></div>
-        <div><Label>VA (g/L)</Label><Input type="number" step="0.01" value={va} onChange={(e) => setVa(e.target.value)} /></div>
-        <div><Label>Free SO₂</Label><Input type="number" step="1" value={so2Free} onChange={(e) => setSo2Free(e.target.value)} /></div>
-        <div><Label>Total SO₂</Label><Input type="number" step="1" value={so2Total} onChange={(e) => setSo2Total(e.target.value)} /></div>
-        <div><Label>Alcohol (%)</Label><Input type="number" step="0.1" value={alcohol} onChange={(e) => setAlcohol(e.target.value)} /></div>
-        <div><Label>RS (g/L)</Label><Input type="number" step="0.1" value={rs} onChange={(e) => setRs(e.target.value)} /></div>
+        <div><Label className="inline-flex items-center">Brix (°)<HelpTooltip content="Sugar content of the juice or wine, measured with a refractometer or hydrometer. At harvest, most table wines target 22 to 26 Brix depending on style. Brix drops as fermentation converts sugar to alcohol." /></Label><Input type="number" step="0.1" value={brix} onChange={(e) => setBrix(e.target.value)} /></div>
+        <div><Label className="inline-flex items-center">pH<HelpTooltip content="Acidity level of the juice or wine. Lower pH means higher acidity and better microbial stability. Most table wines target 3.2 to 3.6 at harvest. pH rises as grapes ripen." /></Label><Input type="number" step="0.01" value={ph} onChange={(e) => setPh(e.target.value)} /></div>
+        <div><Label className="inline-flex items-center">TA (g/L)<HelpTooltip content="Titratable Acidity. Total acid concentration in the juice or wine, expressed in g/L. Higher TA means crisper, more tart wine. Most table wines target 5.5 to 8.0 g/L at harvest." /></Label><Input type="number" step="0.01" value={ta} onChange={(e) => setTa(e.target.value)} /></div>
+        <div><Label className="inline-flex items-center">VA (g/L)<HelpTooltip content="Volatile Acidity. Acetic acid content, essentially vinegar. Low VA is always the goal. Above 0.6 g/L the wine may show off aromas. Above 1.2 g/L it is considered defective." /></Label><Input type="number" step="0.01" value={va} onChange={(e) => setVa(e.target.value)} /></div>
+        <div><Label className="inline-flex items-center">Free SO₂<HelpTooltip content="Free sulfur dioxide, the active antimicrobial and antioxidant form. Must be monitored relative to pH. At pH 3.5, target 25 to 35 ppm free SO2. Solera will flag when your free SO2 drops below safe levels." /></Label><Input type="number" step="1" value={so2Free} onChange={(e) => setSo2Free(e.target.value)} /></div>
+        <div><Label className="inline-flex items-center">Total SO₂<HelpTooltip content="Total sulfur dioxide including bound SO2. Legal limits apply by market. US table wine maximum is 350 ppm. Solera tracks this against TTB limits automatically." /></Label><Input type="number" step="1" value={so2Total} onChange={(e) => setSo2Total(e.target.value)} /></div>
+        <div><Label className="inline-flex items-center">Alcohol (%)<HelpTooltip content="Estimated or measured alcohol by volume. At crush, estimated from Brix using the formula Brix x 0.55. After fermentation, measured by ebulliometer or distillation." /></Label><Input type="number" step="0.1" value={alcohol} onChange={(e) => setAlcohol(e.target.value)} /></div>
+        <div><Label className="inline-flex items-center">RS (g/L)<HelpTooltip content="Residual Sugar. Sugar remaining after fermentation, in g/L. Bone dry wines are below 2 g/L. Off-dry wines are 5 to 15 g/L. Dessert wines can exceed 100 g/L." /></Label><Input type="number" step="0.1" value={rs} onChange={(e) => setRs(e.target.value)} /></div>
       </div>
       <div>
         <Label>Notes</Label>
