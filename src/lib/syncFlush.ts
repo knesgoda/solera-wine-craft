@@ -2,12 +2,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSyncQueueItems, clearSyncQueueItem } from "./syncQueue";
 import { toast } from "sonner";
 
+const ALLOWED_TABLES = ["tasks", "lab_samples", "fermentation_logs", "vineyard_notes"] as const;
+const ALLOWED_OPERATIONS = ["insert", "update"] as const;
+
 export async function flushSyncQueue(): Promise<number> {
   const items = await getSyncQueueItems();
   if (items.length === 0) return 0;
 
   let flushed = 0;
   for (const item of items) {
+    if (!ALLOWED_TABLES.includes(item.table as any)) {
+      console.warn("Sync rejected — table not in allowlist:", item);
+      continue;
+    }
+    if (!ALLOWED_OPERATIONS.includes(item.operation as any)) {
+      console.warn("Sync rejected — operation not in allowlist:", item);
+      continue;
+    }
     try {
       if (item.operation === "insert") {
         const { error } = await supabase.from(item.table as any).insert(item.data as any);
