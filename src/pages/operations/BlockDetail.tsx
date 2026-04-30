@@ -112,6 +112,9 @@ const BlockDetail = () => {
         soil_organic_matter: editForm.soil_organic_matter ? parseFloat(editForm.soil_organic_matter) : null,
         drainage: editForm.drainage || null,
         row_orientation: editForm.row_orientation || null,
+        vine_spacing_ft: editForm.vine_spacing_ft ? parseFloat(editForm.vine_spacing_ft) : null,
+        row_spacing_ft: editForm.row_spacing_ft ? parseFloat(editForm.row_spacing_ft) : null,
+        year_planted: editForm.year_planted ? parseInt(editForm.year_planted) : null,
       }).eq("id", blockId!);
       if (error) throw error;
     },
@@ -138,6 +141,9 @@ const BlockDetail = () => {
       soil_organic_matter: block.soil_organic_matter != null ? String(block.soil_organic_matter) : "",
       drainage: (block as any).drainage || "",
       row_orientation: (block as any).row_orientation || "",
+      vine_spacing_ft: (block as any).vine_spacing_ft != null ? String((block as any).vine_spacing_ft) : "",
+      row_spacing_ft: (block as any).row_spacing_ft != null ? String((block as any).row_spacing_ft) : "",
+      year_planted: (block as any).year_planted != null ? String((block as any).year_planted) : "",
     });
     setEditOpen(true);
   };
