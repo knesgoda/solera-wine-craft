@@ -389,7 +389,11 @@ serve(async (req) => {
     }
 
     // Build winery context
-    const wineryContext = await buildWineryContext(serviceClient, profile.org_id);
+    let wineryContext = await buildWineryContext(serviceClient, profile.org_id);
+    const MAX_CONTEXT_CHARS = 8000;
+    if (wineryContext.length > MAX_CONTEXT_CHARS) {
+      wineryContext = wineryContext.slice(0, MAX_CONTEXT_CHARS) + "\n\n[context truncated]";
+    }
     console.log(`Winery context built: ${wineryContext.length} chars`);
 
     const systemPrompt = `You are Ask Solera, an expert AI winery assistant built into the Solera winery management platform. You have access to real-time data from this winery.
