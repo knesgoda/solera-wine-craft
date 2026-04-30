@@ -1,92 +1,33 @@
-# Security Fix Plan — HIGH & MEDIUM Findings
+# Fix Remaining Audit Issues
 
-Targeted patches to 6 edge functions. No schema changes, no UI changes, no changes to business logic.
+The previous round patched HIGH/MEDIUM security findings. Two leftover items remain from the audit reports.
 
----
+## 1. Invalid Anthropic Model ID (HIGH — runtime failure)
 
-## HIGH Priority
+Same bug we fixed in `ask-solera`, still present in 4 other edge functions. The string `claude-sonnet-4-6` is not a valid Anthropic model identifier and will return a 404/400 from the Anthropic API at runtime. This means these features are silently broken in production.
 
-### 1. `complete-client-signup` — Auth spoofing
-**Problem:** Trusts `auth_user_id` from request body. An attacker could pass another user's UUID and link a client account to them.
+**Files to patch** — replace `"claude-sonnet-4-6"` with `"claude-sonnet-4-20250514"` (the canonical ID per `mem://tech/ai-integration`):
 
-**Fix:**
-- Require `Authorization` header
-- Use `supabase.auth.getClaims(token)` to derive `auth_user_id` from the verified JWT (ignore body value)
-- Add length validation for `first_name` / `last_name` (1–100 chars)
-- Verify `invite.email` matches the JWT's email claim before linking
+- `supabase/functions/weekly-summary/index.ts:126` — weekly AI summary email/notification
+- `supabase/functions/analog-insight/index.ts:101` — Vintage Analog Explorer insights
+- `supabase/functions/suggest-mapping/index.ts:555` — CSV/Excel column mapper
+- `supabase/functions/extract-handwritten-notes/index.ts:106` — handwritten notes OCR
 
-### 2. `generate-coa` — HTML masquerading as PDF
-**Problem:** Function returns HTML with `.html` extension under field name `pdf_url`. Deno cannot run jsPDF reliably for production rendering.
+No other logic changes. One-line edit per file. Functions will be auto-deployed.
 
-**Fix:**
-- Mark Edge Function as deprecated (comment header), keep returning current output for backward compatibility
-- Create new client-side helper `src/lib/coaPdfExport.ts` using jsPDF (mirrors `ttbPdfExport.ts` pattern)
-- Update the COA download caller in `src/pages/client/ClientVintageDetail.tsx` (and any winery-side caller) to fetch the same data via supabase queries and render PDF in browser
-- Filename: `COA_[Vintage]_[BlockName].pdf`
+## 2. Stale Secrets Audit Report (LOW — housekeeping)
 
-### 3. `check-compliance` — XML injection
-**Problem:** `config.username`, `config.password_hash`, `destinationState`, `sku.label`, `quantity_bottles` are interpolated raw into a SOAP envelope. Any `<` `>` `&` `"` `'` in stored config or SKU labels breaks the request or allows XML injection.
+`scripts/audit/secrets-report.txt` flags a CRITICAL for `src/_test_secret_canary.ts`, but that file no longer exists in the repo (verified via `ls`). The remaining warnings (`paddle-client.ts`) are false positives — `VITE_PADDLE_CLIENT_TOKEN` is intentionally a publishable client-side token, safe to expose.
 
-**Fix:**
-- Add `escapeXml()` helper that replaces `& < > " '` with entity references
-- Wrap every interpolated value with `escapeXml(String(value))`
-- Add JWT auth guard at top (function currently has `verify_jwt = false` and no in-code check)
+**Action:** Re-run `scripts/secrets-audit.sh` to regenerate a clean report. No code changes.
 
-### 4. `ask-solera` — Invalid model ID
-**Problem:** Uses `claude-sonnet-4-6` which is not a valid Anthropic model identifier. Will silently fail or 404 at runtime.
+## Out of Scope
 
-**Fix:**
-- Replace with `claude-sonnet-4-20250514` (per project memory `mem://tech/ai-integration`)
-- Add a context-length cap: truncate injected org context to ~8000 chars before sending
+- The original audit's "deprecate `generate-coa`" recommendation was kept for backward compatibility per the prior decision — leaving as-is.
+- No new schema changes, no UI changes, no package additions.
 
----
+## Verification
 
-## MEDIUM Priority
-
-### 5. `sync-shopify` — Missing auth guard
-Add JWT verification using `getClaims()`, then verify the caller's `org_id` (from `profiles`) matches the `org_id` in the request body. Reject otherwise.
-
-### 6. `notify-admin` — Missing auth guard
-Add a shared-secret check (`x-admin-notify-secret` header validated against `Deno.env.get("ADMIN_NOTIFY_SECRET")`) since this is invoked server-to-server. If the secret env var is not yet configured, fall back to requiring service-role JWT.
-
-### 7. `check-compliance` — Auth (covered above in #3)
-
----
-
-## Files Touched
-
-**Edge functions:**
-- `supabase/functions/complete-client-signup/index.ts`
-- `supabase/functions/generate-coa/index.ts` (deprecation comment only)
-- `supabase/functions/check-compliance/index.ts`
-- `supabase/functions/ask-solera/index.ts`
-- `supabase/functions/sync-shopify/index.ts`
-- `supabase/functions/notify-admin/index.ts`
-
-**Client code:**
-- `src/lib/coaPdfExport.ts` (new — jsPDF generator mirroring `ttbPdfExport.ts`)
-- `src/pages/client/ClientVintageDetail.tsx` (swap COA download to client-side PDF)
-- Any other COA caller found via `rg "generate-coa"`
-
-**No DB migrations. No config.toml changes. No package additions** (jsPDF already installed for TTB).
-
----
-
-## Out of Scope (Deferred)
-
-- Restructuring `generate-coa` to be removed entirely (kept for backward compat per audit recommendation)
-- Adding rate limiting to public-ish endpoints
-- The `_test_secret_canary.ts` finding from `secrets-report.txt` — verify whether this is an intentional audit fixture before deleting
-
----
-
-## Verification Checklist
-
-- [ ] `complete-client-signup` rejects calls without `Authorization` header (401)
-- [ ] `complete-client-signup` ignores body `auth_user_id` and uses JWT `sub`
-- [ ] `check-compliance` escapes `&`, `<`, `>`, `"`, `'` in SOAP body
-- [ ] `ask-solera` returns successful Anthropic response (model ID valid)
-- [ ] `sync-shopify` rejects cross-org requests
-- [ ] `notify-admin` rejects unsigned requests
-- [ ] COA download produces a real `.pdf` file in browser
-- [ ] No TypeScript errors; build succeeds
+- [ ] `rg "claude-sonnet-4-6" supabase/` returns zero results
+- [ ] Weekly summary, analog insight, mapping, and handwritten-notes flows complete without 4xx from Anthropic
+- [ ] Secrets audit report no longer references the deleted canary file
