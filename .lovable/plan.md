@@ -1,104 +1,112 @@
-## Vintage Peak Prediction
+## TTB PDF Export — Client-Side jsPDF
 
-A read-only analytical view inside the Vintage Detail page that estimates when a bottled vintage will reach its sensory peak. No new tables, no schema changes, no edits to existing tabs or data entry flows.
+Replace the current server-rendered TTB export (Edge Function → Storage → signed URL) with a true client-side PDF download via jsPDF + jspdf-autotable, triggered from the existing buttons. No data fetching or calculation logic changes.
 
-### Data sources (all existing)
+### Things you should know before approving
 
-- `vintages` — `harvest_date`, `bottled_at` (or `released_at` as fallback), `block_id`, `notes`
-- `blocks` — `variety`, `vineyard_id` (joined for GDD lookup)
-- `lab_samples` — initial Brix from earliest sample, latest pH and TA closest to bottling
-- `fermentation_vessels` — `oak_type`, `barrel_age_fills` filtered by `vintage_id` for oak program signal
-- `weather_readings` — cumulative GDD for vineyard during the vintage growing season
+1. **Two separate exports today, both server-rendered.** `ComplianceReports.tsx` currently has:
+   - **OW-1 report** per saved row → `handleGeneratePdf` (Edge: stores PDF, returns signed URL) and `handleOpenReport` (Edge: refreshes signed URL).
+   - **Additions Log** dialog → `handleExportAdditions` (Edge: builds PDF for date range).
+   This plan migrates **both** to client-side jsPDF so the user no longer leaves the page and no Storage round-trip is needed.
 
-### Files to create
+2. **Layout divergence from the existing Form 5120.17 facsimile.** The current Edge Function renders a high-fidelity TTB Form 5120.17 (per memory: enterprise-compliance, critical-path). The spec in this prompt describes a different, Solera-branded layout (gold/crimson header, 2x2 stat grid, autotable). I will build exactly the spec'd layout. The old facsimile remains in the Edge Function file (commented as deprecated) and can be revived if compliance review later requires the strict TTB form.
 
-```text
-src/lib/peakPrediction.ts            // pure scoring function + types + constants
-src/components/vintages/PeakPredictionTab.tsx   // tab content (banner + factors + Ask Solera CTA)
-```
+3. **No `TtbReportData` type exists yet.** Data is assembled inside the Edge Function from `ttb_reports`, `ttb_bond_info`, `ttb_wine_premise_operations`, and `ttb_additions`. I will define and export `TtbReportData` from `src/lib/ttbPdfExport.ts` and assemble it client-side from the same tables before calling `exportTtbReportPdf`.
 
-### Files to modify
+4. **Preflight validation is preserved.** The Edge Function refuses to render if bond info or operations rows are missing (422 with a missing-fields list). I will replicate this client-side with the same toast UX before opening the PDF.
 
-- `src/pages/vintages/VintageDetail.tsx` — add 5th tab `peak` between Anomalies and Costs, gated by `useTierGate("small_boutique")`. No other changes.
-- `src/App.tsx` — add deep route `/vintages/:vintageId/peak-prediction` rendering VintageDetail with `?tab=peak`, OR simply add the tab and skip the deep route (see below).
-- `src/pages/AskSolera.tsx` — read `?prompt=` query param on mount and prefill the input box (does NOT auto-send).
+5. **No removal.** Old Edge Function is retained with a deprecation header comment as instructed. No DB schema or storage policy changes.
 
-### `calculatePeakWindow(input)` — pure function
+---
 
-Signature:
+### Implementation
+
+#### 1. Dependencies
+Add to `package.json`:
+- `jspdf`
+- `jspdf-autotable`
+
+#### 2. New file: `src/lib/ttbPdfExport.ts`
+
+Exports:
 ```ts
-type PeakInput = {
-  variety: string | null;
-  bottleDate: Date | null;
-  initialBrix: number | null;
-  bottlingPh: number | null;
-  bottlingTa: number | null;
-  cumulativeGdd: number | null;
-  oakProgram: 'new_french' | 'neutral' | 'stainless' | null;
-};
-type PeakFactor = {
-  name: string; value: string | null; impact: 'earlier' | 'neutral' | 'later'; hasData: boolean;
-};
-type PeakResult = {
-  bottleDate: Date; peakStartYear: number; peakEndYear: number;
-  peakConfidence: 'low' | 'medium' | 'high';
-  drinkingWindowMonths: number; factors: PeakFactor[];
-};
+export interface TtbReportData {
+  org: { name: string; bonded_winery_number?: string | null; proprietor_name?: string | null; bond_number?: string | null };
+  period: { start: string; end: string; label: string }; // label = "January 2026"
+  summary: {
+    totalWineProduced: number;   // gallons
+    totalWineRemoved: number;    // shipped + bottled (per spec mapping)
+    inventoryOnHand: number;     // sum ending_inventory_gallons
+    bondBalance: number;         // bondInfo.bond_amount or 0
+  };
+  additions: Array<{ date: string; type: string; quantity: number; unit: string; lotVessel: string; notes: string }>;
+  taxAndBond: Array<{ taxClass: string; gallonsRemoved: number; taxRate: number; taxDue: number }>;
+  generatedAt: Date;
+}
+
+export function exportTtbReportPdf(report: TtbReportData): void;
 ```
 
-Implementation outline:
-1. Constants at top: `WEIGHTS = { brix: 0.20, ph: 0.15, ta: 0.15, variety: 0.25, gdd: 0.15, oak: 0.10 }`, `VARIETY_PEAK` lookup table (Cab 8-12, Pinot 5-8, Chard 3-6, Syrah 6-10, Albariño 1-3, Merlot 5-8, Zin 4-7, Riesling 5-15, default 3-6), oak adjustments (`new_french: +1.5y`, `neutral: 0`, `stainless: -1y`).
-2. Start from variety baseline midpoint and span. Apply weighted shifts:
-   - Brix: `(brix - 24.5) * weight * yearsPerUnit` for reds; clamp ±2 years
-   - pH: above 3.65 shift earlier; below 3.4 extend
-   - TA: <5.5 g/L shift earlier; >7 extend
-   - GDD: >2800 extend (+1y); <2200 shorten (-1y)
-   - Oak: additive shift on END year only
-3. Confidence: count non-null inputs of the 6; ≥6 high, 4–5 medium, <4 low.
-4. Falls back gracefully — every missing input contributes 0 shift and produces a `factors` row with `hasData: false`.
-5. Bottle date fallback chain: `bottled_at → released_at → harvest_date + 18 months → today`.
+Build steps inside the function:
+- Letter (8.5×11"), 0.75" margins, helvetica body, times-bold headings.
+- **Header on every page** via `doc.setPage` loop after build:
+  - "SOLERA" small caps, gold `#C8902A`, 10pt
+  - "TTB Compliance Report" gray `#666` next to it
+  - Org name + period right-aligned
+  - 1pt crimson `#6B1B2A` rule
+- **Page 1 summary**:
+  - "Operations Report — OW-1" times bold 18pt
+  - 2×2 stat grid with subtle border, label small gray, value 16pt bold
+  - "Generated [date] · [winery]" muted line
+- **Additions table** (`autoTable`):
+  - Columns: Date, Type, Quantity, Unit, Lot/Vessel, Notes
+  - Header fill `#6B1B2A`, white text
+  - Alternating fill `#F5F0E8`
+  - Empty array → single row "No additions recorded for this period"
+  - `didDrawPage` hook re-draws the global header
+- **Tax and Bond table** (forces `addPage()` first):
+  - Columns: Tax Class, Gallons Removed, Tax Rate, Tax Due
+  - Foot row with bold totals
+- **Footer** on every page (post-loop): "Generated by Solera — solera.vin" centered, page number right.
+- **Filename**: `TTB_Report_[OrgName]_[Period].pdf` with `.replace(/\s+/g, "_")`. Save via `doc.save(filename)`.
 
-### `PeakPredictionTab` UI (3 sections, brand tokens only)
+Note on copy: the spec uses an em dash in "Operations Report — OW-1" and the footer string. Per project core rule (no em dashes in user-facing copy), I will substitute with " - " (space-hyphen-space) in the rendered PDF text. Filename uses underscores per spec.
 
-**Section 1 — Drinking Window Banner** (full-width Card):
-- Heading (Playfair): `{vintageYear} {variety}`
-- Large line: `Optimal drinking window: {peakStartYear} – {peakEndYear}`
-- Confidence badge with `HelpTooltip` listing missing inputs when not High
-- Horizontal timeline: bottle year → bottle year + 20. CSS gradient `bg-gradient-to-r from-cream via-gold/40 to-cream` with the peak-window band overlaid using `bg-primary/30` between left% and right% computed from year offsets. Today marker is an absolutely positioned vertical line `bg-primary`.
+#### 3. Wire to existing buttons in `src/pages/compliance/ComplianceReports.tsx`
 
-**Section 2 — Factor Breakdown** (Collapsible/Accordion):
-- 6 rows: name, value (or `No data — using default` muted), and a small directional indicator (TrendingDown / Minus / TrendingUp from lucide).
-
-**Section 3 — Ask Solera CTA** (Button):
-- `navigate('/ask-solera?prompt=' + encodeURIComponent('Analyze the aging potential of my {Year} {Variety} and tell me how it compares to similar vintages in our records.'))`
-
-### Tier gating
-
-- Wrap the tab content in `<TierGate requiredTier="small_boutique" featureName="Peak Prediction">…</TierGate>`. "Pro" maps to `small_boutique` per `useTierGate` map.
-- The tab trigger remains visible to all users; the locked state appears inside the tab panel. Cleaner UX than hiding the tab.
-
-### AskSolera prefill
-
-Add at top of `AskSolera`:
-```tsx
-const [searchParams] = useSearchParams();
-useEffect(() => {
-  const prompt = searchParams.get('prompt');
-  if (prompt) setInput(prompt);
-}, []);
+Add a small client-side assembler (no UI/text changes):
+```ts
+async function buildReportData(reportId: string): Promise<TtbReportData | null>
 ```
-No auto-send, no scheduled submit.
+Fetches `ttb_reports`, `ttb_bond_info`, `ttb_wine_premise_operations`, `organizations.name`, plus `ttb_additions` over the report period, and computes summary totals. Performs the same preflight (`missing[]` toast) as the Edge Function before returning.
 
-### Deep route
+Replace the body of:
+- `handleGeneratePdf(reportId)` → assemble + `exportTtbReportPdf(data)`. Comment retained Edge invocation as `// TTB PDF now generated client-side via jsPDF — Edge Function export deprecated.`
+- `handleOpenReport(r)` → same; the row no longer needs a `pdf_url` to render the "PDF" button. Update the JSX condition so the button always uses the client-side path (button label/styling unchanged: "PDF" with Download icon if `r.pdf_url` exists for back-compat with old rows, otherwise "Generate PDF" with FileText icon — both call the same client-side handler).
+- `handleExportAdditions()` → assemble an additions-only `TtbReportData` (empty summary/taxAndBond rows or omitted sections) and call `exportTtbReportPdf` with a flag or a sibling helper `exportTtbAdditionsPdf` (cleaner: single PDF with just the additions table + header/footer). I'll add `exportTtbAdditionsPdf(orgName, from, to, additions)` to the same file to keep the OW-1 layout focused.
 
-Add `<Route path="/vintages/:vintageId/peak-prediction" element={<VintageDetail />} />` in App.tsx. Inside VintageDetail, read `useLocation().pathname.endsWith('/peak-prediction')` to set Tabs `defaultValue="peak"`. Existing `/vintages/:vintageId` route stays as-is.
+No button labels, icons, or styling change. No changes to `handleSaveReport`, `autoCalculate`, `validate`, or any state that drives the form.
 
-### Verification checklist
+#### 4. Deprecate Edge Function
+Top of `supabase/functions/generate-ttb-report/index.ts`:
+```ts
+// DEPRECATED: TTB report now exports as true PDF client-side via jsPDF.
+// This function is no longer called. Retained for reference only.
+```
+File body untouched; remains deployed but unused.
 
-- `calculatePeakWindow` covers all-null input and returns finite years
-- Confidence resolves to low / medium / high correctly
-- Today marker positions correctly when today is before bottle date or after window
-- Pro gate: Hobbyist sees TierGate locked card with Upgrade Plan button
-- Ask Solera prefill populates input but does not call `sendMessage`
-- No HelpTooltip content over 300 chars
-- No edits to existing Lab / TTB / Anomalies / Costs tabs or data entry dialogs
+---
+
+### Files touched
+
+- `package.json` (add `jspdf`, `jspdf-autotable`)
+- `src/lib/ttbPdfExport.ts` (new)
+- `src/pages/compliance/ComplianceReports.tsx` (rewire 3 handlers, add assembler, no UI changes)
+- `supabase/functions/generate-ttb-report/index.ts` (deprecation comment only)
+
+### Out of scope
+
+- TTB form-field fidelity (Form 5120.17 layout)
+- DB schema, RLS, or storage policy changes
+- Removing the Edge Function or its storage records
+- Changing button labels, icons, the New Report dialog, validation, or auto-calculate logic
