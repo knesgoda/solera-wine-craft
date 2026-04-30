@@ -380,7 +380,7 @@ ${wineryContext}`;
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      throw new Error(`AI request failed (${response.status}): ${t.slice(0, 200)}`);
+      throw new Error("AI is temporarily unavailable. Please try again later or contact support.");
     }
 
     return new Response(response.body, {
