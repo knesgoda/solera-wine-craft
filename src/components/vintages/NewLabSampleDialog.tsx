@@ -124,11 +124,14 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSampl
         const { error } = await supabase.from("lab_samples").insert(record as any);
         if (error) throw error;
 
-        // Evaluate alert rules asynchronously
-        supabase.functions.invoke("evaluate-alerts", {
-          body: { type: "lab_sample", record },
-          headers: { "x-internal-secret": import.meta.env.VITE_INTERNAL_FUNCTION_SECRET || "" },
-        }).catch((e) => console.error("Alert evaluation failed:", e));
+        // Evaluate alert rules asynchronously via authenticated proxy
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (!session?.access_token) return;
+          supabase.functions.invoke("proxy-evaluate-alerts", {
+            body: { type: "lab_sample", record },
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }).catch((e) => console.error("Alert evaluation failed:", e));
+        });
 
         // Detect anomalies asynchronously
         supabase.functions.invoke("detect-anomalies", {

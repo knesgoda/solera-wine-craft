@@ -18,9 +18,25 @@ export function ImportUploader({ accept, description, onFileData }: Props) {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const processFile = useCallback(async (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File too large. Maximum import file size is 10MB.");
+      return;
+    }
     setIsProcessing(true);
     try {
       const ext = file.name.split(".").pop()?.toLowerCase();
+
+      const guardLimits = (headers: string[], rows: Record<string, any>[]): boolean => {
+        if (rows.length > 10000) {
+          toast.error("Too many rows. Maximum import size is 10,000 rows. Split the file and import in batches.");
+          return false;
+        }
+        if (headers.length > 100) {
+          toast.error("Too many columns. Maximum is 100 columns per import file.");
+          return false;
+        }
+        return true;
+      };
 
       if (ext === "json") {
         const text = await file.text();
@@ -28,6 +44,7 @@ export function ImportUploader({ accept, description, onFileData }: Props) {
         const rows = Array.isArray(json) ? json : json.data || json.records || [json];
         if (rows.length === 0) throw new Error("No data found in JSON");
         const headers = Object.keys(rows[0]);
+        if (!guardLimits(headers, rows)) return;
         onFileData(headers, rows);
         return;
       }
@@ -39,6 +56,7 @@ export function ImportUploader({ accept, description, onFileData }: Props) {
         const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet);
         if (rows.length === 0) throw new Error("No data found in spreadsheet");
         const headers = Object.keys(rows[0]);
+        if (!guardLimits(headers, rows)) return;
         onFileData(headers, rows);
         return;
       }
@@ -51,6 +69,7 @@ export function ImportUploader({ accept, description, onFileData }: Props) {
         complete: (results) => {
           if (results.data.length === 0) { toast.error("No data found"); return; }
           const headers = results.meta.fields || Object.keys(results.data[0] as any);
+          if (!guardLimits(headers, results.data as Record<string, any>[])) return;
           onFileData(headers, results.data as Record<string, any>[]);
         },
         error: (err: any) => toast.error(err.message),

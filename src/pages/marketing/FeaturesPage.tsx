@@ -334,7 +334,7 @@ const FEATURES = [
           <UserPlus className="h-4 w-4 text-primary" /> Client Portal
         </div>
         <div className="bg-muted rounded p-2 text-xs">
-          <p className="font-medium text-foreground mb-1">Acme Wines</p>
+          <p className="font-medium text-foreground mb-1">Whistling Eagle Vineyards</p>
           <p className="text-muted-foreground">3 active vintages • 2 unread messages</p>
         </div>
         <div className="flex gap-2">

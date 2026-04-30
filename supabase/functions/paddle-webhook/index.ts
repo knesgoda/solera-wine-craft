@@ -254,13 +254,19 @@ Deno.serve(async (req) => {
         const oldOrg = await getOrgInfo(supabase, orgId, subId);
         const oldTier = oldOrg.tier;
 
+        // Only update tier when a known price ID was present in the event.
+        // Status-only updates (address change, payment method) carry no items
+        // and must not overwrite the existing tier with a hobbyist default.
+        const hasPriceId = !!tier;
         const updateData: any = {
-          tier: resolvedTier,
           subscription_status: status,
           next_billed_at: nextBilledAt,
           scheduled_change: scheduledChange,
         };
-        
+        if (hasPriceId) {
+          updateData.tier = resolvedTier;
+        }
+
         let resolvedOrgId = orgId;
         if (orgId) {
           await supabase.from("organizations").update(updateData).eq("id", orgId);
@@ -276,12 +282,12 @@ Deno.serve(async (req) => {
         }
 
         // Process referral conversion on upgrade (Hobbyist → Pro/Growth)
-        if (resolvedOrgId && oldTier !== resolvedTier && REFERRAL_ELIGIBLE_TIERS.includes(resolvedTier)) {
+        if (hasPriceId && resolvedOrgId && oldTier !== resolvedTier && REFERRAL_ELIGIBLE_TIERS.includes(resolvedTier)) {
           await processReferralConversion(supabase, resolvedOrgId, resolvedTier);
         }
 
         // Admin notification if tier changed
-        if (oldTier !== resolvedTier) {
+        if (hasPriceId && oldTier !== resolvedTier) {
           sendAdminNotification(
             `Subscription updated: ${oldOrg.name} changed from ${TIER_LABELS[oldTier] || oldTier} to ${TIER_LABELS[resolvedTier] || resolvedTier}`,
             `Organization: ${oldOrg.name}\nPrevious Tier: ${TIER_LABELS[oldTier] || oldTier}\nNew Tier: ${TIER_LABELS[resolvedTier] || resolvedTier}\nStatus: ${status}`
@@ -366,9 +372,12 @@ Deno.serve(async (req) => {
 
       case "transaction.completed": {
         if (customerId) {
-          await supabase.from("organizations").update({
-            subscription_status: "active",
-          } as any).eq("paddle_customer_id", customerId);
+          const txUpdateData: any = { subscription_status: "active" };
+          // Also update tier if a known price ID is present in transaction items
+          if (tier) {
+            txUpdateData.tier = resolvedTier;
+          }
+          await supabase.from("organizations").update(txUpdateData as any).eq("paddle_customer_id", customerId);
         }
         break;
       }

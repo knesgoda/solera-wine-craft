@@ -7,6 +7,14 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const ALLOWED_IMPORT_TABLES = [
+  "blocks", "vintages", "lab_samples", "tasks", "fermentation_logs",
+  "harvest_progress", "harvest_predictions", "pick_windows",
+  "grower_contracts", "blending_trials", "barrel_lots", "vessels",
+  "fermentation_vessels", "barrels", "inventory_skus", "vineyards",
+  "ttb_additions",
+];
+
 // --- Enum normalization ---
 function normalizeTaskStatus(v: string): string {
   const s = v.toLowerCase().trim();
@@ -178,28 +186,32 @@ async function deriveVintageFromBlock(
 
   if (!block) return null;
 
-  // Try to find a vintage with matching variety or recent year
+  // Scope by both org_id and block_id to avoid assigning wrong vintage
   const { data: vintage } = await supabase
     .from("vintages")
     .select("id")
     .eq("org_id", orgId)
+    .eq("block_id", blockId)
     .order("year", { ascending: false })
     .limit(1)
     .maybeSingle();
 
   if (vintage) return vintage.id;
 
-  // Auto-create a vintage from block variety + current year
+  // Auto-create a vintage for this specific block
   const currentYear = new Date().getFullYear();
   const vintageName = block.variety
     ? `${block.variety} ${currentYear}`
     : `${block.name} ${currentYear}`;
   const { data: created, error } = await supabase
     .from("vintages")
-    .insert({ org_id: orgId, name: vintageName, year: currentYear, variety: block.variety || null })
+    .insert({ org_id: orgId, name: vintageName, year: currentYear, variety: block.variety || null, block_id: blockId })
     .select("id")
     .single();
-  if (error) return null;
+  if (error) {
+    console.error(`deriveVintageFromBlock auto-create failed for block ${blockId}:`, error);
+    return null;
+  }
   const key = vintageName.toLowerCase().trim();
   vintageCache[key] = created.id;
   return created.id;
@@ -417,6 +429,10 @@ serve(async (req) => {
             if (!data.vintage_id) {
               throw new Error("lab_samples: vintage_id is required — provide a vintage/lot name, block name, or vintage ID");
             }
+
+            if (!data.block_id) {
+              throw new Error("block_id is required for lab sample import. Ensure the block is mapped correctly.");
+            }
           }
 
           // --- Entity resolution: grower_contracts need grower_id ---
@@ -525,8 +541,8 @@ serve(async (req) => {
             // Remove winery_name (not a real column)
             delete data.winery_name;
 
-            if (!data.grower_id) {
-              throw new Error("grower_contracts: grower_id is required — provide a grower_name or grower_id in the CSV");
+            if (!data.block_id) {
+              throw new Error("block_id is required for harvest import.");
             }
           }
 
@@ -619,7 +635,18 @@ serve(async (req) => {
             data.temp_controlled = v === "true" || v === "1" || v === "yes";
           }
 
-          const { error: insertError } = await supabase.from(table).insert(data);
+          if (!ALLOWED_IMPORT_TABLES.includes(table)) {
+            errors++;
+            await supabase.from("import_errors").insert({
+              job_id: jobId,
+              row_number: i + 1,
+              source_data: row,
+              error_message: `Import target "${table}" is not an allowed import table.`,
+            });
+            continue;
+          }
+
+          const { error: insertError } = await supabase.from(table as any).insert(data);
           if (insertError) {
             throw new Error(`${table}: ${insertError.message}`);
           }

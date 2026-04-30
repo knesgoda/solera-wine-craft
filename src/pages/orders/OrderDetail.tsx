@@ -117,7 +117,7 @@ const OrderDetail = () => {
             <div className="flex justify-between font-bold border-t pt-2"><span>Total</span><span>${Number(order.total).toFixed(2)}</span></div>
             {order.tracking_number && <div className="flex justify-between"><span className="text-muted-foreground">Tracking</span><span>{order.tracking_number}</span></div>}
             {order.source && order.source !== "manual" && <div className="flex justify-between"><span className="text-muted-foreground">Source</span><Badge variant="secondary" className="capitalize">{order.source}</Badge></div>}
-            {(order.stripe_session_id) && <div className="flex justify-between"><span className="text-muted-foreground">Payment Ref</span><span className="text-xs truncate max-w-[200px]">{order.stripe_session_id}</span></div>}
+            {(order.stripe_session_id) && <div className="flex justify-between"><span className="text-muted-foreground">Wine Club Ref (legacy)</span><span className="text-xs truncate max-w-[200px]">{order.stripe_session_id}</span></div>}
             {order.compliance_status && order.compliance_status !== "unchecked" && (
               <div className="flex justify-between"><span className="text-muted-foreground">Compliance</span>
                 <Badge variant={order.compliance_status === "passed" ? "default" : "destructive"} className="capitalize">{order.compliance_status}</Badge>

@@ -130,7 +130,7 @@ export default function AdminDashboard() {
     switch (activeTab) {
       case "dashboard": return <DashboardTab api={api} key={refreshKey} />;
       case "weekly": return <WeeklyStrategyTab api={api} key={refreshKey} />;
-      case "customers": return <CustomersTab api={api} password="" key={refreshKey} />;
+      case "customers": return <CustomersTab api={api} key={refreshKey} />;
       case "revenue": return <RevenueTab api={api} key={refreshKey} />;
       case "analytics": return <ProductAnalyticsTab api={api} key={refreshKey} />;
       case "operations": return <OperationsTab api={api} key={refreshKey} />;

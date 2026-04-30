@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://solera.vin",
@@ -329,6 +330,51 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const anonClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: authError } = await anonClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const serviceClient = createClient(supabaseUrl, serviceKey);
+
+    const { data: profile } = await serviceClient
+      .from("profiles")
+      .select("org_id")
+      .eq("id", user.id)
+      .single();
+    if (!profile?.org_id) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: org } = await serviceClient
+      .from("organizations")
+      .select("tier, subscription_status")
+      .eq("id", profile.org_id)
+      .single();
+    if (!org || !["active", "trialing"].includes(org.subscription_status)) {
+      return new Response(JSON.stringify({ error: "Data import requires an active subscription." }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { headers, sampleRows, sourceType } = await req.json();
     const lowerHeaders = headers.map((h: string) => h.toLowerCase().trim());
     const normalizedHeaders = headers.map((h: string) => normalizeHeader(h));

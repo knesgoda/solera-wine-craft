@@ -27,7 +27,13 @@ Deno.serve(async (req) => {
 
     // Call ShipCompliant CheckCompliance API
     try {
-      const resp = await fetch("https://ws-dev.shipcompliant.com/services/1.2/complianceService.asmx", {
+      const shipCompliantUrl = Deno.env.get("SHIPCOMPLIANT_BASE_URL");
+      if (!shipCompliantUrl) {
+        return new Response(JSON.stringify({ error: "ShipCompliant is not configured." }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const resp = await fetch(`${shipCompliantUrl}complianceService.asmx`, {
         method: "POST",
         headers: { "Content-Type": "text/xml", "SOAPAction": "http://ws.shipcompliant.com/CheckComplianceOfSalesOrder" },
         body: `<?xml version="1.0" encoding="utf-8"?>

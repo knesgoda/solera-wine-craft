@@ -160,7 +160,7 @@ const StorefrontSettings = () => {
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">Managed by Paddle. Your DTC transactions are processed through your Paddle account.</p>
           <div>
-            <Label>Payment Account ID</Label>
+            <Label>Payment Account ID <span className="text-xs font-normal text-muted-foreground">Legacy DTC wine club field (Phase 4)</span></Label>
             <Input value={currentForm.stripe_account_id || ""} onChange={(e) => updateForm("stripe_account_id", e.target.value)} placeholder="acct_..." />
             <p className="text-xs text-muted-foreground mt-1">Managed by Paddle. Your DTC transactions are processed through your Paddle account.</p>
           </div>
