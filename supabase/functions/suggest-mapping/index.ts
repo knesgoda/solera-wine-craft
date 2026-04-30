@@ -552,7 +552,7 @@ Sample rows (first 5): ${JSON.stringify(sampleRows)}`;
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
+        model: "claude-sonnet-4-20250514",
         max_tokens: 2048,
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],
