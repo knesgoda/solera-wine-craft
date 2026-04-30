@@ -38,6 +38,9 @@ export function NewTaskDialog({ open, onOpenChange }: Props) {
   const [blockId, setBlockId] = useState<string>("");
   const [dueDate, setDueDate] = useState<Date>();
   const [instructions, setInstructions] = useState("");
+  const [taskType, setTaskType] = useState<string>("");
+  const [priority, setPriority] = useState<string>("medium");
+  const [assignedUserId, setAssignedUserId] = useState<string>("");
 
   const { data: blocks = [] } = useQuery({
     queryKey: ["all-blocks", organization?.id],
@@ -46,6 +49,19 @@ export function NewTaskDialog({ open, onOpenChange }: Props) {
         .from("blocks")
         .select("id, name, vineyard_id, vineyards(name)")
         .order("name");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!organization?.id,
+  });
+
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ["org-members", organization?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, email")
+        .eq("org_id", organization!.id);
       if (error) throw error;
       return data as any[];
     },
@@ -61,6 +77,9 @@ export function NewTaskDialog({ open, onOpenChange }: Props) {
         assigned_to: user!.id,
         due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : null,
         instructions: instructions || null,
+        task_type: taskType || null,
+        priority: priority || null,
+        assigned_to_user_id: assignedUserId || null,
       } as any);
       if (error) throw error;
     },
@@ -77,6 +96,9 @@ export function NewTaskDialog({ open, onOpenChange }: Props) {
     setBlockId("");
     setDueDate(undefined);
     setInstructions("");
+    setTaskType("");
+    setPriority("medium");
+    setAssignedUserId("");
     onOpenChange(false);
   };
 
@@ -102,6 +124,52 @@ export function NewTaskDialog({ open, onOpenChange }: Props) {
             {blocks.map((b: any) => (
               <SelectItem key={b.id} value={b.id}>
                 {b.name} · {b.vineyards?.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label className="inline-flex items-center">Task Type<HelpTooltip content="The viticulture activity category. Used for grouping tasks in reports and tracking labor hours by activity (e.g. spraying vs pruning vs harvest)." /></Label>
+          <Select value={taskType} onValueChange={setTaskType}>
+            <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="spraying">Spraying</SelectItem>
+              <SelectItem value="pruning">Pruning</SelectItem>
+              <SelectItem value="canopy_management">Canopy Management</SelectItem>
+              <SelectItem value="irrigation">Irrigation</SelectItem>
+              <SelectItem value="harvest">Harvest</SelectItem>
+              <SelectItem value="sampling">Sampling</SelectItem>
+              <SelectItem value="planting">Planting</SelectItem>
+              <SelectItem value="maintenance">Maintenance</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="inline-flex items-center">Priority<HelpTooltip content="Urgency level. High priority tasks surface at the top of dashboards and trigger reminders. Use Critical sparingly for time-sensitive work like spray windows." /></Label>
+          <Select value={priority} onValueChange={setPriority}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="critical">Critical</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div>
+        <Label className="inline-flex items-center">Assign To<HelpTooltip content="The team member responsible for completing this task. They will see it on their dashboard and receive notifications. Leave blank to assign to yourself." /></Label>
+        <Select value={assignedUserId} onValueChange={setAssignedUserId}>
+          <SelectTrigger><SelectValue placeholder="Select team member (optional)" /></SelectTrigger>
+          <SelectContent>
+            {teamMembers.map((m: any) => (
+              <SelectItem key={m.id} value={m.id}>
+                {[m.first_name, m.last_name].filter(Boolean).join(" ") || m.email}
               </SelectItem>
             ))}
           </SelectContent>
