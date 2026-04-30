@@ -179,6 +179,7 @@ const App = () => (
               <Route path="/vineyard-ops" element={<Navigate to="/operations" replace />} />
               <Route path="/vintages" element={<VintageList />} />
               <Route path="/vintages/:vintageId" element={<VintageDetail />} />
+              <Route path="/vintages/:vintageId/peak-prediction" element={<VintageDetail />} />
               <Route path="/growers" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerList /></TierGate>} />
               <Route path="/growers/contracts" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><GrowerContractList /></TierGate>} />
               <Route path="/growers/contracts/new" element={<TierGate requiredTier="enterprise" featureName="Grower Contract Management"><ContractForm /></TierGate>} />
