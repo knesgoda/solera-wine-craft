@@ -50,6 +50,7 @@ const InfoRow = ({ label, value, tooltip }: { label: string; value: string | num
 const emptyEditForm = {
   name: "", variety: "", clone: "", rootstock: "", acres: "",
   lifecycle_stage: "" as string, soil_ph: "", soil_texture: "", soil_organic_matter: "", drainage: "",
+  row_orientation: "",
 };
 
 const BlockDetail = () => {
