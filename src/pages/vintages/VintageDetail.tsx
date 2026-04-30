@@ -251,6 +251,13 @@ export default function VintageDetail() {
         <ArrowLeft className="h-4 w-4 mr-2" /> Back
       </Button>
 
+      {vintage.client_org_id && vintage.contract_status === "pending" && (
+        <div className="mb-4 p-3 rounded-md border border-yellow-300 bg-yellow-50 text-yellow-900 text-sm flex items-start gap-2">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>Contract not yet fully executed. Confirm signed agreement before recording production activity.</span>
+        </div>
+      )}
+
       <Card className="mb-6">
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
@@ -308,6 +315,103 @@ export default function VintageDetail() {
                 <span className="text-muted-foreground">Notes</span>
                 <Textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2} />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-sm space-y-1">
+                  <Label className="inline-flex items-center text-muted-foreground">Target Brix<HelpTooltip content="The sugar level at which you plan to pick. Solera uses this as the endpoint for harvest prediction. Adjust based on your style goals and variety." /></Label>
+                  <Input type="number" step="0.1" value={editTargetBrix} onChange={(e) => setEditTargetBrix(e.target.value)} />
+                </div>
+                <div className="text-sm space-y-1">
+                  <Label className="inline-flex items-center text-muted-foreground">Target pH<HelpTooltip content="Your ideal pH at harvest. Solera will alert you if pH is trending above target as the vintage progresses." /></Label>
+                  <Input type="number" step="0.01" value={editTargetPh} onChange={(e) => setEditTargetPh(e.target.value)} />
+                </div>
+              </div>
+              <div className="text-sm space-y-1">
+                <Label className="inline-flex items-center text-muted-foreground">Fermentation Start Date<HelpTooltip content="The date primary fermentation began. Used to calculate fermentation duration and flag stalled or sluggish ferments." /></Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !editFermStartDate && "text-muted-foreground")}>
+                      <CalendarIcon className="h-4 w-4 mr-2" />
+                      {editFermStartDate ? format(editFermStartDate, "MMMM d, yyyy") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={editFermStartDate} onSelect={setEditFermStartDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="text-sm space-y-1">
+                <Label className="inline-flex items-center text-muted-foreground">MLF Status<HelpTooltip content="Malolactic fermentation converts sharp malic acid to softer lactic acid. Most red wines and some whites undergo MLF for texture and stability." /></Label>
+                <Select value={editMlfStatus} onValueChange={setEditMlfStatus}>
+                  <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="not_started">Not Started</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="complete">Complete</SelectItem>
+                    <SelectItem value="blocked">Blocked / Inoculated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-sm space-y-1">
+                  <Label className="inline-flex items-center text-muted-foreground">Yeast Strain<HelpTooltip content="The commercial yeast strain used. Different strains have different temperature ranges, alcohol tolerance, flavor contributions, and nutrient demands." /></Label>
+                  <Input value={editYeastStrain} onChange={(e) => setEditYeastStrain(e.target.value)} placeholder="e.g. EC-1118" />
+                </div>
+                <div className="text-sm space-y-1">
+                  <Label className="inline-flex items-center text-muted-foreground">Inoculation Date<HelpTooltip content="The date yeast was added to begin fermentation. Used to track fermentation duration and flag slow starts." /></Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !editInoculationDate && "text-muted-foreground")}>
+                        <CalendarIcon className="h-4 w-4 mr-2" />
+                        {editInoculationDate ? format(editInoculationDate, "MMM d, yyyy") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={editInoculationDate} onSelect={setEditInoculationDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+              {vintage.client_org_id && (
+                <div className="space-y-3 border-t pt-3">
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Custom Crush Lot</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="text-sm space-y-1">
+                      <Label className="inline-flex items-center text-muted-foreground">Grapes Received (tons)<HelpTooltip content="Total weight of grapes received from this client, in tons. Used to calculate expected yield and juice volume." /></Label>
+                      <Input type="number" step="0.01" min={0} value={editGrapesTons} onChange={(e) => setEditGrapesTons(e.target.value)} />
+                    </div>
+                    <div className="text-sm space-y-1">
+                      <Label className="inline-flex items-center text-muted-foreground">Expected Yield (gallons)<HelpTooltip content="Estimated gallons of finished wine from this lot based on grape weight. Actual yield is confirmed at pressing. Industry average is roughly 150 gallons per ton." /></Label>
+                      <Input type="number" step={1} min={0} value={editYieldGal} onChange={(e) => setEditYieldGal(e.target.value)} placeholder={editGrapesTons ? String(Math.round(parseFloat(editGrapesTons) * 150)) : "e.g. 300"} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="text-sm space-y-1">
+                      <Label className="inline-flex items-center text-muted-foreground">Contract Status<HelpTooltip content="Whether the crush agreement has been signed and countersigned. Lot tracking cannot begin until the contract is fully executed." /></Label>
+                      <Select value={editContractStatus} onValueChange={setEditContractStatus}>
+                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="signed">Signed</SelectItem>
+                          <SelectItem value="countersigned">Countersigned</SelectItem>
+                          <SelectItem value="expired">Expired</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="text-sm space-y-1">
+                      <Label className="inline-flex items-center text-muted-foreground">COA Status<HelpTooltip content="Certificate of Analysis. The lab report documenting the final chemistry of the client's wine. Required before wine can be released to the client." /></Label>
+                      <Select value={editCoaStatus} onValueChange={setEditCoaStatus}>
+                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="not_requested">Not Requested</SelectItem>
+                          <SelectItem value="pending_lab">Pending Lab</SelectItem>
+                          <SelectItem value="ready">Ready</SelectItem>
+                          <SelectItem value="released_to_client">Released to Client</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="flex gap-2 pt-1">
                 <Button size="sm" onClick={() => updateVintageDetails.mutate()} disabled={updateVintageDetails.isPending}>
                   {updateVintageDetails.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
@@ -323,6 +427,39 @@ export default function VintageDetail() {
               )}
               {vintage.tons_harvested != null && (
                 <div className="text-sm"><span className="text-muted-foreground">Tons Harvested:</span> <span className="font-medium text-foreground">{vintage.tons_harvested}</span></div>
+              )}
+              {vintage.target_brix != null && (
+                <div className="text-sm"><span className="text-muted-foreground inline-flex items-center">Target Brix<HelpTooltip content="The sugar level at which you plan to pick. Solera uses this as the endpoint for harvest prediction." /></span> <span className="font-medium text-foreground">{vintage.target_brix}</span></div>
+              )}
+              {vintage.target_ph != null && (
+                <div className="text-sm"><span className="text-muted-foreground inline-flex items-center">Target pH<HelpTooltip content="Your ideal pH at harvest. Solera will alert you if pH is trending above target." /></span> <span className="font-medium text-foreground">{vintage.target_ph}</span></div>
+              )}
+              {vintage.fermentation_start_date && (
+                <div className="text-sm"><span className="text-muted-foreground inline-flex items-center">Fermentation Start<HelpTooltip content="The date primary fermentation began. Used to calculate fermentation duration." /></span> <span className="font-medium text-foreground">{format(parseISO(vintage.fermentation_start_date), "MMMM d, yyyy")}</span></div>
+              )}
+              {vintage.mlf_status && (
+                <div className="text-sm"><span className="text-muted-foreground inline-flex items-center">MLF Status<HelpTooltip content="Malolactic fermentation status. MLF converts sharp malic acid to softer lactic acid." /></span> <span className="font-medium text-foreground capitalize">{String(vintage.mlf_status).replace(/_/g, " ")}</span></div>
+              )}
+              {vintage.yeast_strain && (
+                <div className="text-sm"><span className="text-muted-foreground inline-flex items-center">Yeast Strain<HelpTooltip content="The commercial yeast strain used for fermentation." /></span> <span className="font-medium text-foreground">{vintage.yeast_strain}</span></div>
+              )}
+              {vintage.inoculation_date && (
+                <div className="text-sm"><span className="text-muted-foreground inline-flex items-center">Inoculation Date<HelpTooltip content="The date yeast was added to begin fermentation." /></span> <span className="font-medium text-foreground">{format(parseISO(vintage.inoculation_date), "MMMM d, yyyy")}</span></div>
+              )}
+              {vintage.client_org_id && (vintage.grapes_received_tons != null || vintage.expected_yield_gallons != null || vintage.contract_status || vintage.coa_status) && (
+                <div className="pt-2 border-t space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Custom Crush Lot</div>
+                  {vintage.grapes_received_tons != null && (
+                    <div className="text-sm"><span className="text-muted-foreground inline-flex items-center">Grapes Received<HelpTooltip content="Total weight of grapes received from this client, in tons." /></span> <span className="font-medium text-foreground">{vintage.grapes_received_tons} tons</span></div>
+                  )}
+                  {vintage.expected_yield_gallons != null && (
+                    <div className="text-sm"><span className="text-muted-foreground inline-flex items-center">Expected Yield<HelpTooltip content="Estimated gallons of finished wine from this lot." /></span> <span className="font-medium text-foreground">{vintage.expected_yield_gallons} gal</span></div>
+                  )}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {contractStatusBadge(vintage.contract_status)}
+                    {coaStatusBadge(vintage.coa_status)}
+                  </div>
+                </div>
               )}
               {vintage.notes && (
                 <div className="text-sm"><span className="text-muted-foreground">Notes:</span> <span className="text-foreground">{vintage.notes}</span></div>
