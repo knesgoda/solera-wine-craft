@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, Loader2, Plus, Thermometer, Droplets, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 
 /** Safely parse an ISO date string, falling back to current date on failure */
 const safeParse = (d: string): Date => {
@@ -38,6 +39,7 @@ export default function VesselDetail() {
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
   const [logTempF, setLogTempF] = useState("");
   const [logBrix, setLogBrix] = useState("");
+  const [logCapMgmt, setLogCapMgmt] = useState<string>("");
   const [logNotes, setLogNotes] = useState("");
   const [loggedAt, setLoggedAt] = useState(new Date().toISOString().slice(0, 16));
   const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
@@ -87,6 +89,7 @@ export default function VesselDetail() {
   const resetForm = () => {
     setLogTempF("");
     setLogBrix("");
+    setLogCapMgmt("");
     setLogNotes("");
     setLoggedAt(new Date().toISOString().slice(0, 16));
     setEditingLogId(null);
@@ -101,6 +104,7 @@ export default function VesselDetail() {
         logged_at: new Date(loggedAt).toISOString(),
         temp_f: logTempF ? parseFloat(logTempF) : null,
         brix: logBrix ? parseFloat(logBrix) : null,
+        cap_management: logCapMgmt || null,
         notes: logNotes || null,
       };
 
@@ -167,6 +171,7 @@ export default function VesselDetail() {
     setEditingLogId(log.id);
     setLogTempF(log.temp_f != null ? String(log.temp_f) : "");
     setLogBrix(log.brix != null ? String(log.brix) : "");
+    setLogCapMgmt(log.cap_management || "");
     setLogNotes(log.notes || "");
     setLoggedAt(safeParse(log.logged_at).toISOString().slice(0, 16));
     setShowLogForm(true);
@@ -203,6 +208,46 @@ export default function VesselDetail() {
         <CardContent className="space-y-3">
           {vessel.capacity_liters && (
             <div className="text-sm"><span className="text-muted-foreground">Capacity:</span> <span className="font-medium">{vessel.capacity_liters}L</span></div>
+          )}
+          {vessel.vessel_type && (
+            <div className="text-sm">
+              <span className="text-muted-foreground inline-flex items-center">Vessel Type<HelpTooltip content="The container type: tank, barrel, amphora, etc. Affects oxygenation, flavor development, and the appropriate monitoring schedule." /></span>{" "}
+              <span className="font-medium capitalize">{String(vessel.vessel_type).replace(/_/g, " ")}</span>
+            </div>
+          )}
+          {vessel.status && (
+            <div className="text-sm">
+              <span className="text-muted-foreground inline-flex items-center">Status<HelpTooltip content="Current state of the vessel. Determines what actions are available and affects monitoring schedule." /></span>{" "}
+              <span className="font-medium capitalize">{String(vessel.status).replace(/_/g, " ")}</span>
+            </div>
+          )}
+          {vessel.fill_level_pct != null && (
+            <div className="text-sm">
+              <span className="text-muted-foreground inline-flex items-center">Fill Level<HelpTooltip content="Current volume of wine in this vessel as a percentage of capacity. Solera uses this to flag ullage, which is empty headspace that could cause oxidation." /></span>{" "}
+              <span className="font-medium">{vessel.fill_level_pct}%</span>
+            </div>
+          )}
+          {vessel.vessel_type === "barrel" && (
+            <>
+              {vessel.oak_type && (
+                <div className="text-sm">
+                  <span className="text-muted-foreground inline-flex items-center">Oak Type<HelpTooltip content="The species and origin of oak. French adds spice and structure. American adds vanilla and coconut. Hungarian is a middle ground." /></span>{" "}
+                  <span className="font-medium capitalize">{String(vessel.oak_type).replace(/_/g, " ")}</span>
+                </div>
+              )}
+              {vessel.toast_level && (
+                <div className="text-sm">
+                  <span className="text-muted-foreground inline-flex items-center">Toast Level<HelpTooltip content="How heavily the barrel was charred during manufacture. Light preserves wood tannins. Medium adds vanilla and caramel. Heavy adds smoke." /></span>{" "}
+                  <span className="font-medium capitalize">{String(vessel.toast_level).replace(/_/g, " ")}</span>
+                </div>
+              )}
+              {vessel.barrel_age_fills != null && (
+                <div className="text-sm">
+                  <span className="text-muted-foreground inline-flex items-center">Barrel Age (fills)<HelpTooltip content="How many times this barrel has been used. First-fill barrels impart the most flavor. By the third or fourth fill, oak influence is minimal." /></span>{" "}
+                  <span className="font-medium">{vessel.barrel_age_fills}</span>
+                </div>
+              )}
+            </>
           )}
           <div className="text-sm"><span className="text-muted-foreground">Temp Controlled:</span> <span className="font-medium">{vessel.temp_controlled ? "Yes" : "No"}</span></div>
           {vessel.notes && <div className="text-sm"><span className="text-muted-foreground">Notes:</span> {vessel.notes}</div>}
@@ -270,8 +315,21 @@ export default function VesselDetail() {
             <div className="border border-border rounded-lg p-4 mb-4 space-y-3">
               <div><Label>Logged At</Label><Input type="datetime-local" value={loggedAt} onChange={(e) => setLoggedAt(e.target.value)} /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Temp (°F)</Label><Input type="number" step="0.1" value={logTempF} onChange={(e) => setLogTempF(e.target.value)} /></div>
-                <div><Label>Brix (°)</Label><Input type="number" step="0.1" value={logBrix} onChange={(e) => setLogBrix(e.target.value)} /></div>
+                <div><Label className="inline-flex items-center">Temp (°F)<HelpTooltip content="Fermentation temperature in Fahrenheit. Affects yeast activity and flavor development. Most red ferments run 75 to 85 F. White ferments are typically cooler at 55 to 65 F." /></Label><Input type="number" step="0.1" value={logTempF} onChange={(e) => setLogTempF(e.target.value)} /></div>
+                <div><Label className="inline-flex items-center">Brix (°)<HelpTooltip content="Current Brix reading. A healthy ferment drops roughly 1 to 2 Brix per day. A slower drop may indicate a stuck or sluggish ferment." /></Label><Input type="number" step="0.1" value={logBrix} onChange={(e) => setLogBrix(e.target.value)} /></div>
+              </div>
+              <div>
+                <Label className="inline-flex items-center">Cap Management<HelpTooltip content="Cap management action performed this log entry. Pump overs circulate juice over the skins. Punch downs push the cap below the surface. Both extract color, tannin, and flavor." /></Label>
+                <Select value={logCapMgmt} onValueChange={setLogCapMgmt}>
+                  <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="pump_over">Pump Over</SelectItem>
+                    <SelectItem value="punch_down">Punch Down</SelectItem>
+                    <SelectItem value="rack_and_return">Rack and Return</SelectItem>
+                    <SelectItem value="delestage">Délestage</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div><Label>Notes</Label><Textarea value={logNotes} onChange={(e) => setLogNotes(e.target.value)} rows={2} /></div>
               <div className="flex gap-2">
@@ -319,6 +377,11 @@ export default function VesselDetail() {
                     {log.brix != null && (
                       <span className="flex items-center gap-1">
                         <Droplets className="h-3.5 w-3.5" /> {log.brix}°Bx
+                      </span>
+                    )}
+                    {log.cap_management && log.cap_management !== "none" && (
+                      <span className="capitalize text-muted-foreground">
+                        {String(log.cap_management).replace(/_/g, " ")}
                       </span>
                     )}
                   </div>

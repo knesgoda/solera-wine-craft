@@ -792,6 +792,7 @@ export type Database = {
           name: string
           notes: string | null
           rootstock: string | null
+          row_orientation: string | null
           row_spacing_ft: number | null
           soil_organic_matter: number | null
           soil_ph: number | null
@@ -819,6 +820,7 @@ export type Database = {
           name: string
           notes?: string | null
           rootstock?: string | null
+          row_orientation?: string | null
           row_spacing_ft?: number | null
           soil_organic_matter?: number | null
           soil_ph?: number | null
@@ -846,6 +848,7 @@ export type Database = {
           name?: string
           notes?: string | null
           rootstock?: string | null
+          row_orientation?: string | null
           row_spacing_ft?: number | null
           soil_organic_matter?: number | null
           soil_ph?: number | null
@@ -1958,6 +1961,7 @@ export type Database = {
       fermentation_logs: {
         Row: {
           brix: number | null
+          cap_management: string | null
           created_at: string
           id: string
           import_source: string | null
@@ -1970,6 +1974,7 @@ export type Database = {
         }
         Insert: {
           brix?: number | null
+          cap_management?: string | null
           created_at?: string
           id?: string
           import_source?: string | null
@@ -1982,6 +1987,7 @@ export type Database = {
         }
         Update: {
           brix?: number | null
+          cap_management?: string | null
           created_at?: string
           id?: string
           import_source?: string | null
@@ -2011,58 +2017,70 @@ export type Database = {
       }
       fermentation_vessels: {
         Row: {
+          barrel_age_fills: number | null
           capacity_gallons: number | null
           capacity_liters: number | null
           created_at: string
           current_fill_gal: number | null
           external_vessel_id: string | null
           facility_id: string | null
+          fill_level_pct: number | null
           id: string
           location: string | null
           material: string | null
           name: string
           notes: string | null
+          oak_type: string | null
           org_id: string
           status: string | null
           temp_controlled: boolean
+          toast_level: string | null
           updated_at: string
           vessel_type: string | null
           vintage_id: string | null
         }
         Insert: {
+          barrel_age_fills?: number | null
           capacity_gallons?: number | null
           capacity_liters?: number | null
           created_at?: string
           current_fill_gal?: number | null
           external_vessel_id?: string | null
           facility_id?: string | null
+          fill_level_pct?: number | null
           id?: string
           location?: string | null
           material?: string | null
           name: string
           notes?: string | null
+          oak_type?: string | null
           org_id: string
           status?: string | null
           temp_controlled?: boolean
+          toast_level?: string | null
           updated_at?: string
           vessel_type?: string | null
           vintage_id?: string | null
         }
         Update: {
+          barrel_age_fills?: number | null
           capacity_gallons?: number | null
           capacity_liters?: number | null
           created_at?: string
           current_fill_gal?: number | null
           external_vessel_id?: string | null
           facility_id?: string | null
+          fill_level_pct?: number | null
           id?: string
           location?: string | null
           material?: string | null
           name?: string
           notes?: string | null
+          oak_type?: string | null
           org_id?: string
           status?: string | null
           temp_controlled?: boolean
+          toast_level?: string | null
           updated_at?: string
           vessel_type?: string | null
           vintage_id?: string | null
@@ -3171,10 +3189,12 @@ export type Database = {
           gdd_cumulative: number | null
           id: string
           import_source: string | null
+          malic_acid: number | null
           notes: string | null
           offline_queued: boolean
           ph: number | null
           rs: number | null
+          sample_source: string | null
           sampled_at: string
           sampled_by: string | null
           so2_free: number | null
@@ -3194,10 +3214,12 @@ export type Database = {
           gdd_cumulative?: number | null
           id?: string
           import_source?: string | null
+          malic_acid?: number | null
           notes?: string | null
           offline_queued?: boolean
           ph?: number | null
           rs?: number | null
+          sample_source?: string | null
           sampled_at: string
           sampled_by?: string | null
           so2_free?: number | null
@@ -3217,10 +3239,12 @@ export type Database = {
           gdd_cumulative?: number | null
           id?: string
           import_source?: string | null
+          malic_acid?: number | null
           notes?: string | null
           offline_queued?: boolean
           ph?: number | null
           rs?: number | null
+          sample_source?: string | null
           sampled_at?: string
           sampled_by?: string | null
           so2_free?: number | null
@@ -3595,6 +3619,59 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      ow1_reports: {
+        Row: {
+          created_at: string
+          id: string
+          losses_this_period: number | null
+          org_id: string
+          produced_this_period: number | null
+          reporting_month: number
+          reporting_year: number
+          status: string
+          taxpaid_removals: number | null
+          updated_at: string
+          wine_on_hand_beginning: number | null
+          wine_on_hand_ending: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          losses_this_period?: number | null
+          org_id: string
+          produced_this_period?: number | null
+          reporting_month: number
+          reporting_year: number
+          status?: string
+          taxpaid_removals?: number | null
+          updated_at?: string
+          wine_on_hand_beginning?: number | null
+          wine_on_hand_ending?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          losses_this_period?: number | null
+          org_id?: string
+          produced_this_period?: number | null
+          reporting_month?: number
+          reporting_year?: number
+          status?: string
+          taxpaid_removals?: number | null
+          updated_at?: string
+          wine_on_hand_beginning?: number | null
+          wine_on_hand_ending?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ow1_reports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pick_windows: {
         Row: {
@@ -4264,6 +4341,7 @@ export type Database = {
         Row: {
           assigned_to: string | null
           assigned_to_name: string | null
+          assigned_to_user_id: string | null
           block_id: string | null
           category: string | null
           created_at: string
@@ -4279,12 +4357,14 @@ export type Database = {
           priority: string | null
           source_reference: string | null
           status: Database["public"]["Enums"]["task_status"]
+          task_type: string | null
           title: string
           updated_at: string
         }
         Insert: {
           assigned_to?: string | null
           assigned_to_name?: string | null
+          assigned_to_user_id?: string | null
           block_id?: string | null
           category?: string | null
           created_at?: string
@@ -4300,12 +4380,14 @@ export type Database = {
           priority?: string | null
           source_reference?: string | null
           status?: Database["public"]["Enums"]["task_status"]
+          task_type?: string | null
           title: string
           updated_at?: string
         }
         Update: {
           assigned_to?: string | null
           assigned_to_name?: string | null
+          assigned_to_user_id?: string | null
           block_id?: string | null
           category?: string | null
           created_at?: string
@@ -4321,6 +4403,7 @@ export type Database = {
           priority?: string | null
           source_reference?: string | null
           status?: Database["public"]["Enums"]["task_status"]
+          task_type?: string | null
           title?: string
           updated_at?: string
         }
@@ -4753,14 +4836,21 @@ export type Database = {
           cases_projected: number | null
           client_org_id: string | null
           clone: string | null
+          coa_status: string | null
+          contract_status: string | null
           created_at: string
+          expected_yield_gallons: number | null
           external_lot_id: string | null
           external_vintage_id: string | null
           fermentation_start: string | null
+          fermentation_start_date: string | null
           gallons: number | null
+          grapes_received_tons: number | null
           harvest_date: string | null
           id: string
+          inoculation_date: string | null
           ml_complete: string | null
+          mlf_status: string | null
           name: string | null
           notes: string | null
           org_id: string
@@ -4768,11 +4858,14 @@ export type Database = {
           press_date: string | null
           rootstock: string | null
           status: Database["public"]["Enums"]["vintage_status"]
+          target_brix: number | null
+          target_ph: number | null
           tons_harvested: number | null
           updated_at: string
           variety: string | null
           winemaker_notes: string | null
           year: number
+          yeast_strain: string | null
         }
         Insert: {
           block_id?: string | null
@@ -4780,14 +4873,21 @@ export type Database = {
           cases_projected?: number | null
           client_org_id?: string | null
           clone?: string | null
+          coa_status?: string | null
+          contract_status?: string | null
           created_at?: string
+          expected_yield_gallons?: number | null
           external_lot_id?: string | null
           external_vintage_id?: string | null
           fermentation_start?: string | null
+          fermentation_start_date?: string | null
           gallons?: number | null
+          grapes_received_tons?: number | null
           harvest_date?: string | null
           id?: string
+          inoculation_date?: string | null
           ml_complete?: string | null
+          mlf_status?: string | null
           name?: string | null
           notes?: string | null
           org_id: string
@@ -4795,11 +4895,14 @@ export type Database = {
           press_date?: string | null
           rootstock?: string | null
           status?: Database["public"]["Enums"]["vintage_status"]
+          target_brix?: number | null
+          target_ph?: number | null
           tons_harvested?: number | null
           updated_at?: string
           variety?: string | null
           winemaker_notes?: string | null
           year: number
+          yeast_strain?: string | null
         }
         Update: {
           block_id?: string | null
@@ -4807,14 +4910,21 @@ export type Database = {
           cases_projected?: number | null
           client_org_id?: string | null
           clone?: string | null
+          coa_status?: string | null
+          contract_status?: string | null
           created_at?: string
+          expected_yield_gallons?: number | null
           external_lot_id?: string | null
           external_vintage_id?: string | null
           fermentation_start?: string | null
+          fermentation_start_date?: string | null
           gallons?: number | null
+          grapes_received_tons?: number | null
           harvest_date?: string | null
           id?: string
+          inoculation_date?: string | null
           ml_complete?: string | null
+          mlf_status?: string | null
           name?: string | null
           notes?: string | null
           org_id?: string
@@ -4822,11 +4932,14 @@ export type Database = {
           press_date?: string | null
           rootstock?: string | null
           status?: Database["public"]["Enums"]["vintage_status"]
+          target_brix?: number | null
+          target_ph?: number | null
           tons_harvested?: number | null
           updated_at?: string
           variety?: string | null
           winemaker_notes?: string | null
           year?: number
+          yeast_strain?: string | null
         }
         Relationships: [
           {

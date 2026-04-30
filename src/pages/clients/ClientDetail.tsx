@@ -155,13 +155,15 @@ const ClientDetail = () => {
                 <div className="p-8 text-center text-muted-foreground">No vintages assigned to this client.</div>
               ) : (
                 <Table>
-                  <TableHeader><TableRow><TableHead>Year</TableHead><TableHead>Block</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+                  <TableHeader><TableRow><TableHead>Year</TableHead><TableHead>Block</TableHead><TableHead>Status</TableHead><TableHead>Contract</TableHead><TableHead>COA</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {vintages.map((v: any) => (
                       <TableRow key={v.id} className="cursor-pointer" onClick={() => navigate(`/vintages/${v.id}`)}>
                         <TableCell className="font-medium">{v.year}</TableCell>
                         <TableCell>{v.blocks?.name || "—"}</TableCell>
                         <TableCell><Badge variant="secondary" className="capitalize">{v.status}</Badge></TableCell>
+                        <TableCell>{v.contract_status ? <Badge variant="outline" className={`capitalize ${v.contract_status === "pending" ? "bg-yellow-100 text-yellow-900 border-yellow-300" : v.contract_status === "expired" ? "bg-red-100 text-red-900 border-red-300" : "bg-green-100 text-green-900 border-green-300"}`}>{String(v.contract_status).replace(/_/g, " ")}</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
+                        <TableCell>{v.coa_status ? <Badge variant="outline" className={`capitalize ${v.coa_status === "not_requested" ? "bg-muted text-muted-foreground border-border" : v.coa_status === "pending_lab" ? "bg-yellow-100 text-yellow-900 border-yellow-300" : v.coa_status === "ready" ? "bg-blue-100 text-blue-900 border-blue-300" : "bg-green-100 text-green-900 border-green-300"}`}>{String(v.coa_status).replace(/_/g, " ")}</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

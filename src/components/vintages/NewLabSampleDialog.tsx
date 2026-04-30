@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { HelpTooltip } from "@/components/ui/HelpTooltip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -64,6 +65,8 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSampl
   const [so2Total, setSo2Total] = useState("");
   const [alcohol, setAlcohol] = useState("");
   const [rs, setRs] = useState("");
+  const [sampleSource, setSampleSource] = useState<string>("");
+  const [malicAcid, setMalicAcid] = useState("");
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
@@ -77,6 +80,8 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSampl
       setSo2Total(editingSample.so2_total != null ? String(editingSample.so2_total) : "");
       setAlcohol(editingSample.alcohol != null ? String(editingSample.alcohol) : "");
       setRs(editingSample.rs != null ? String(editingSample.rs) : "");
+      setSampleSource((editingSample as any).sample_source || "");
+      setMalicAcid((editingSample as any).malic_acid != null ? String((editingSample as any).malic_acid) : "");
       setNotes(editingSample.notes || "");
     } else if (open && !editingSample) {
       resetForm();
@@ -101,6 +106,8 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSampl
         so2_total: so2Total ? parseFloat(so2Total) : null,
         alcohol: alcohol ? parseFloat(alcohol) : null,
         rs: rs ? parseFloat(rs) : null,
+        sample_source: sampleSource || null,
+        malic_acid: malicAcid ? parseFloat(malicAcid) : null,
         notes: notes || null,
       };
 
@@ -157,7 +164,8 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSampl
   const resetForm = () => {
     setSampledAt(new Date().toISOString().slice(0, 16));
     setBrix(""); setPh(""); setTa(""); setVa("");
-    setSo2Free(""); setSo2Total(""); setAlcohol(""); setRs(""); setNotes("");
+    setSo2Free(""); setSo2Total(""); setAlcohol(""); setRs("");
+    setSampleSource(""); setMalicAcid(""); setNotes("");
   };
 
   const title = isEditing ? "Edit Lab Sample" : "New Lab Sample";
@@ -178,6 +186,20 @@ export function NewLabSampleDialog({ vintageId, open, onOpenChange, editingSampl
         <div><Label className="inline-flex items-center">Total SO₂<HelpTooltip content="Total sulfur dioxide including bound SO2. Legal limits apply by market. US table wine maximum is 350 ppm. Solera tracks this against TTB limits automatically." /></Label><Input type="number" step="1" value={so2Total} onChange={(e) => setSo2Total(e.target.value)} /></div>
         <div><Label className="inline-flex items-center">Alcohol (%)<HelpTooltip content="Estimated or measured alcohol by volume. At crush, estimated from Brix using the formula Brix x 0.55. After fermentation, measured by ebulliometer or distillation." /></Label><Input type="number" step="0.1" value={alcohol} onChange={(e) => setAlcohol(e.target.value)} /></div>
         <div><Label className="inline-flex items-center">RS (g/L)<HelpTooltip content="Residual Sugar. Sugar remaining after fermentation, in g/L. Bone dry wines are below 2 g/L. Off-dry wines are 5 to 15 g/L. Dessert wines can exceed 100 g/L." /></Label><Input type="number" step="0.1" value={rs} onChange={(e) => setRs(e.target.value)} /></div>
+        <div><Label className="inline-flex items-center">Malic Acid (g/L)<HelpTooltip content="Primary grape acid converted to softer lactic acid during malolactic fermentation. Track this to monitor MLF progress. It should drop as MLF completes." /></Label><Input type="number" step="0.01" min={0} value={malicAcid} onChange={(e) => setMalicAcid(e.target.value)} /></div>
+      </div>
+      <div>
+        <Label className="inline-flex items-center">Sample Source<HelpTooltip content="Where this sample was taken from. Affects how Solera interprets the reading in the context of your ripening or cellar program." /></Label>
+        <Select value={sampleSource} onValueChange={setSampleSource}>
+          <SelectTrigger><SelectValue placeholder="Select source" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="vineyard">Vineyard (Pre-Harvest)</SelectItem>
+            <SelectItem value="tank">Tank</SelectItem>
+            <SelectItem value="barrel">Barrel</SelectItem>
+            <SelectItem value="press">Press</SelectItem>
+            <SelectItem value="bottle">Bottle</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div>
         <Label>Notes</Label>
