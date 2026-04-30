@@ -26,18 +26,20 @@ export async function flushSyncQueue(): Promise<number> {
       } else if (item.operation === "update") {
         const { id: recordId, ...rest } = item.data;
 
-        // Timestamp-based conflict resolution: skip if server is newer
-        const { data: serverRecord } = await (supabase
-          .from(item.table as any)
-          .select("updated_at")
-          .eq("id", recordId)
-          .single() as any);
+        if (ALLOWED_TABLES.includes(item.table as any)) {
+          // Timestamp-based conflict resolution: skip if server is newer
+          const { data: serverRecord } = await (supabase
+            .from(item.table as any)
+            .select("updated_at")
+            .eq("id", recordId)
+            .single() as any);
 
-        const serverUpdatedAt = (serverRecord as any)?.updated_at;
-        if (serverUpdatedAt && new Date(serverUpdatedAt).getTime() > item.timestamp) {
-          toast.warning(`Offline change to ${item.table} was skipped — a newer version exists`);
-          await clearSyncQueueItem(item.id!);
-          continue;
+          const serverUpdatedAt = (serverRecord as any)?.updated_at;
+          if (serverUpdatedAt && new Date(serverUpdatedAt).getTime() > item.timestamp) {
+            toast.warning(`Offline change to ${item.table} was skipped — a newer version exists`);
+            await clearSyncQueueItem(item.id!);
+            continue;
+          }
         }
 
         const { error } = await supabase.from(item.table as any).update(rest as any).eq("id", recordId);
