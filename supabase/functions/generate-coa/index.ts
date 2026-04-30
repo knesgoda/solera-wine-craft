@@ -1,3 +1,9 @@
+/**
+ * @deprecated This Edge Function returns HTML, not a real PDF. The Deno runtime
+ * cannot reliably run jsPDF or headless Chrome. COA generation has been moved
+ * client-side via `src/lib/coaPdfExport.ts` (jsPDF). This function is retained
+ * for backward compatibility only and should not be invoked by new code.
+ */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
